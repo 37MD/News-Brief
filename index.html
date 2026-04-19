@@ -16,7 +16,7 @@
   .container { max-width: 800px; margin: 0 auto; padding: 20px 20px 80px; }
   .setup-box { background: var(--paper2); padding: 20px; border: 1px solid var(--rule); margin-bottom: 30px; border-radius: 4px; }
   input, button { font-family: 'IBM Plex Mono', monospace; padding: 12px; border: 1px solid var(--rule); font-size: 13px; }
-  .btn-main { background: var(--ink); color: white; cursor: pointer; width: 100%; font-weight: bold; text-transform: uppercase; border: none; letter-spacing: 1px; }
+  .btn-main { background: var(--ink); color: white; cursor: pointer; width: 100%; font-weight: bold; text-transform: uppercase; border: none; letter-spacing: 1px; transition: 0.2s; }
   #status { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); text-align: center; margin: 20px 0; padding: 10px; border: 1px dashed var(--rule); background: #fff; }
   .section { margin-bottom: 40px; border-bottom: 1px solid var(--rule); padding-bottom: 25px; animation: fadeIn 0.4s ease; }
   @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
@@ -25,27 +25,23 @@
   .action-btn { font-size: 10px; background: white; border: 1px solid var(--accent); color: var(--accent); cursor: pointer; padding: 6px 14px; border-radius: 4px; font-weight: bold; }
   .detail-box { background: white; padding: 20px; border-left: 5px solid var(--accent); margin-top: 15px; display: none; font-size: 14px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
   .detail-box h3 { margin-bottom: 10px; color: var(--accent); border-bottom: 1px solid #eee; padding-bottom: 5px; font-family: 'Playfair Display', serif; }
-  .hidden { display: none; }
 </style>
 </head>
 <body>
 
 <div class="masthead">
-    <div class="tagline" id="header-date">Financial Research Terminal</div>
+    <div class="tagline" id="header-date">Financial Intelligence Terminal</div>
     <div class="masthead-title">Gemini Pulse</div>
-    <div class="tagline" id="last-update">Awaiting Initial Pull</div>
+    <div class="tagline" id="last-update">System Initializing</div>
 </div>
 
 <div class="container">
   <div id="setup" class="setup-box">
-    <p class="tagline" style="margin-bottom: 10px; color: var(--ink)">Enter AI Studio API Key</p>
-    <div style="display:flex; gap: 10px;">
-        <input type="password" id="api-key" placeholder="AIza..." style="flex:1">
-        <button onclick="saveKey()">Save Key</button>
-    </div>
+    <input type="password" id="api-key" placeholder="AI Studio API Key" style="width: 70%">
+    <button onclick="saveKey()">Save Key</button>
   </div>
 
-  <button class="btn-main" onclick="runBriefing()">Pull New Intelligence</button>
+  <button class="btn-main" onclick="runBriefing()">Pull Market Intelligence</button>
   <div id="status">System Ready</div>
 
   <div id="briefing-output"></div>
@@ -62,27 +58,24 @@ const FEED_URLS = [
 
 function saveKey() {
   const key = document.getElementById('api-key').value.trim();
-  if(!key) return alert("Please enter a key.");
+  if(!key) return alert("Enter key");
   localStorage.setItem('gemini_key', key);
-  document.getElementById('setup').classList.add('hidden');
+  document.getElementById('setup').style.display = 'none';
 }
 
 window.onload = () => {
-  if(localStorage.getItem('gemini_key')) document.getElementById('setup').classList.add('hidden');
-  const last = localStorage.getItem('last_timestamp');
-  if(last) document.getElementById('last-update').textContent = "Last Run: " + new Date(parseInt(last)).toLocaleString();
+  if(localStorage.getItem('gemini_key')) document.getElementById('setup').style.display = 'none';
   document.getElementById('header-date').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
 };
 
 async function runBriefing(forceAll = false) {
   const apiKey = localStorage.getItem('gemini_key');
-  if(!apiKey) return alert("Please save your API key first.");
+  if(!apiKey) return alert("Save API Key first");
 
   const status = document.getElementById('status');
-  const output = document.getElementById('briefing-output');
   const lastTimestamp = forceAll ? (Date.now() - 24*60*60*1000) : parseInt(localStorage.getItem('last_timestamp') || "0");
   
-  status.innerHTML = "🔍 Scanning Indian Market Feeds...";
+  status.innerHTML = "🔍 Fetching RSS Feeds...";
   let allArticles = [];
   const seen = new Set();
 
@@ -90,9 +83,7 @@ async function runBriefing(forceAll = false) {
     try {
       const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}&t=${Date.now()}`);
       const data = await res.json();
-      
-      // FIX 1: Guard against empty or malformed items
-      if(data.status === 'ok' && data.items && Array.isArray(data.items)) {
+      if(data.status === 'ok' && data.items) {
         data.items.forEach(item => {
           const pubTime = new Date(item.pubDate).getTime();
           const titleKey = item.title.toLowerCase().trim().slice(0, 50);
@@ -102,36 +93,24 @@ async function runBriefing(forceAll = false) {
           }
         });
       }
-    } catch (e) { console.error("Feed error", e); }
+    } catch (e) { console.error(e); }
   }
 
   if (allArticles.length === 0) {
-    status.innerHTML = "☕ No new developments. <br><button onclick='runBriefing(true)' style='font-size:10px; border:none; background:none; text-decoration:underline; cursor:pointer; color:var(--accent)'>Force Scan (24h)</button>";
+    status.innerHTML = "No new updates. <button onclick='runBriefing(true)' style='font-size:10px; cursor:pointer;'>Force Scan (24h)</button>";
     return;
   }
 
-  status.textContent = `🤖 Gemini is analyzing ${allArticles.length} stories...`;
-  
+  status.textContent = `🤖 Gemini is analyzing ${allArticles.length} events...`;
   try {
-    const prompt = `Return ONLY JSON format: {"themes": [{"title": "Theme Name", "summary": "3-sentence text"}]}. NEWS: ${JSON.stringify(allArticles)}`;
+    const prompt = `Return ONLY JSON format: {"themes": [{"title": "Theme", "summary": "3-sentence text"}]}. NEWS: ${JSON.stringify(allArticles)}`;
     const rawResponse = await callGemini(prompt, apiKey);
+    const briefingData = JSON.parse(rawResponse.replace(/```json|```/g, "").trim());
     
-    // FIX 2: Better cleaning of AI output
-    const cleaned = rawResponse.replace(/```json|```/g, "").trim();
-    const briefingData = JSON.parse(cleaned);
-    
-    // FIX 3: Guard against AI skipping the 'themes' key
-    if (briefingData && briefingData.themes && Array.isArray(briefingData.themes)) {
-        renderBriefing(briefingData, allArticles);
-        localStorage.setItem('last_timestamp', Math.max(...allArticles.map(a => a.time)).toString());
-        document.getElementById('last-update').textContent = "Last Run: " + new Date().toLocaleString();
-        status.textContent = "✅ Intelligence Briefing Complete.";
-    } else {
-        throw new Error("AI output missing themes.");
-    }
-  } catch (err) {
-    status.innerHTML = `❌ <b>AI Error:</b> ${err.message}. Try pulling again.`;
-  }
+    renderBriefing(briefingData, allArticles);
+    localStorage.setItem('last_timestamp', Math.max(...allArticles.map(a => a.time)).toString());
+    status.textContent = "✅ Briefing Complete.";
+  } catch (err) { status.innerHTML = "❌ AI Error: " + err.message; }
 }
 
 async function callGemini(promptText, key) {
@@ -139,10 +118,7 @@ async function callGemini(promptText, key) {
   const response = await fetch(url, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ parts: [{ text: promptText }] }],
-      generationConfig: { responseMimeType: "application/json" }
-    })
+    body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }], generationConfig: { responseMimeType: "application/json" } })
   });
   const resData = await response.json();
   if (resData.error) throw new Error(resData.error.message);
@@ -152,9 +128,7 @@ async function callGemini(promptText, key) {
 function renderBriefing(data, articles) {
   const container = document.getElementById('briefing-output');
   container.innerHTML = "";
-
-  // FIX 4: Safety check before loop
-  if (!data || !data.themes) return;
+  if (!data.themes) return;
 
   data.themes.forEach((theme, index) => {
     const primaryArticle = articles.find(a => theme.summary.includes(a.title.slice(0, 5))) || articles[0];
@@ -165,7 +139,7 @@ function renderBriefing(data, articles) {
       <p id="sum-${index}">${theme.summary}</p>
       <div class="btn-row">
         <button class="action-btn" onclick="explainAsStory(${index})">✨ Story Mode</button>
-        <button class="action-btn" onclick="fetchDetails('${primaryArticle.link}', ${index})">📈 Deep Dive</button>
+        <button class="action-btn" onclick="fetchDetails('${primaryArticle.link}', ${index})">📈 Deep Dive Details</button>
       </div>
       <div id="detail-${index}" class="detail-box"></div>
     `;
@@ -173,22 +147,48 @@ function renderBriefing(data, articles) {
   });
 }
 
+// RESILIENT SCRAPER WITH FALLBACK PROXY
 async function fetchDetails(link, index) {
   const box = document.getElementById(`detail-${index}`);
-  const key = localStorage.getItem('gemini_key');
   box.style.display = 'block';
-  box.innerHTML = "<i>Scraping content...</i>";
-  try {
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(link)}`;
-    const res = await fetch(proxyUrl);
-    const data = await res.json();
-    const doc = new DOMParser().parseFromString(data.contents, 'text/html');
-    const bodyText = doc.body.innerText.replace(/\s\s+/g, ' ').slice(0, 4500);
-    const prompt = `Analyze this: "${bodyText}". Provide a report with: 1. CORE, 2. BACKGROUND, 3. SEQUENCE, 4. INVESTOR VIEW.`;
-    const detailText = await callGemini(prompt, key);
-    box.innerHTML = `<h3>Deep Dive Report</h3>` + detailText.replace(/\n/g, '<br>');
-    box.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  } catch (e) { box.innerHTML = "❌ Scraper Error."; }
+  box.innerHTML = "<i>Attempting to bypass CORS and scrape content...</i>";
+
+  const proxies = [
+    `https://api.allorigins.win/get?url=${encodeURIComponent(link)}`,
+    `https://corsproxy.io/?${encodeURIComponent(link)}`
+  ];
+
+  for (let proxyUrl of proxies) {
+    try {
+      const res = await fetch(proxyUrl);
+      let html = "";
+      
+      if (proxyUrl.includes("allorigins")) {
+        const data = await res.json();
+        html = data.contents;
+      } else {
+        html = await res.text();
+      }
+
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      // Clean up scripts and styles to get pure content
+      doc.querySelectorAll('script, style, nav, footer, header').forEach(el => el.remove());
+      const bodyText = doc.body.innerText.replace(/\s\s+/g, ' ').slice(0, 5000);
+
+      if (bodyText.length < 200) throw new Error("Content too short");
+
+      const prompt = `Act as a senior Research Analyst. Analyze this article: "${bodyText}". 
+      Write a Deep Dive report with: 1. CORE, 2. BACKGROUND, 3. SEQUENCE, 4. INVESTOR VIEW. 
+      Use bullet points and professional tone.`;
+
+      const detailText = await callGemini(prompt, localStorage.getItem('gemini_key'));
+      box.innerHTML = `<h3>Deep Dive Report</h3>` + detailText.replace(/\n/g, '<br>');
+      return; // Exit loop on success
+    } catch (e) {
+      console.warn(`Proxy ${proxyUrl} failed, trying next...`);
+    }
+  }
+  box.innerHTML = "❌ <b>Scraper Error:</b> All proxies failed. Target site may be blocking automated access.";
 }
 
 async function explainAsStory(index) {
@@ -197,15 +197,9 @@ async function explainAsStory(index) {
   box.style.display = 'block';
   box.innerHTML = "<i>Writing story...</i>";
   try {
-      const result = await callGemini(`Explain as a story: "${text}"`, localStorage.getItem('gemini_key'));
-      box.innerHTML = `<h3>The Story</h3>` + result.replace(/\n/g, '<br>');
+    const result = await callGemini(`Explain as a simple story: "${text}"`, localStorage.getItem('gemini_key'));
+    box.innerHTML = `<h3>The Story</h3>` + result.replace(/\n/g, '<br>');
   } catch(e) { box.innerHTML = "Error writing story."; }
-}
-
-if ('serviceWorker' in navigator) {
-  const swCode = `self.addEventListener('fetch', function(e) { e.respondWith(fetch(e.request)); });`;
-  const blob = new Blob([swCode], {type: 'text/javascript'});
-  navigator.serviceWorker.register(URL.createObjectURL(blob));
 }
 </script>
 </body>
