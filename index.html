@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gemini Finance Pulse</title>
+<link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkdlbWluaSBGaW5hbmNlIFB1bHNlIiwKICAic2hvcnRfbmFtZSI6ICJHZW1pbmkgTmV3cyIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjZjVmMGV4IiwKICAidGhlbWVfY29sb3IiOiAiIzFhNWMzYSIKfQ==">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root { --ink: #1a1a18; --paper: #f5f0e8; --paper2: #ede8de; --accent: #1a5c3a; --rule: #c8c0b0; --muted: #7a7468; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--paper); color: var(--ink); font-family: 'IBM Plex Sans', sans-serif; min-height: 100vh; line-height: 1.6; }
+  
+  /* Masthead Styles from original briefing */
+  .masthead { border-bottom: 3px double var(--ink); padding: 30px 20px; text-align: center; background: var(--paper); position: relative; }
+  .masthead-title { font-family: 'Playfair Display', serif; font-size: clamp(32px, 5vw, 56px); font-weight: 700; letter-spacing: -0.02em; }
+  .tagline { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-top: 8px; }
+
+  .container { max-width: 800px; margin: 0 auto; padding: 20px 20px 80px; }
+  
+  /* UI Components */
+  .setup-box { background: var(--paper2); padding: 20px; border: 1px solid var(--rule); margin-bottom: 30px; border-radius: 4px; }
+  input, button { font-family: 'IBM Plex Mono', monospace; padding: 12px; border: 1px solid var(--rule); font-size: 13px; }
+  .btn-main { background: var(--ink); color: white; cursor: pointer; width: 100%; font-weight: bold; text-transform: uppercase; letter-spacing: 1px; border: none; transition: 0.2s; }
+  .btn-main:hover { background: #333; }
+  .btn-force { background: transparent; color: var(--muted); font-size: 10px; border: none; cursor: pointer; margin-top: 15px; text-decoration: underline; }
+
+  #status { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--muted); text-align: center; margin: 20px 0; padding: 10px; border: 1px dashed var(--rule); }
+
+  /* Briefing Sections */
+  .section { margin-bottom: 40px; border-bottom: 1px solid var(--rule); padding-bottom: 25px; animation: fadeIn 0.5s ease-in; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  .section h2 { font-family: 'Playfair Display', serif; color: var(--accent); font-size: 24px; margin-bottom: 12px; }
+  .section p { font-size: 15px; color: #333; margin-bottom: 15px; }
+  .jargon-btn { font-size: 11px; background: white; border: 1px solid var(--accent); color: var(--accent); cursor: pointer; padding: 5px 12px; border-radius: 20px; }
+  .explanation-box { background: white; padding: 15px; border-left: 4px solid var(--accent); margin-top: 15px; font-style: italic; display: none; font-size: 14px; box-shadow: 2px 2px 10px rgba(0,0,0,0.05); }
+
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div class="masthead">
+    <div class="tagline" id="date-display">Financial Intelligence</div>
+    <div class="masthead-title">Gemini Pulse</div>
+    <div class="tagline" id="last-update">No previous data</div>
+</div>
+
+<div class="container">
+  <div id="setup" class="setup-box">
+    <p class="tagline" style="margin-bottom: 10px; color: var(--ink)">Enter API Key</p>
+    <div style="display:flex; gap: 10px;">
+        <input type="password" id="api-key" placeholder="AI Studio Key (AIza...)" style="flex:1">
+        <button onclick="saveKey()">Save</button>
+    </div>
+  </div>
+
+  <button class="btn-main" onclick="runBriefing()">Pull New Updates</button>
+  <div id="status">Ready to scan markets...</div>
+
+  <div id="briefing-output"></div>
+</div>
+
+<script>
+// 2026 Configuration
+const MODEL_ID = "gemini-3.1-flash-lite-preview"; 
+const FEED_URLS = [
+  'https://pulse.zerodha.com/feed.php',
+  'https://economictimes.indiatimes.com/rssfeedsdefault.cms',
+  'https://www.livemint.com/rss/markets',
+  'https://www.moneycontrol.com/rss/MCtopnews.xml'
+];
+
+function saveKey() {
+  const key = document.getElementById('api-key').value.trim();
+  if(!key) return alert("Enter key");
+  localStorage.setItem('gemini_key', key);
+  document.getElementById('setup').classList.add('hidden');
+}
+
+window.onload = () => {
+  const key = localStorage.getItem('gemini_key');
+  if(key) {
+    document.getElementById('setup').classList.add('hidden');
+    document.getElementById('api-key').value = key;
+  }
+  const last = localStorage.getItem('last_timestamp');
+  if(last) document.getElementById('last-update').textContent = "Last Run: " + new Date(parseInt(last)).toLocaleString();
+  document.getElementById('date-display').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
+};
+
+async function runBriefing(forceAll = false) {
+  const apiKey = localStorage.getItem('gemini_key');
+  if(!apiKey) return alert("Please save your API key first.");
+
+  const status = document.getElementById('status');
+  const output = document.getElementById('briefing-output');
+  
+  // Pull logic: Compare against last seen
+  const lastTimestamp = forceAll ? (Date.now() - 24*60*60*1000) : parseInt(localStorage.getItem('last_timestamp') || "0");
+  
+  status.innerHTML = "🔍 Fetching new items...";
+  output.innerHTML = ""; 
+
+  let allArticles = [];
+  const seen = new Set();
+
+  for (const url of FEED_URLS) {
+    try {
+      const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}&t=${Date.now()}`);
+      const data = await res.json();
+      if(data.status !== 'ok') continue;
+
+      data.items.forEach(item => {
+        const pubTime = new Date(item.pubDate).getTime();
+        const titleKey = item.title.toLowerCase().trim().slice(0, 50);
+
+        if (pubTime > lastTimestamp && !seen.has(titleKey)) {
+          seen.add(titleKey);
+          allArticles.push({ title: item.title, desc: item.description.replace(/<[^>]+>/g, '').slice(0, 250), time: pubTime });
+        }
+      });
+    } catch (e) { console.error("Feed error", e); }
+  }
+
+  if (allArticles.length === 0) {
+    status.innerHTML = "☕ No new developments since your last check.<br><button class='btn-force' onclick='runBriefing(true)'>Force Scan (24h)</button>";
+    return;
+  }
+
+  status.textContent = `🤖 Gemini is analyzing ${allArticles.length} stories...`;
+  
+  try {
+    const rawResponse = await callGemini(allArticles, apiKey);
+    // Clean potential markdown formatting
+    const cleaned = rawResponse.replace(/```json|```/g, "").trim();
+    const briefingData = JSON.parse(cleaned);
+    
+    renderBriefing(briefingData);
+
+    const newest = Math.max(...allArticles.map(a => a.time));
+    localStorage.setItem('last_timestamp', newest.toString());
+    document.getElementById('last-update').textContent = "Last Run: " + new Date().toLocaleString();
+    status.textContent = "✅ Update Complete.";
+  } catch (err) {
+    status.innerHTML = `❌ <b>AI Error:</b> ${err.message}<br><small>Ensure your model is set to gemini-3.1-flash-lite-preview</small>`;
+  }
+}
+
+async function callGemini(articles, key) {
+  const prompt = `Act as a senior financial editor for a Mumbai-based investor. Group these headlines into 3-4 major market themes and summarize each in 3 flowing sentences. 
+  Output ONLY raw JSON format: {"themes": [{"title": "Theme Name", "summary": "AI summary"}]}
+  
+  NEWS DATA: ${JSON.stringify(articles)}`;
+
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${key}`;
+  
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { responseMimeType: "application/json" }
+    })
+  });
+
+  const resData = await response.json();
+  if (resData.error) throw new Error(`${resData.error.status}: ${resData.error.message}`);
+  return resData.candidates[0].content.parts[0].text;
+}
+
+function renderBriefing(data) {
+  const container = document.getElementById('briefing-output');
+  data.themes.forEach((theme, index) => {
+    const div = document.createElement('div');
+    div.className = 'section';
+    div.innerHTML = `
+      <h2>${theme.title}</h2>
+      <p id="summary-${index}">${theme.summary}</p>
+      <button class="jargon-btn" onclick="explainJargon(${index})">✨ Explain as a Story</button>
+      <div id="explain-${index}" class="explanation-box"></div>
+    `;
+    container.appendChild(div);
+  });
+}
+
+async function explainJargon(index) {
+  const text = document.getElementById(`summary-${index}`).textContent;
+  const box = document.getElementById(`explain-${index}`);
+  const key = localStorage.getItem('gemini_key');
+  
+  box.style.display = 'block';
+  box.textContent = "Writing your story...";
+
+  const prompt = `Explain the following news as a simple story for a beginner, defining any jargon: "${text}"`;
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${key}`;
+  
+  const response = await fetch(url, {
+      method: 'POST',
+      body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+  });
+  const data = await response.json();
+  box.textContent = data.candidates[0].content.parts[0].text;
+}
+
+// PWA Service Worker for Offline access
+if ('serviceWorker' in navigator) {
+  const swCode = `self.addEventListener('fetch', function(e) { e.respondWith(fetch(e.request)); });`;
+  const blob = new Blob([swCode], {type: 'text/javascript'});
+  navigator.serviceWorker.register(URL.createObjectURL(blob));
+}
+</script>
+</body>
+</html>
