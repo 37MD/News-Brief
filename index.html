@@ -14,6 +14,7 @@
     --muted: #5a554c; 
     --meta-color: #8c867a;
     --error: #c0392b;
+    --gemini-blue: #1a73e8;
   }
   
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -268,6 +269,25 @@
   }
   .reader-back-btn:hover { background: var(--accent); color: var(--paper); }
 
+  /* ── Gemini Analyze Button ── */
+  .reader-gemini-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    background: var(--gemini-blue);
+    color: #fff;
+    border: 1px solid var(--gemini-blue);
+    padding: 5px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: opacity 0.2s;
+    flex-shrink: 0;
+  }
+  .reader-gemini-btn:hover { opacity: 0.85; }
+  .reader-gemini-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
   .reader-source-url {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px;
@@ -276,6 +296,7 @@
     overflow: hidden;
     text-overflow: ellipsis;
     flex: 1;
+    text-align: center;
   }
 
   .reader-open-btn {
@@ -526,6 +547,7 @@
 
   <div class="reader-topbar">
     <button class="reader-back-btn" id="reader-back">← Back</button>
+    <button class="reader-gemini-btn" id="reader-gemini">✨ Analyze</button>
     <span class="reader-source-url" id="reader-url-label"></span>
     <div class="reader-font-ctrl">
       <button id="font-down" title="Smaller text" aria-label="Decrease font size">A−</button>
@@ -791,7 +813,7 @@
   }
 
   // ══════════════════════════════════════
-  //  READER MODE
+  //  READER MODE & SECURE GEMINI API 
   // ══════════════════════════════════════
   const readerPanel    = document.getElementById('reader-panel');
   const readerBackdrop = document.getElementById('reader-backdrop');
@@ -800,6 +822,7 @@
   const readerUrlLabel = document.getElementById('reader-url-label');
   const readerExtLink  = document.getElementById('reader-ext-link');
   const readerProgress = document.getElementById('reader-progress');
+  const geminiBtn      = document.getElementById('reader-gemini');
 
   let readerFontSize = 17;
 
@@ -837,6 +860,68 @@
   readerScroll.addEventListener('scroll', function() {
     const pct = readerScroll.scrollTop / (readerScroll.scrollHeight - readerScroll.clientHeight) * 100;
     readerProgress.style.width = Math.min(100, pct || 0) + '%';
+  });
+
+  // ── 🧠 Secure Gemini API Logic ──
+  geminiBtn.addEventListener('click', async function() {
+    const articleBodyNode = document.querySelector('.reader-body');
+    if (!articleBodyNode) return alert("Please wait for the article to load before analyzing.");
+    
+    const articleText = articleBodyNode.innerText.substring(0, 15000); 
+    if (articleText.length < 50) return alert("Article is too short for a meaningful analysis.");
+
+    const originalText = geminiBtn.innerText;
+    geminiBtn.innerText = "⏳ SCANNING...";
+    geminiBtn.disabled = true;
+    
+    // Check local storage for key, prompt if not found
+    let apiKey = localStorage.getItem("gemini_api_key");
+    if (!apiKey) {
+        apiKey = prompt("🔒 Please enter your Gemini API Key.\n\nIt will be saved securely in this device's local storage and will NEVER be uploaded to GitHub.");
+        if (apiKey) {
+            localStorage.setItem("gemini_api_key", apiKey.trim());
+        } else {
+            geminiBtn.innerText = originalText;
+            geminiBtn.disabled = false;
+            return; // Exit if the user hits cancel
+        }
+    }
+    
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
+    
+    const payload = {
+        contents: [{
+            parts: [{
+                text: `As a quantitative financial analyst, provide a highly concise summary of the market impact of this article. Identify any sectors to watch, geopolitical impacts on flows, or potential momentum shifts:\n\n${articleText}`
+            }]
+        }]
+    };
+
+    try {
+        const response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+        });
+        
+        const data = await response.json();
+        
+        if (data.error) {
+            alert("API Error: " + data.error.message);
+            // If the key is invalid or quota is exceeded, clear it so the user can enter a new one next time
+            if (data.error.code === 400 || data.error.code === 401 || data.error.code === 403) {
+                localStorage.removeItem("gemini_api_key");
+            }
+        } else {
+            const reply = data.candidates[0].content.parts[0].text;
+            alert("GEMINI ANALYSIS:\n\n" + reply); 
+        }
+    } catch (error) {
+        alert("Network Error: Could not connect to Gemini API. Check your connection.");
+    } finally {
+        geminiBtn.innerText = originalText;
+        geminiBtn.disabled = false;
+    }
   });
 
   const CONTENT_SELECTORS = [
