@@ -215,7 +215,6 @@
      READER MODE
   ══════════════════════════════════════ */
 
-  /* Full-screen panel slides in from right */
   #reader-panel {
     position: fixed;
     top: 0; right: 0; bottom: 0;
@@ -232,7 +231,6 @@
   }
   #reader-panel.open { transform: translateX(0); }
 
-  /* Dim backdrop */
   #reader-backdrop {
     display: none;
     position: fixed;
@@ -243,7 +241,6 @@
   }
   #reader-backdrop.open { display: block; }
 
-  /* Top bar */
   .reader-topbar {
     display: flex;
     align-items: center;
@@ -299,7 +296,6 @@
   }
   .reader-open-btn:hover { border-color: var(--ink); color: var(--ink); }
 
-  /* Font size controls */
   .reader-font-ctrl {
     display: flex;
     gap: 4px;
@@ -319,14 +315,12 @@
   }
   .reader-font-ctrl button:hover { border-color: var(--ink); color: var(--ink); }
 
-  /* Scrollable content area */
   .reader-scroll {
     overflow-y: auto;
     flex: 1;
     padding: 36px 40px 60px;
   }
 
-  /* Article header */
   .reader-article-title {
     font-family: 'Playfair Display', serif;
     font-size: clamp(22px, 3.5vw, 32px);
@@ -347,7 +341,6 @@
     border-bottom: 2px solid var(--rule);
   }
 
-  /* Article body typography */
   .reader-body {
     font-size: var(--reader-font-size, 17px);
     line-height: 1.85;
@@ -387,7 +380,6 @@
     margin-top: 6px;
   }
 
-  /* Loading / error inside reader */
   .reader-status {
     font-family: 'IBM Plex Mono', monospace;
     font-size: 12px;
@@ -398,7 +390,6 @@
   }
   .reader-status.error { color: var(--error); }
 
-  /* Progress bar at top of reader */
   #reader-progress {
     position: absolute;
     top: 0; left: 0;
@@ -409,7 +400,6 @@
     z-index: 5;
   }
 
-  /* Feed items — change cursor to pointer */
   .headline { cursor: pointer; }
 
   @media (max-width: 520px) {
@@ -423,6 +413,14 @@
 
 <div class="controls-bar">
   <select id="feed-dropdown" aria-label="Select news feed">
+
+    <optgroup label="── Digital & National News ──">
+      <option value="https://feeds.feedburner.com/NDTV-LatestNews">NDTV · Latest News</option>
+      <option value="https://feeds.feedburner.com/ScrollinArticles.rss">Scroll.in · Articles</option>
+      <option value="https://www.firstpost.com/commonfeeds/v1/mfp/rss/web-stories.xml">Firstpost · Web Stories</option>
+      <option value="https://indianexpress.com/feed/">IE · Top News</option>
+      <option value="https://theprint.in/feed/">The Print · Top News</option>
+    </optgroup>
 
     <optgroup label="── Times of India ──">
       <option value="https://timesofindia.indiatimes.com/rssfeedstopstories.cms">TOI · Top Stories</option>
@@ -450,8 +448,7 @@
     </optgroup>
 
     <optgroup label="── Business Standard ──">
-      <option value="https://www.business-standard.com/rss/latest.rss">BS · Latest</option>
-      <option value="https://wap.business-standard.com/rss/markets-106.rss">BS · Markets</option>
+      <option value="https://www.business-standard.com/rss/markets-106.rss">BS · Markets</option>
       <option value="https://www.business-standard.com/rss/economy-policy-102.rss">BS · Economy & Policy</option>
       <option value="https://www.business-standard.com/rss/finance-103.rss">BS · Finance</option>
       <option value="https://www.business-standard.com/rss/technology-108.rss">BS · Technology</option>
@@ -460,9 +457,9 @@
     <optgroup label="── The Hindu ──">
       <option value="https://www.thehindu.com/feeder/default.rss">Hindu · Top News</option>
       <option value="https://www.thehindu.com/business/feeder/default.rss">Hindu · Business</option>
+      <option value="https://frontline.thehindu.com/cover-story/feeder/default.rss">Frontline · Cover Story</option>
       <option value="https://www.thehindu.com/opinion/feeder/default.rss">Hindu · Opinion</option>
       <option value="https://www.thehindu.com/sci-tech/feeder/default.rss">Hindu · Science & Tech</option>
-      <option value="https://www.thehindu.com/sport/feeder/default.rss">Hindu · Sport</option>
     </optgroup>
 
     <optgroup label="── Hindu BusinessLine ──">
@@ -477,11 +474,9 @@
       <option value="https://www.hindustantimes.com/feeds/rss/india-news/rssfeed.xml">HT · India News</option>
       <option value="https://www.hindustantimes.com/feeds/rss/business/rssfeed.xml">HT · Business</option>
       <option value="https://www.hindustantimes.com/feeds/rss/world-news/rssfeed.xml">HT · World</option>
-      <option value="https://www.hindustantimes.com/feeds/rss/education/rssfeed.xml">HT · Education</option>
     </optgroup>
 
-    <optgroup label="── Indian Express ──">
-      <option value="https://indianexpress.com/feed/">IE · Top News</option>
+    <optgroup label="── Indian Express (Extended) ──">
       <option value="https://indianexpress.com/section/business/feed/">IE · Business</option>
       <option value="https://indianexpress.com/section/opinion/feed/">IE · Opinion</option>
       <option value="https://indianexpress.com/section/technology/feed/">IE · Technology</option>
@@ -497,9 +492,8 @@
       <option value="https://www.livemint.com/rss/companies">Mint · Companies</option>
     </optgroup>
 
-    <optgroup label="── Others ──">
+    <optgroup label="── Editorials & City ──">
       <option value="https://www.moneycontrol.com/rss/MCtopnews.xml">Moneycontrol · Top News</option>
-      <option value="https://theprint.in/feed/">The Print · Top News</option>
       <option value="https://www.mid-day.com/Resources/midday/rss/news.xml">Mid-Day · Mumbai</option>
       <option value="https://www.epw.in/taxonomy/term/65/feed">EPW · Editorials</option>
     </optgroup>
@@ -570,7 +564,7 @@
   const nextRefresh = document.getElementById('next-refresh');
 
   // ══════════════════════════════════════
-  //  XHR FETCH (no AbortSignal — works in sandboxed iframes)
+  //  XHR FETCH
   // ══════════════════════════════════════
   function xhrFetch(url, timeoutMs) {
     return new Promise((resolve, reject) => {
@@ -639,16 +633,12 @@
   }
 
   // ══════════════════════════════════════
-  //  RSS PROXIES
+  //  RSS PROXIES (Upgraded to 3-Tier Fallback)
   // ══════════════════════════════════════
-  function urlRss2json(feedUrl) {
-    return 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(feedUrl);
-  }
-  function urlAllOrigins(feedUrl) {
-    return 'https://api.allorigins.win/get?url=' + encodeURIComponent(feedUrl);
-  }
+  function urlRss2json(feedUrl) { return 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(feedUrl); }
+  function urlAllOrigins(feedUrl) { return 'https://api.allorigins.win/get?url=' + encodeURIComponent(feedUrl); }
+  function urlCodetabs(feedUrl) { return 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(feedUrl); }
 
-  // XML parser (used by allorigins fallback)
   function parseXML(xmlString) {
     const parser = new DOMParser();
     const xml = parser.parseFromString(xmlString, 'text/xml');
@@ -680,25 +670,32 @@
   async function fetchViaAllOrigins(feedUrl) {
     const text = await xhrFetch(urlAllOrigins(feedUrl), FETCH_TIMEOUT);
     let data;
-    try {
-      data = JSON.parse(text);
-    } catch(e) {
-      throw new Error('allorigins returned invalid JSON');
-    }
+    try { data = JSON.parse(text); } catch(e) { throw new Error('allorigins returned invalid JSON'); }
     if (!data.contents) throw new Error('allorigins returned no content');
     return parseXML(data.contents);
+  }
+
+  async function fetchViaCodetabs(feedUrl) {
+    const text = await xhrFetch(urlCodetabs(feedUrl), FETCH_TIMEOUT);
+    return parseXML(text); // Codetabs returns raw text/xml bypassing CORS
   }
 
   async function fetchFeed(feedUrl) {
     try {
       return await fetchViaRss2json(feedUrl);
     } catch(e1) {
-      console.warn('rss2json failed (' + e1.message + '), trying allorigins…');
-      output.innerHTML = "<div class='system-msg'>📡 Retrying via backup proxy…</div>";
+      console.warn('Proxy 1 (rss2json) failed, trying Proxy 2 (allorigins)...');
+      output.innerHTML = "<div class='system-msg'>📡 Bypassing block: Retrying via backup proxy 1...</div>";
       try {
         return await fetchViaAllOrigins(feedUrl);
       } catch(e2) {
-        throw new Error('Both proxies failed. [1] ' + e1.message + '  [2] ' + e2.message);
+        console.warn('Proxy 2 (allorigins) failed, trying Proxy 3 (codetabs)...');
+        output.innerHTML = "<div class='system-msg'>📡 Bypassing block: Retrying via backup proxy 2...</div>";
+        try {
+          return await fetchViaCodetabs(feedUrl);
+        } catch(e3) {
+          throw new Error('All proxies blocked by site security (Cloudflare/Akamai) or feed URL is dead.');
+        }
       }
     }
   }
@@ -778,7 +775,6 @@
       const safeTitle = escapeHtml(item.title || 'Untitled');
       const safeDesc  = escapeHtml(desc);
       const timeAgo   = timeSince(item.pubDate);
-      // escapeHtml the URL for use inside a data attribute
       const attrUrl   = escapeHtml(rawLink);
       const attrDate  = escapeHtml(item.pubDate || '');
       const attrFeed  = escapeHtml(feedName);
@@ -843,7 +839,6 @@
     readerProgress.style.width = Math.min(100, pct || 0) + '%';
   });
 
-  // Content selectors in priority order
   const CONTENT_SELECTORS = [
     '[itemprop="articleBody"]',
     '[class*="article-body"]',
@@ -875,13 +870,10 @@
       const parser = new DOMParser();
       const doc    = parser.parseFromString(data.contents, 'text/html');
 
-      // Fix relative URLs
       rebaseUrls(doc, url);
 
-      // Strip junk
       try { doc.querySelectorAll(STRIP_SELECTORS).forEach(function(el){ el.remove(); }); } catch(e) {}
 
-      // Find best content block
       let bodyEl = null;
       for (let i = 0; i < CONTENT_SELECTORS.length; i++) {
         try {
@@ -890,7 +882,6 @@
         } catch(e) {}
       }
 
-      // Fallback: collect all long <p> tags
       if (!bodyEl) {
         const allP = Array.from(doc.querySelectorAll('body p'))
                          .filter(function(p){ return p.textContent.trim().length > 40; });
