@@ -15,7 +15,7 @@
   .tagline { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-top: 8px; }
   .container { max-width: 800px; margin: 0 auto; padding: 20px 20px 80px; }
   .setup-box { background: var(--paper2); padding: 20px; border: 1px solid var(--rule); margin-bottom: 30px; border-radius: 4px; }
-  input, button { font-family: 'IBM Plex Mono', monospace; padding: 12px; border: 1px solid var(--rule); font-size: 13px; }
+  input, button, textarea { font-family: 'IBM Plex Mono', monospace; padding: 12px; border: 1px solid var(--rule); font-size: 13px; }
   .btn-main { background: var(--ink); color: white; cursor: pointer; width: 100%; font-weight: bold; text-transform: uppercase; border: none; letter-spacing: 1px; padding: 15px; }
   #status { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); text-align: center; margin: 20px 0; padding: 10px; border: 1px dashed var(--rule); background: #fff; }
   .section { margin-bottom: 40px; border-bottom: 1px solid var(--rule); padding-bottom: 25px; }
@@ -24,12 +24,15 @@
   .btn-row { display: flex; gap: 10px; margin-top: 15px; }
   .action-btn { font-size: 10px; background: white; border: 1px solid var(--accent); color: var(--accent); cursor: pointer; padding: 8px 16px; border-radius: 4px; font-weight: bold; text-transform: uppercase; }
 
-  /* Chat & Deep Dive UI */
+  /* Deep Dive UI */
   .detail-box { background: white; padding: 25px; border-left: 6px solid var(--accent); margin-top: 20px; display: none; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); line-height: 1.7; }
   .detail-box h3 { margin-bottom: 15px; color: var(--accent); border-bottom: 1px solid #eee; padding-bottom: 8px; font-family: 'Playfair Display', serif; font-size: 22px; }
   
+  .research-tools { background: #f9f9f7; padding: 15px; border-radius: 4px; border: 1px solid #eee; margin-bottom: 20px; }
+  textarea.article-input { width: 100%; height: 100px; margin: 10px 0; font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; border: 1px solid var(--rule); padding: 10px; resize: vertical; }
+
   .chat-area { margin-top: 25px; border-top: 1px solid #eee; padding-top: 20px; }
-  .chat-history { font-size: 14px; margin-bottom: 15px; max-height: 300px; overflow-y: auto; }
+  .chat-history { font-size: 14px; margin-bottom: 15px; max-height: 300px; overflow-y: auto; border-bottom: 1px solid #f0f0f0; }
   .chat-msg { margin-bottom: 10px; padding: 8px 12px; border-radius: 6px; }
   .user-msg { background: var(--paper2); color: var(--ink); border-left: 3px solid var(--muted); }
   .ai-msg { background: #f0f7f2; color: var(--accent); border-left: 3px solid var(--accent); }
@@ -42,7 +45,7 @@
 <body>
 
 <div class="masthead">
-    <div class="tagline" id="header-date">Financial Research Terminal</div>
+    <div class="tagline" id="header-date">Financial Intelligence Terminal</div>
     <div class="masthead-title">Gemini Pulse</div>
     <div class="tagline" id="last-update">System Online</div>
 </div>
@@ -61,7 +64,7 @@
 <script>
 const MODEL_ID = "gemini-3.1-flash-lite-preview"; 
 const FEED_URLS = ['https://pulse.zerodha.com/feed.php', 'https://economictimes.indiatimes.com/rssfeedsdefault.cms', 'https://www.livemint.com/rss/markets', 'https://www.moneycontrol.com/rss/MCtopnews.xml'];
-let articleContexts = {}; // Stores content for chat logic
+let articleContexts = {}; 
 
 function saveKey() { localStorage.setItem('gemini_key', document.getElementById('api-key').value.trim()); document.getElementById('setup').style.display = 'none'; }
 window.onload = () => { if(localStorage.getItem('gemini_key')) document.getElementById('setup').style.display = 'none'; document.getElementById('header-date').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' }); };
@@ -71,7 +74,7 @@ async function runBriefing(forceAll = false) {
   if(!apiKey) return alert("Save API Key first");
   const status = document.getElementById('status');
   const lastTimestamp = forceAll ? (Date.now() - 24*60*60*1000) : parseInt(localStorage.getItem('last_timestamp') || "0");
-  status.innerHTML = "🔍 Scanning Indian Market Feeds...";
+  status.innerHTML = "🔍 Scanning Financial Feeds...";
   let allArticles = [];
   const seen = new Set();
   for (const url of FEED_URLS) {
@@ -98,7 +101,7 @@ async function runBriefing(forceAll = false) {
     const briefingData = JSON.parse(rawResponse.replace(/```json|```/g, "").trim());
     renderBriefing(briefingData, allArticles);
     localStorage.setItem('last_timestamp', Math.max(...allArticles.map(a => a.time)).toString());
-    status.textContent = "✅ Update Complete.";
+    status.textContent = "✅ Intelligence Ready.";
   } catch (err) { status.innerHTML = "❌ AI Error: " + err.message; }
 }
 
@@ -122,48 +125,63 @@ function renderBriefing(data, articles) {
       <p id="sum-${index}">${theme.summary}</p>
       <div class="btn-row">
         <button class="action-btn" onclick="explainAsStory(${index})">✨ Story Mode</button>
-        <button class="action-btn" onclick="fetchDetails('${primaryArticle.link}', ${index})">📈 Deep Dive</button>
+        <button class="action-btn" onclick="openResearchBox('${primaryArticle.link}', ${index})">📈 Deep Dive / Chat</button>
       </div>
       <div id="detail-${index}" class="detail-box"></div>
     `;
     container.appendChild(div);
-    articleContexts[index] = theme.summary; // Store summary as initial context
+    articleContexts[index] = theme.summary; 
   });
 }
 
-async function fetchDetails(link, index) {
+function openResearchBox(link, index) {
   const box = document.getElementById(`detail-${index}`);
   box.style.display = 'block';
-  box.innerHTML = "<i>Analyzing market context...</i>";
-  const proxy = `https://api.allorigins.win/get?url=${encodeURIComponent(link)}`;
-  try {
-    const res = await fetch(proxy);
-    const data = await res.json();
-    const doc = new DOMParser().parseFromString(data.contents, 'text/html');
-    doc.querySelectorAll('script, style, nav, footer, header').forEach(el => el.remove());
-    const bodyText = doc.body.innerText.replace(/\s\s+/g, ' ').slice(0, 4500);
+  box.innerHTML = `
+    <h3>Research Analyst Panel</h3>
+    <div class="research-tools">
+      <div class="tagline" style="color:var(--accent); margin-bottom:10px">Step 1: Get the content</div>
+      <a href="${link}" target="_blank" style="color:var(--ink); font-weight:bold; font-size:13px; display:block; margin-bottom:15px">Open Article in New Tab ↗</a>
+      
+      <div class="tagline" style="color:var(--accent); margin-bottom:5px">Step 2: Paste content below</div>
+      <textarea id="article-input-${index}" class="article-input" placeholder="Copy article text and paste here..."></textarea>
+      <button class="btn-main" onclick="analyzePastedText(${index})" style="padding:10px; font-size:11px">Package & Start Research</button>
+    </div>
+    <div id="analysis-output-${index}"></div>
+    <div id="chat-container-${index}" style="display:none">
+       <div class="chat-area">
+          <div class="tagline" style="margin-bottom:10px">Follow-up Clarifications</div>
+          <div id="chat-history-${index}" class="chat-history"></div>
+          <div class="chat-input-row">
+            <input type="text" id="chat-input-${index}" class="chat-input" placeholder="Ask about this article...">
+            <button class="chat-send" onclick="askQuestion(${index})">ASK</button>
+          </div>
+       </div>
+    </div>
+  `;
+  box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 
-    const prompt = `Act as a senior Research Analyst. Analyze this article: "${bodyText}". Provide a report with plain headers (CORE:, BACKGROUND:, SEQUENCE:, INVESTOR VIEW:).`;
-    const rawText = await callGemini(prompt, localStorage.getItem('gemini_key'));
+async function analyzePastedText(index) {
+  const text = document.getElementById(`article-input-${index}`).value.trim();
+  const output = document.getElementById(`analysis-output-${index}`);
+  const chat = document.getElementById(`chat-container-${index}`);
+  const key = localStorage.getItem('gemini_key');
+
+  if (!text) return alert("Please paste article text first.");
+
+  output.innerHTML = "<i>Packaging Deep Dive report...</i>";
+  articleContexts[index] = text; // Update context for chat
+
+  const prompt = `Act as a senior Research Analyst. Based on this text: "${text}", provide a Deep Dive report with plain headers (CORE:, BACKGROUND:, SEQUENCE:, INVESTOR VIEW:). No brackets or JSON.`;
+
+  try {
+    const rawText = await callGemini(prompt, key);
     const cleanText = rawText.replace(/[\[\]{}"]/g, '').trim();
-    
-    articleContexts[index] = bodyText; // LOCK THIS ARTICLE AS CONTEXT
-    
-    box.innerHTML = `
-      <h3>Deep Dive Report</h3>
-      <div id="report-text-${index}">${cleanText.replace(/\n/g, '<br>')}</div>
-      <div class="chat-area">
-        <div class="tagline" style="margin-bottom:10px">Researcher Chat (Article Context)</div>
-        <div id="chat-history-${index}" class="chat-history"></div>
-        <div class="chat-input-row">
-          <input type="text" id="chat-input-${index}" class="chat-input" placeholder="Ask about this article...">
-          <button class="chat-send" onclick="askQuestion(${index})">ASK</button>
-        </div>
-      </div>
-    `;
-    box.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  } catch (e) { 
-    box.innerHTML = `❌ <b>Security Block:</b> Firewall detected. <br><br> <a href="${link}" target="_blank" style="color:var(--accent)">Read manually here.</a>`; 
+    output.innerHTML = `<div style="margin-bottom:20px">${cleanText.replace(/\n/g, '<br>')}</div>`;
+    chat.style.display = 'block';
+  } catch (e) {
+    output.innerHTML = "❌ AI Analysis failed.";
   }
 }
 
@@ -176,22 +194,20 @@ async function askQuestion(index) {
 
   if (!question) return;
 
-  // Update UI immediately
   history.innerHTML += `<div class="chat-msg user-msg"><b>You:</b> ${question}</div>`;
   input.value = "";
   history.scrollTop = history.scrollHeight;
 
-  const prompt = `You are a financial research assistant. Answer the user's question ONLY using the context provided. If you don't know, say so.
+  const prompt = `Financial analyst mode. Using the provided article text, answer the user's question clearly. 
   CONTEXT: "${context}"
-  USER QUESTION: "${question}"`;
+  QUESTION: "${question}"`;
 
   try {
     const aiResponse = await callGemini(prompt, key);
-    const cleanAi = aiResponse.replace(/[\[\]{}"]/g, '').trim();
-    history.innerHTML += `<div class="chat-msg ai-msg"><b>Gemini:</b> ${cleanAi}</div>`;
+    history.innerHTML += `<div class="chat-msg ai-msg"><b>Gemini:</b> ${aiResponse.replace(/[\[\]{}"]/g, '').trim()}</div>`;
     history.scrollTop = history.scrollHeight;
   } catch (e) {
-    history.innerHTML += `<div class="chat-msg ai-msg" style="color:red">Error answering question.</div>`;
+    history.innerHTML += `<div class="chat-msg ai-msg">Error answering question.</div>`;
   }
 }
 
@@ -201,9 +217,8 @@ async function explainAsStory(index) {
   box.style.display = 'block';
   box.innerHTML = "<i>Writing story...</i>";
   try {
-    const rawText = await callGemini(`Explain this update as a simple story for a beginner. No brackets: "${text}"`, localStorage.getItem('gemini_key'));
-    const cleanText = rawText.replace(/[\[\]{}"]/g, '').trim();
-    box.innerHTML = `<h3>The Story</h3>` + cleanText.replace(/\n/g, '<br>');
+    const rawText = await callGemini(`Explain as a simple story for a beginner: "${text}"`, localStorage.getItem('gemini_key'));
+    box.innerHTML = `<h3>The Story</h3>` + rawText.replace(/[\[\]{}"]/g, '').replace(/\n/g, '<br>');
   } catch(e) { box.innerHTML = "Error writing story."; }
 }
 </script>
