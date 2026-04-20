@@ -3,16 +3,20 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gemini Pulse</title>
+<title>Gemini Pulse Terminal</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
   :root { 
     --ink: #1a1a18; 
     --paper: #f5f0e8; 
+    --paper2: #ede8de;
     --accent: #1a5c3a; 
     --rule: #c8c0b0; 
     --muted: #5a554c; 
     --meta-color: #8c867a;
+    --chat-bg: #ffffff;
+    --user-msg: #f0f4f8;
+    --ai-msg: #f2f7f4;
   }
   
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -25,32 +29,6 @@
     line-height: 1.6; 
   }
   
-  /* Top Right Dropdown Container */
-  .feed-selector-container {
-    position: absolute;
-    top: 20px;
-    right: 25px;
-    z-index: 100;
-  }
-
-  select {
-    font-family: 'IBM Plex Mono', monospace;
-    font-size: 11px;
-    background-color: transparent;
-    color: var(--ink);
-    border: 1px solid var(--rule);
-    padding: 6px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-    outline: none;
-    text-transform: uppercase;
-    font-weight: 500;
-  }
-
-  select:hover {
-    border-color: var(--accent);
-  }
-
   .masthead { 
     border-bottom: 3px double var(--ink); 
     padding: 30px 20px; 
@@ -73,7 +51,55 @@
     color: var(--meta-color); 
     margin-top: 8px; 
   }
+
+  .setup-box { 
+    background: var(--paper2); 
+    padding: 15px; 
+    border-bottom: 1px solid var(--rule); 
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+  }
   
+  .setup-box input {
+    font-family: 'IBM Plex Mono', monospace; 
+    padding: 10px; 
+    border: 1px solid var(--rule); 
+    font-size: 12px; 
+    width: 300px;
+  }
+
+  .setup-box button {
+    background: var(--ink); 
+    color: white; 
+    border: none; 
+    padding: 10px 15px; 
+    font-family: 'IBM Plex Mono', monospace;
+    font-weight: bold;
+    cursor: pointer;
+  }
+
+  .feed-selector-container {
+    position: absolute;
+    top: 20px;
+    right: 25px;
+    z-index: 100;
+  }
+
+  select {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background-color: transparent;
+    color: var(--ink);
+    border: 1px solid var(--rule);
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    outline: none;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
   .container { 
     max-width: 800px; 
     margin: 0 auto; 
@@ -84,10 +110,6 @@
     margin-bottom: 35px;
     border-bottom: 1px solid var(--rule);
     padding-bottom: 25px;
-  }
-
-  .feed-item:last-child {
-    border-bottom: none;
   }
 
   .headline {
@@ -101,104 +123,128 @@
     margin-bottom: 10px;
   }
 
-  .headline:hover {
-    color: var(--accent);
-    text-decoration: underline;
-  }
+  .headline:hover { color: var(--accent); text-decoration: underline; }
+  .description { font-size: 15px; color: var(--muted); margin-bottom: 12px; }
+  .meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--meta-color); text-transform: uppercase; }
 
-  .description {
-    font-size: 15px;
-    color: var(--muted);
-    margin-bottom: 12px;
-    line-height: 1.6;
-  }
-
-  .meta {
+  .action-btn { 
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px; 
-    color: var(--meta-color);
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
+    background: transparent; 
+    border: 1px solid var(--accent); 
+    color: var(--accent); 
+    cursor: pointer; 
+    padding: 6px 12px; 
+    margin-top: 10px;
+    font-weight: bold; 
+    text-transform: uppercase; 
+    transition: all 0.2s;
+  }
+  
+  .action-btn:hover { background: var(--accent); color: white; }
+
+  /* AI Panel */
+  .ai-panel {
+    background: var(--chat-bg);
+    border-left: 4px solid var(--accent);
+    padding: 20px;
+    margin-top: 15px;
+    display: none;
+    font-size: 14px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
   }
 
-  .system-msg {
-    font-family: 'IBM Plex Mono', monospace; 
-    font-size: 12px; 
-    color: var(--meta-color); 
-    text-align: center;
-    margin-top: 40px;
+  .ai-panel h4 {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+    border-bottom: 1px dashed #eee;
+    padding-bottom: 5px;
   }
+
+  /* Chat UI */
+  .chat-history {
+    max-height: 250px;
+    overflow-y: auto;
+    margin: 15px 0;
+    padding-right: 5px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .chat-bubble { padding: 10px 14px; border-radius: 6px; line-height: 1.5; width: fit-content; max-width: 90%; }
+  .user-bubble { background: var(--user-msg); align-self: flex-end; border-bottom-right-radius: 0; color: var(--ink); }
+  .ai-bubble { background: var(--ai-msg); align-self: flex-start; border-bottom-left-radius: 0; color: var(--accent); }
+
+  .chat-input-row { display: flex; gap: 8px; margin-top: 10px; }
+  .chat-input { flex: 1; padding: 10px; border: 1px solid var(--rule); font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; }
+  .chat-send { background: var(--ink); color: white; border: none; padding: 0 15px; cursor: pointer; font-family: 'IBM Plex Mono', monospace; font-weight: bold; text-transform: uppercase; font-size: 11px; }
+  
+  .loading-text { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--meta-color); font-style: italic; }
 </style>
 </head>
 <body>
 
-<div class="feed-selector-container">
-    <select id="feed-dropdown" onchange="loadFeed()">
-        <optgroup label="Business News">
-            <option value="https://www.thehindubusinessline.com/feeder/default.rss">Business Line</option>
-            <option value="https://economictimes.indiatimes.com/rssfeedsdefault.cms">Economic Times</option>
-            <option value="https://www.livemint.com/rss/markets">Livemint Markets</option>
-            <option value="https://www.moneycontrol.com/rss/MCtopnews.xml">Moneycontrol</option>
-            <option value="https://wap.business-standard.com/rss/markets-106.rss">Business Standard</option>
-            <option value="https://www.financialexpress.com/feed/">Financial Express</option>
-        </optgroup>
-        <optgroup label="Daily News">
-            <option value="https://theprint.in/feed/">ThePrint</option>
-            <option value="https://indianexpress.com/feed/">The Indian Express</option>
-            <option value="https://www.livemint.com/rss/news">Livemint News</option>
-            <option value="https://timesofindia.indiatimes.com/rssfeedstopstories.cms?x=1">Times of India Top</option>
-            <option value="https://m.hindustantimes.com/rss/topnews/rssfeed.xml">Hindustan Times</option>
-        </optgroup>
-        <optgroup label="Personal Finance">
-            <option value="https://www.livemint.com/rss/Mutual%20Funds">Livemint Mutual Fund</option>
-            <option value="https://economictimes.indiatimes.com/rssfeeds/837555174.cms">ET Wealth</option>
-        </optgroup>
-        <optgroup label="Mumbai & Thane">
-            <option value="https://timesofindia.indiatimes.com/rssfeeds/3831863.cms">TOI Thane News</option>
-            <option value="https://timesofindia.indiatimes.com/rssfeeds/-2128838597.cms">TOI Mumbai News</option>
-            <option value="https://www.mid-day.com/Resources/midday/rss/news.xml">Mid-Day Mumbai</option>
-        </optgroup>
-        <optgroup label="Editorial">
-            <option value="https://www.epw.in/taxonomy/term/65/feed">EPW Editorials</option>
-            <option value="https://www.livemint.com/rss/opinion">Livemint Opinion</option>
-        </optgroup>
-    </select>
+<div id="setup" class="setup-box">
+  <input type="password" id="api-key" placeholder="Enter Gemini API Key to enable Deep Dive">
+  <button onclick="saveKey()">Save Key</button>
 </div>
 
 <div class="masthead">
+    <div class="feed-selector-container">
+        <select id="feed-dropdown" onchange="loadFeed()">
+            <optgroup label="Business News">
+                <option value="https://www.thehindubusinessline.com/feeder/default.rss">Business Line</option>
+                <option value="https://economictimes.indiatimes.com/rssfeedsdefault.cms">Economic Times</option>
+                <option value="https://www.livemint.com/rss/markets">Livemint Markets</option>
+                <option value="https://www.moneycontrol.com/rss/MCtopnews.xml">Moneycontrol</option>
+                <option value="https://wap.business-standard.com/rss/markets-106.rss">Business Standard</option>
+            </optgroup>
+            <optgroup label="Daily News">
+                <option value="https://theprint.in/feed/">ThePrint</option>
+                <option value="https://indianexpress.com/feed/">The Indian Express</option>
+                <option value="https://www.livemint.com/rss/news">Livemint News</option>
+            </optgroup>
+        </select>
+    </div>
     <div class="tagline" id="header-date">Financial Intelligence Terminal</div>
     <div class="masthead-title">Gemini Pulse</div>
     <div class="tagline">Live Feed</div>
 </div>
 
 <div class="container">
-  <div id="rss-output">
-      <div class="system-msg">Initializing secure terminal...</div>
-  </div>
+  <div id="rss-output"></div>
 </div>
 
 <script>
+    const GEMINI_MODEL = "gemini-1.5-flash"; // Recommended model for standard text tasks
+    let articleContexts = {}; // Stores the scraped text for chat context
+
     window.onload = () => {
+        if(localStorage.getItem('gemini_key')) {
+            document.getElementById('setup').style.display = 'none';
+        }
         document.getElementById('header-date').textContent = new Date().toLocaleDateString('en-IN', { 
             weekday: 'long', day: 'numeric', month: 'long' 
         });
         loadFeed(); 
     };
 
+    function saveKey() { 
+        localStorage.setItem('gemini_key', document.getElementById('api-key').value.trim()); 
+        document.getElementById('setup').style.display = 'none'; 
+    }
+
     function timeSince(dateString) {
         const date = new Date(dateString);
         const seconds = Math.floor((new Date() - date) / 1000);
-        
-        let interval = seconds / 86400;
-        if (interval > 1) return Math.floor(interval) + " days ago";
-        
-        interval = seconds / 3600;
-        if (interval > 1) return Math.floor(interval) + " hours ago";
-        
-        interval = seconds / 60;
-        if (interval > 1) return Math.floor(interval) + " mins ago";
-        
-        return "Just now";
+        let interval = seconds / 86400; if (interval > 1) return Math.floor(interval) + "d ago";
+        interval = seconds / 3600; if (interval > 1) return Math.floor(interval) + "h ago";
+        interval = seconds / 60; if (interval > 1) return Math.floor(interval) + "m ago";
+        return "Now";
     }
 
     function loadFeed() {
@@ -207,43 +253,157 @@
         const currentFeedUrl = dropdown.value;
         const selectedFeedName = dropdown.options[dropdown.selectedIndex].text;
 
-        outputContainer.innerHTML = "<div class='system-msg'>📡 Fetching data stream...</div>";
+        outputContainer.innerHTML = "<div class='loading-text' style='text-align:center; margin-top:40px;'>📡 Fetching terminal data...</div>";
 
-        const apiUrl = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(currentFeedUrl);
-
-        fetch(apiUrl)
+        fetch('https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(currentFeedUrl))
             .then(response => response.json())
             .then(data => {
-                if (data.status !== 'ok') {
-                    throw new Error("Failed to fetch the feed.");
-                }
-
+                if (data.status !== 'ok') throw new Error("Feed failed.");
                 let htmlOutput = "";
 
-                data.items.forEach(item => {
+                data.items.forEach((item, index) => {
                     let cleanDesc = item.description ? item.description.replace(/<[^>]*>?/gm, '').trim() : "";
-                    
-                    if (cleanDesc.length > 350) {
-                        cleanDesc = cleanDesc.substring(0, 350) + "...";
-                    }
+                    if (cleanDesc.length > 300) cleanDesc = cleanDesc.substring(0, 300) + "...";
 
-                    const timeAgo = timeSince(item.pubDate);
+                    // Save backup context in case site blocks scraping
+                    articleContexts[index] = { text: cleanDesc, title: item.title, link: item.link };
 
                     htmlOutput += `
                         <div class="feed-item">
-                            <a href="${item.link}" class="headline" target="_blank" rel="noopener">${item.title}</a>
+                            <a href="${item.link}" class="headline" target="_blank">${item.title}</a>
                             ${cleanDesc ? `<p class="description">${cleanDesc}</p>` : ''}
-                            <div class="meta">${timeAgo} &mdash; ${selectedFeedName}</div>
+                            <div class="meta">${timeSince(item.pubDate)} &mdash; ${selectedFeedName}</div>
+                            <button class="action-btn" onclick="startAI(${index}, '${item.link}')">✨ AI Deep Dive & Chat</button>
+                            
+                            <div id="ai-panel-${index}" class="ai-panel">
+                                <h4>Intelligence Briefing</h4>
+                                <div id="ai-output-${index}" class="loading-text"></div>
+                                
+                                <div id="chat-ui-${index}" style="display:none; margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
+                                    <h4>Ask Follow-up</h4>
+                                    <div id="chat-history-${index}" class="chat-history"></div>
+                                    <div class="chat-input-row">
+                                        <input type="text" id="chat-input-${index}" class="chat-input" placeholder="Ask a question about this article...">
+                                        <button class="chat-send" onclick="askQuestion(${index})">Ask</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     `;
                 });
-
                 outputContainer.innerHTML = htmlOutput;
             })
             .catch(err => {
-                console.error("Terminal Error:", err);
-                outputContainer.innerHTML = "<div class='system-msg' style='color:#d93025'>❌ Connection lost or dead feed link.</div>";
+                outputContainer.innerHTML = "<div style='color:#d93025; text-align:center;'>❌ Connection lost.</div>";
             });
+    }
+
+    // -- AI FUNCTIONS --
+
+    async function fetchArticleText(url) {
+        try {
+            // Use allorigins to bypass CORS and get the raw HTML of the article
+            const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
+            const data = await res.json();
+            
+            // Parse HTML and extract paragraphs
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(data.contents, "text/html");
+            const paragraphs = Array.from(doc.querySelectorAll('p')).map(p => p.innerText.trim());
+            
+            // Join and limit string length to prevent massive token usage
+            let fullText = paragraphs.join('\n\n').trim();
+            return fullText.length > 200 ? fullText.substring(0, 15000) : null; 
+        } catch (e) {
+            return null;
+        }
+    }
+
+    async function callGemini(promptText, apiKey) {
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                contents: [{ parts: [{ text: promptText }] }] 
+            })
+        });
+        const resData = await response.json();
+        if (resData.error) throw new Error(resData.error.message);
+        return resData.candidates[0].content.parts[0].text;
+    }
+
+    async function startAI(index, url) {
+        const apiKey = localStorage.getItem('gemini_key');
+        if (!apiKey) return alert("Please enter your Gemini API Key at the top of the page.");
+
+        const panel = document.getElementById(`ai-panel-${index}`);
+        const output = document.getElementById(`ai-output-${index}`);
+        const chatUi = document.getElementById(`chat-ui-${index}`);
+        
+        panel.style.display = 'block';
+        chatUi.style.display = 'none';
+        output.innerHTML = "🔄 Fetching article text from source...";
+
+        // 1. Scrape the article
+        let scrapedText = await fetchArticleText(url);
+        
+        // Fallback to RSS description if the news site blocks the proxy
+        if (!scrapedText) {
+            scrapedText = articleContexts[index].text; 
+            output.innerHTML = "⚠️ <i>Source blocked direct extraction. Analyzing RSS summary instead...</i><br><br>";
+        } else {
+            output.innerHTML = "🧠 <i>Reading full text...</i><br><br>";
+        }
+
+        // Update context for the chat later
+        articleContexts[index].scrapedContent = scrapedText;
+
+        // 2. Generate initial summary
+        const prompt = `Act as a financial analyst. Read this text and provide a concise, 3-bullet point executive summary. Do not use markdown headers, just bullet points. \n\nTEXT:\n${scrapedText}`;
+
+        try {
+            const aiResponse = await callGemini(prompt, apiKey);
+            output.innerHTML = aiResponse.replace(/\n/g, '<br>');
+            chatUi.style.display = 'block'; // Open chat
+        } catch (e) {
+            output.innerHTML = `<span style="color:red">❌ AI Error: ${e.message}</span>`;
+        }
+    }
+
+    async function askQuestion(index) {
+        const apiKey = localStorage.getItem('gemini_key');
+        const inputField = document.getElementById(`chat-input-${index}`);
+        const historyBox = document.getElementById(`chat-history-${index}`);
+        const question = inputField.value.trim();
+        const contextText = articleContexts[index].scrapedContent;
+
+        if (!question) return;
+
+        // Append user question
+        historyBox.innerHTML += `<div class="chat-bubble user-bubble">${question}</div>`;
+        inputField.value = "";
+        historyBox.scrollTop = historyBox.scrollHeight;
+
+        // Strict prompt to constrain AI to the article
+        const prompt = `
+        You are an assistant answering questions based strictly on the provided ARTICLE TEXT. 
+        If the answer is not contained in the text, or if the user asks an unrelated general knowledge question, you MUST reply with: "I can only answer questions related to the information provided in the article." Do not attempt to use outside knowledge.
+        
+        ARTICLE TEXT:
+        "${contextText}"
+
+        USER QUESTION:
+        "${question}"
+        `;
+
+        try {
+            const aiResponse = await callGemini(prompt, apiKey);
+            historyBox.innerHTML += `<div class="chat-bubble ai-bubble">${aiResponse}</div>`;
+            historyBox.scrollTop = historyBox.scrollHeight;
+        } catch (e) {
+            historyBox.innerHTML += `<div class="chat-bubble ai-bubble" style="color:red;">Error getting response.</div>`;
+        }
     }
 </script>
 </body>
