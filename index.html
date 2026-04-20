@@ -4,90 +4,17 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Quant News Feed</title>
-    <style>
-        :root {
-            --bg-color: #121212;
-            --card-bg: #1e1e1e;
-            --text-main: #e0e0e0;
-            --text-muted: #a0a0a0;
-            --accent: #1a73e8;
-        }
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-main);
-            margin: 0;
-            padding: 16px;
-        }
-        h1 {
-            font-size: 20px;
-            border-bottom: 2px solid var(--card-bg);
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-        .feed-container {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-        .rss-article-link {
-            background-color: var(--card-bg);
-            padding: 16px;
-            border-radius: 8px;
-            text-decoration: none;
-            color: inherit;
-            display: block;
-            border-left: 4px solid var(--accent);
-            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-        }
-        .rss-article-link h2 {
-            margin: 0 0 8px 0;
-            font-size: 16px;
-            line-height: 1.4;
-        }
-        .rss-article-link p {
-            margin: 0;
-            font-size: 14px;
-            color: var(--text-muted);
-            line-height: 1.5;
-        }
-    </style>
 </head>
 <body>
 
     <h1>📰 Market Feed</h1>
     
     <div class="feed-container">
-        <a href="https://economictimes.indiatimes.com/markets/stocks/news/example-article-1" class="rss-article-link" target="_self">
-            <h2>FII flows shift amidst Middle East tensions; Nifty faces resistance</h2>
-            <p>A brief summary of the geopolitical impacts on the Indian market...</p>
-        </a>
-
-        <a href="https://economictimes.indiatimes.com/markets/stocks/news/example-article-2" class="rss-article-link" target="_self">
-            <h2>Realty index shows positive consolidation ahead of RBI policy</h2>
-            <p>Sectoral shifts indicate strong momentum in real estate stocks...</p>
+        <a href="https://economictimes.indiatimes.com/YOUR_ARTICLE_LINK" target="_self">
+            <h2>Article Title</h2>
+            <p>RSS Summary text...</p>
         </a>
     </div>
-
-    <script>
-        // Intercept all clicks on RSS links
-        const articleLinks = document.querySelectorAll('.rss-article-link');
-
-        articleLinks.forEach(link => {
-            link.addEventListener('click', function(event) {
-                event.preventDefault(); // Stop normal navigation
-                
-                const originalUrl = this.href;
-                
-                // Route through txtify.it to strip ALL code/paywalls and return pure text (Reader Mode)
-                // Alternatively, you can swap this to: const readerModeUrl = `https://12ft.io/${originalUrl}`;
-                const readerModeUrl = `https://txtify.it/${originalUrl}`; 
-                
-                // Open cleanly in the same Hermit window
-                window.location.href = readerModeUrl;
-            });
-        });
-    </script>
 
 </body>
 </html>
