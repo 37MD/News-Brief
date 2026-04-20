@@ -72,7 +72,8 @@ async function runBriefing() {
     const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(TEST_FEED)}&t=${Date.now()}`);
     const data = await res.json();
     
-    // TEST LIMIT: Only take the first 3 articles
+    if(!data.items || data.items.length === 0) throw new Error("RSS Feed is empty.");
+
     const testArticles = data.items.slice(0, 3).map(item => ({
       title: item.title,
       desc: item.description.replace(/<[^>]+>/g, '').slice(0, 300),
@@ -82,28 +83,50 @@ async function runBriefing() {
     status.textContent = `🤖 Analyzing 3 Test Articles...`;
     const prompt = `Return ONLY JSON format: {"themes": [{"title": "Theme", "summary": "3-sentence text"}]}. NEWS: ${JSON.stringify(testArticles)}`;
     
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${apiKey}`;
-    const aiRes = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" } }) });
-    const aiData = await aiRes.json();
-    const briefingData = JSON.parse(aiData.candidates[0].content.parts[0].text.replace(/```json|```/g, "").trim());
+    const aiResponseText = await callGeminiAPI(prompt, apiKey);
+    const briefingData = JSON.parse(aiResponseText.replace(/```json|```/g, "").trim());
     
     renderBriefing(briefingData, testArticles);
     status.textContent = "✅ Test Load Complete.";
   } catch (err) { status.innerHTML = "❌ Error: " + err.message; }
 }
 
+async function callGeminiAPI(promptText, key) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${key}`;
+  const response = await fetch(url, { 
+    method: 'POST', 
+    headers: { 'Content-Type': 'application/json' }, 
+    body: JSON.stringify({ 
+      contents: [{ parts: [{ text: promptText }] }], 
+      generationConfig: { responseMimeType: "application/json" } 
+    }) 
+  });
+  
+  const resData = await response.json();
+  
+  // THE FIX: Check if candidates exist before reading [0]
+  if (resData.candidates && resData.candidates[0] && resData.candidates[0].content) {
+    return resData.candidates[0].content.parts[0].text;
+  } else if (resData.error) {
+    throw new Error(resData.error.message);
+  } else {
+    throw new Error("AI returned an empty response. This is usually due to a safety block on a news headline.");
+  }
+}
+
 function renderBriefing(data, articles) {
   const container = document.getElementById('briefing-output');
   container.innerHTML = "";
+  if (!data.themes) return;
   data.themes.forEach((theme, index) => {
-    const primaryArticle = articles[index] || articles[0]; // Match theme to test article
+    const primaryArticle = articles[index] || articles[0];
     const div = document.createElement('div');
     div.className = 'section';
     div.innerHTML = `
       <h2>${theme.title}</h2>
       <p id="sum-${index}">${theme.summary}</p>
       <div class="btn-row">
-        <button class="action-btn" onclick="explainAsStory(${index})">✨ Story</button>
+        <button class="action-btn" onclick="explainAsStory(${index})">✨ Story Mode</button>
         <button class="action-btn" onclick="openResearchBox('${primaryArticle.link}', ${index})">📈 Analyst Panel</button>
       </div>
       <div id="detail-${index}" class="detail-box"></div>
@@ -143,16 +166,16 @@ async function analyzePastedText(index) {
   const output = document.getElementById(`analysis-output-${index}`);
   const chat = document.getElementById(`chat-container-${index}`);
   if (!text) return alert("Paste text first.");
-  output.innerHTML = "<i>Processing...</i>";
+  output.innerHTML = "<i>Processing analyst report...</i>";
   articleContexts[index] = text;
-  const prompt = `Research Analyst Mode. Analyze this Hindu BusinessLine article: "${text}". Provide: CORE:, BACKGROUND:, SEQUENCE:, INVESTOR VIEW:. No brackets.`;
+  
+  const prompt = `Research Analyst Mode. Analyze this article: "${text}". Provide: CORE:, BACKGROUND:, SEQUENCE:, INVESTOR VIEW:. No brackets.`;
+  
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${localStorage.getItem('gemini_key')}`;
-    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
-    const data = await res.json();
-    output.innerHTML = `<div style="margin-top:15px">${data.candidates[0].content.parts[0].text.replace(/[\[\]{}"]/g, '').replace(/\n/g, '<br>')}</div>`;
+    const aiText = await callGeminiAPI(prompt, localStorage.getItem('gemini_key'));
+    output.innerHTML = `<div style="margin-top:15px">${aiText.replace(/[\[\]{}"]/g, '').replace(/\n/g, '<br>')}</div>`;
     chat.style.display = 'block';
-  } catch (e) { output.innerHTML = "❌ AI Error."; }
+  } catch (e) { output.innerHTML = "❌ AI Error: " + e.message; }
 }
 
 async function askQuestion(index) {
@@ -160,29 +183,27 @@ async function askQuestion(index) {
   const history = document.getElementById(`chat-history-${index}`);
   const question = input.value.trim();
   if (!question) return;
+  
   history.innerHTML += `<div class="chat-msg user-msg"><b>You:</b> ${question}</div>`;
   input.value = "";
+  
   const prompt = `Context: "${articleContexts[index]}". Question: "${question}"`;
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${localStorage.getItem('gemini_key')}`;
-    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
-    const data = await res.json();
-    history.innerHTML += `<div class="chat-msg ai-msg"><b>Gemini:</b> ${data.candidates[0].content.parts[0].text.replace(/[\[\]{}"]/g, '')}</div>`;
+    const aiText = await callGeminiAPI(prompt, localStorage.getItem('gemini_key'));
+    history.innerHTML += `<div class="chat-msg ai-msg"><b>Gemini:</b> ${aiText.replace(/[\[\]{}"]/g, '')}</div>`;
     history.scrollTop = history.scrollHeight;
-  } catch (e) { history.innerHTML += `<div class="chat-msg ai-msg">Error.</div>`; }
+  } catch (e) { history.innerHTML += `<div class="chat-msg ai-msg" style="color:red">Error: ${e.message}</div>`; }
 }
 
 async function explainAsStory(index) {
   const text = document.getElementById(`sum-${index}`).textContent;
   const box = document.getElementById(`detail-${index}`);
   box.style.display = 'block';
-  box.innerHTML = "<i>Writing...</i>";
+  box.innerHTML = "<i>Writing the story...</i>";
   try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${localStorage.getItem('gemini_key')}`;
-    const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: `Explain as a story: "${text}"` }] }] }) });
-    const data = await res.json();
-    box.innerHTML = `<h3>The Story</h3>` + data.candidates[0].content.parts[0].text.replace(/[\[\]{}"]/g, '').replace(/\n/g, '<br>');
-  } catch(e) { box.innerHTML = "Error."; }
+    const aiText = await callGeminiAPI(`Explain as a simple story: "${text}"`, localStorage.getItem('gemini_key'));
+    box.innerHTML = `<h3>The Story</h3>` + aiText.replace(/[\[\]{}"]/g, '').replace(/\n/g, '<br>');
+  } catch(e) { box.innerHTML = "❌ AI Story Error: " + e.message; }
 }
 </script>
 </body>
