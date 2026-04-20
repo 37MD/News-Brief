@@ -20,37 +20,41 @@
 
         .container { max-width: 800px; margin: 0 auto; padding: 20px; }
         .feed-item { margin-bottom: 30px; border-bottom: 1px solid var(--rule); padding-bottom: 20px; }
-        .headline { font-family: 'Playfair Display', serif; font-size: 21px; color: var(--ink); text-decoration: none; font-weight: 700; display: block; margin-bottom: 8px; line-height: 1.3; }
-        .description { font-size: 14px; color: #444; margin-bottom: 10px; }
+        .headline { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--ink); text-decoration: none; font-weight: 700; display: block; margin-bottom: 8px; }
+        .description { font-size: 15px; color: #444; margin-bottom: 10px; }
         .meta { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); text-transform: uppercase; }
 
         #reader-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--paper); z-index: 200; overflow-y: auto; padding: 20px; }
         .reader-header { display: flex; justify-content: space-between; border-bottom: 2px solid var(--ink); padding-bottom: 10px; margin-bottom: 20px; }
         .ai-chat-box { background: white; border: 2px solid var(--accent); padding: 15px; margin-top: 20px; border-radius: 6px; }
-        .chat-history { max-height: 250px; overflow-y: auto; margin-bottom: 10px; font-size: 14px; }
+        .chat-history { max-height: 200px; overflow-y: auto; margin-bottom: 10px; font-size: 14px; }
     </style>
 </head>
 <body>
 
 <div class="masthead">
-    <div class="tagline" id="current-date">Intelligence Terminal</div>
+    <div class="tagline" id="current-date">Financial Intelligence Terminal</div>
     <div class="masthead-title">Gemini Pulse</div>
 </div>
 
 <div class="controls">
     <input type="password" id="api-key" placeholder="Enter Gemini API Key">
     <select id="feed-selector" onchange="loadFeed()">
-        <optgroup label="Latest Updates">
-            <option value="https://indianexpress.com/feed/">Indian Express</option>
-            <option value="https://feeds.feedburner.com/NDTV-LatestNews">NDTV Latest</option>
-            <option value="https://www.business-standard.com/rss/latest.rss">Business Standard</option>
-            <option value="https://feeds.feedburner.com/ScrollinArticles.rss">Scroll.in</option>
-        </optgroup>
-        <optgroup label="Analysis & Editorial">
-            <option value="https://frontline.thehindu.com/cover-story/feeder/default.rss">Frontline (Cover Story)</option>
+        <optgroup label="Business & Markets">
+            <option value="https://www.business-standard.com/rss/latest.rss">Business Standard (Latest)</option>
             <option value="https://www.thehindubusinessline.com/feeder/default.rss">Business Line</option>
             <option value="https://economictimes.indiatimes.com/rssfeedsdefault.cms">Economic Times</option>
-            <option value="https://www.firstpost.com/commonfeeds/v1/mfp/rss/web-stories.xml">Firstpost Web Stories</option>
+            <option value="https://www.livemint.com/rss/markets">Livemint Markets</option>
+            <option value="https://www.moneycontrol.com/rss/MCtopnews.xml">Moneycontrol</option>
+        </optgroup>
+        <optgroup label="Opinion & Editorial">
+            <option value="https://www.livemint.com/rss/opinion">Livemint Opinion</option>
+            <option value="https://www.thehindu.com/opinion/editorial/feeder/default.rss">The Hindu Editorial</option>
+            <option value="https://theprint.in/category/opinion/feed/">ThePrint Opinion</option>
+        </optgroup>
+        <optgroup label="General News">
+            <option value="https://indianexpress.com/feed/">Indian Express</option>
+            <option value="https://timesofindia.indiatimes.com/rssfeedstopstories.cms">TOI Top Stories</option>
         </optgroup>
     </select>
 </div>
@@ -60,14 +64,14 @@
 <div id="reader-overlay">
     <div class="reader-header">
         <button onclick="closeReader()">🔙 BACK</button>
-        <span class="tagline">Deep Dive Analyst</span>
+        <span class="tagline">Analysis Terminal</span>
     </div>
     <div id="reader-content"></div>
     <div class="ai-chat-box">
-        <div class="tagline" style="color:var(--accent)">Pulse AI Terminal</div>
+        <div class="tagline" style="color:var(--accent)">Pulse AI Analyst</div>
         <div id="chat-history" class="chat-history"></div>
         <div style="display:flex; gap:5px;">
-            <input type="text" id="chat-input" style="flex:1" placeholder="Question article facts...">
+            <input type="text" id="chat-input" style="flex:1" placeholder="Ask follow-up...">
             <button class="btn-main" onclick="askAI()">ASK</button>
         </div>
     </div>
@@ -94,11 +98,12 @@
             .then(data => {
                 let html = "";
                 data.items.forEach((item) => {
+                    const timeAgo = item.pubDate; // Could refine to "X hrs ago" logic
                     html += `
                         <div class="feed-item">
                             <a class="headline" href="#" onclick="openDeepDive('${encodeURIComponent(item.link)}', '${encodeURIComponent(item.title)}')">${item.title}</a>
-                            <p class="description">${item.description.replace(/<[^>]*>?/gm, '').substring(0, 180)}...</p>
-                            <div class="meta">${item.pubDate} — ${data.feed.title} | <button onclick="openDeepDive('${encodeURIComponent(item.link)}', '${encodeURIComponent(item.title)}')">DEEP DIVE ✨</button></div>
+                            <p class="description">${item.description.replace(/<[^>]*>?/gm, '').substring(0, 200)}...</p>
+                            <div class="meta">${timeAgo} — ${data.feed.title} | <button onclick="openDeepDive('${encodeURIComponent(item.link)}', '${encodeURIComponent(item.title)}')">DEEP DIVE ✨</button></div>
                         </div>`;
                 });
                 out.innerHTML = html;
@@ -114,7 +119,7 @@
         localStorage.setItem('pulse_key', apiKey);
 
         overlay.style.display = 'block';
-        content.innerHTML = `<h1>${title}</h1><p>Scraping source intelligence...</p>`;
+        content.innerHTML = `<h1>${title}</h1><p>Extracting intelligence data...</p>`;
 
         try {
             const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
@@ -122,10 +127,10 @@
             const parser = new DOMParser();
             const doc = parser.parseFromString(data.contents, "text/html");
             const paragraphs = Array.from(doc.querySelectorAll('p')).map(p => p.innerText).join("\n\n");
-            activeArticleText = paragraphs || "Extraction limited. AI analysis based on available metadata.";
-            content.innerHTML = `<h1>${title}</h1><div style="white-space:pre-wrap">${activeArticleText.substring(0, 3000)}...</div>`;
+            activeArticleText = paragraphs || "Automated extraction blocked. AI will use available context.";
+            content.innerHTML = `<h1>${title}</h1><div style="white-space:pre-wrap">${activeArticleText.substring(0, 2000)}...</div>`;
         } catch (e) {
-            content.innerHTML = `<h1>${title}</h1><p>Source security prevented extraction.</p>`;
+            content.innerHTML = `<h1>${title}</h1><p>Extraction restricted by source security.</p>`;
         }
     }
 
@@ -141,7 +146,7 @@
         history.innerHTML += `<div><b>You:</b> ${question}</div>`;
         input.value = "Processing...";
 
-        const prompt = `Context: ${activeArticleText.substring(0, 6000)}\n\nAct as a professional financial analyst. Answer the following question based strictly on the provided context: ${question}`;
+        const prompt = `Analyze this article: ${activeArticleText.substring(0, 5000)}\nQuestion: ${question}\nLimit answer to the article facts.`;
         
         try {
             const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`, {
@@ -152,7 +157,7 @@
             const data = await res.json();
             const answer = data.candidates[0].content.parts[0].text;
             history.innerHTML += `<div style="color:var(--accent)"><b>AI:</b> ${answer}</div>`;
-        } catch (e) { history.innerHTML += `<div style="color:red">API Error</div>`; }
+        } catch (e) { history.innerHTML += `<div style="color:red">AI Communication Error</div>`; }
         input.value = "";
     }
 </script>
