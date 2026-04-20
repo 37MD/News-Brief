@@ -421,7 +421,6 @@
 </head>
 <body>
 
-<!-- ── Controls Bar ── -->
 <div class="controls-bar">
   <select id="feed-dropdown" aria-label="Select news feed">
 
@@ -509,23 +508,42 @@
   <button id="refresh-btn" title="Refresh feed" aria-label="Refresh feed">⟳ Refresh</button>
 </div>
 
-<!-- ── Masthead ── -->
 <div class="masthead">
   <div class="tagline" id="header-date">Financial Intelligence Terminal</div>
   <div class="masthead-title">Gemini Pulse</div>
   <div class="tagline">Live Feed</div>
 </div>
 
-<!-- ── Status Bar ── -->
 <div class="feed-status-bar">
   <span id="item-count"></span>
   <span id="next-refresh"></span>
 </div>
 
-<!-- ── Feed Output ── -->
 <div class="container">
   <div id="rss-output">
     <div class="system-msg">Initializing secure terminal...</div>
+  </div>
+</div>
+
+<div id="reader-backdrop"></div>
+
+<div id="reader-panel" role="dialog" aria-modal="true" aria-label="Article reader">
+  <div id="reader-progress"></div>
+
+  <div class="reader-topbar">
+    <button class="reader-back-btn" id="reader-back">← Back</button>
+    <span class="reader-source-url" id="reader-url-label"></span>
+    <div class="reader-font-ctrl">
+      <button id="font-down" title="Smaller text" aria-label="Decrease font size">A−</button>
+      <button id="font-up"   title="Larger text"  aria-label="Increase font size">A+</button>
+    </div>
+    <a class="reader-open-btn" id="reader-ext-link" href="#" target="_blank" rel="noopener noreferrer">↗ Original</a>
+  </div>
+
+  <div class="reader-scroll" id="reader-scroll">
+    <div class="reader-status" id="reader-content">
+      Loading article…
+    </div>
   </div>
 </div>
 
@@ -661,7 +679,12 @@
 
   async function fetchViaAllOrigins(feedUrl) {
     const text = await xhrFetch(urlAllOrigins(feedUrl), FETCH_TIMEOUT);
-    const data = JSON.parse(text);
+    let data;
+    try {
+      data = JSON.parse(text);
+    } catch(e) {
+      throw new Error('allorigins returned invalid JSON');
+    }
     if (!data.contents) throw new Error('allorigins returned no content');
     return parseXML(data.contents);
   }
@@ -994,33 +1017,5 @@
     loadFeed();
   });
 </script>
-
-
-<!-- ══ READER BACKDROP ══ -->
-<div id="reader-backdrop"></div>
-
-<!-- ══ READER PANEL ══ -->
-<div id="reader-panel" role="dialog" aria-modal="true" aria-label="Article reader">
-  <div id="reader-progress"></div>
-
-  <!-- Top bar -->
-  <div class="reader-topbar">
-    <button class="reader-back-btn" id="reader-back">← Back</button>
-    <span class="reader-source-url" id="reader-url-label"></span>
-    <div class="reader-font-ctrl">
-      <button id="font-down" title="Smaller text" aria-label="Decrease font size">A−</button>
-      <button id="font-up"   title="Larger text"  aria-label="Increase font size">A+</button>
-    </div>
-    <a class="reader-open-btn" id="reader-ext-link" href="#" target="_blank" rel="noopener noreferrer">↗ Original</a>
-  </div>
-
-  <!-- Scrollable article content -->
-  <div class="reader-scroll" id="reader-scroll">
-    <div class="reader-status" id="reader-content">
-      Loading article…
-    </div>
-  </div>
-</div>
-
 </body>
 </html>
