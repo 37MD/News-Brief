@@ -24,7 +24,7 @@
             text-decoration: underline;
         }
         .source {
-            font-size: 10px; /* Very small font for the source */
+            font-size: 10px; /* Very small font */
             color: #777;
             display: block;
             margin-top: 2px;
@@ -37,26 +37,27 @@
     <div id="rss-output">Fetching feeds...</div>
 
     <script>
-        // The specific URL you requested
+        // Target RSS URL
         const targetUrl = 'https://www.thehindubusinessline.com/feeder/default.rss';
         
-        // A CORS proxy is required because browsers block direct cross-origin XML requests
-        const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(targetUrl);
+        // Using rss2json API which is much more reliable for blocked news sites
+        const apiUrl = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(targetUrl);
 
-        fetch(proxyUrl)
-            .then(response => response.text())
-            .then(str => new window.DOMParser().parseFromString(str, "text/xml"))
+        fetch(apiUrl)
+            .then(response => response.json())
             .then(data => {
-                const items = data.querySelectorAll("item");
+                // Check if the API successfully grabbed the feed
+                if (data.status !== 'ok') {
+                    throw new Error("API failed to fetch the feed.");
+                }
+
                 let htmlOutput = "";
 
-                items.forEach(item => {
-                    const title = item.querySelector("title").textContent;
-                    const link = item.querySelector("link").textContent;
-                    
+                // The API conveniently converts the XML to a JavaScript array called 'items'
+                data.items.forEach(item => {
                     htmlOutput += `
                         <div class="feed-item">
-                            <a href="${link}" class="headline" target="_blank">${title}</a>
+                            <a href="${item.link}" class="headline" target="_blank">${item.title}</a>
                             <span class="source">Source: The Hindu BusinessLine</span>
                         </div>
                     `;
@@ -66,7 +67,7 @@
             })
             .catch(err => {
                 console.error("Error loading feed:", err);
-                document.getElementById("rss-output").innerHTML = "Error loading the RSS feed.";
+                document.getElementById("rss-output").innerHTML = "Error loading the RSS feed. Please check your internet connection or try again later.";
             });
     </script>
 
