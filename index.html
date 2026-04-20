@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gemini Pulse: Clean Reader</title>
+<title>Gemini Pulse: Hybrid Terminal</title>
 <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkdlbWluaSBGaW5hbmNlIFB1bHNlIiwKICAic2hvcnRfbmFtZSI6ICJHZW1pbmkgTmV3cyIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjZjVmMGV4IiwKICAidGhlbWVfY29sb3IiOiAiIzFhNWMzYSIsCiAgImljb25zIjogW3sgInNyYyI6ICJodHRwczovL2Nkbi1pY29ucy1wbmcuZmxhdGljb24uY29tLzUxMi8yNzg5LzI3ODkyNTkucG5nIiwgInNpemVzIjogIjUxMng1MTIiLCAidHlwZSI6ICJpbWFnZS9wbmciIH1dCn0=">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
@@ -14,22 +14,22 @@
   .masthead-title { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 700; }
   .container { max-width: 800px; margin: 0 auto; padding: 20px 20px 80px; }
   .setup-box { background: var(--paper2); padding: 20px; border: 1px solid var(--rule); margin-bottom: 30px; border-radius: 4px; }
-  input, button { font-family: 'IBM Plex Mono', monospace; padding: 12px; border: 1px solid var(--rule); font-size: 13px; }
+  input, button, textarea { font-family: 'IBM Plex Mono', monospace; padding: 12px; border: 1px solid var(--rule); font-size: 13px; }
   .btn-main { background: var(--ink); color: white; cursor: pointer; width: 100%; font-weight: bold; text-transform: uppercase; border: none; padding: 15px; }
   #status { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); text-align: center; margin: 20px 0; padding: 10px; border: 1px dashed var(--rule); background: #fff; }
   .section { margin-bottom: 40px; border-bottom: 1px solid var(--rule); padding-bottom: 25px; }
-  .section h2 { font-family: 'Playfair Display', serif; color: var(--accent); font-size: 24px; }
-  .section p { font-size: 18px; color: #222; margin-top: 10px; }
+  .section h2 { font-family: 'Playfair Display', serif; color: var(--accent); font-size: 26px; }
+  .section p { font-size: 18px; color: #222; margin-top: 10px; line-height: 1.7; }
   .btn-row { display: flex; gap: 10px; margin-top: 15px; }
-  .action-btn { font-size: 10px; background: white; border: 1px solid var(--accent); color: var(--accent); cursor: pointer; padding: 8px 16px; border-radius: 4px; font-weight: bold; }
-  .detail-box { background: white; padding: 25px; border-left: 6px solid var(--accent); margin-top: 20px; display: none; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); }
+  .action-btn { font-size: 10px; background: white; border: 1px solid var(--accent); color: var(--accent); cursor: pointer; padding: 8px 16px; border-radius: 4px; font-weight: bold; text-transform: uppercase; }
+  .detail-box { background: white; padding: 25px; border-left: 6px solid var(--accent); margin-top: 20px; display: none; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); line-height: 1.7; }
+  .detail-box h3 { margin-bottom: 15px; color: var(--accent); border-bottom: 1px solid #eee; padding-bottom: 8px; font-family: 'Playfair Display', serif; font-size: 22px; }
   .chat-area { margin-top: 25px; border-top: 1px solid #eee; padding-top: 20px; }
   .chat-history { font-size: 14px; margin-bottom: 15px; max-height: 300px; overflow-y: auto; }
   .chat-msg { margin-bottom: 10px; padding: 8px 12px; border-radius: 6px; }
   .user-msg { background: var(--paper2); border-left: 3px solid var(--muted); }
   .ai-msg { background: #f0f7f2; border-left: 3px solid var(--accent); }
-  .chat-input-row { display: flex; gap: 8px; }
-  .chat-input { flex: 1; padding: 10px; border: 1px solid var(--rule); border-radius: 4px; }
+  textarea.article-input { width: 100%; height: 120px; margin: 10px 0; border: 1px dashed var(--accent); background: #fdfdfd; padding: 10px; }
 </style>
 </head>
 <body>
@@ -41,7 +41,7 @@
 
 <div class="container">
   <div id="setup" class="setup-box">
-    <input type="password" id="api-key" placeholder="Gemini API Key" style="width: 70%">
+    <input type="password" id="api-key" placeholder="AI Studio Key" style="width: 70%">
     <button onclick="saveKey()">Save</button>
   </div>
   <button class="btn-main" onclick="runBriefing()">Pull BusinessLine News</button>
@@ -62,19 +62,16 @@ async function runBriefing() {
   if(!apiKey) return alert("Save Key first");
   const status = document.getElementById('status');
   status.innerHTML = "🔍 Fetching RSS...";
-  
   try {
     const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(FEED_URL)}&t=${Date.now()}`);
     const data = await res.json();
     const articles = data.items.slice(0, 3);
-
     status.textContent = "🤖 Analyzing Themes...";
     const prompt = `Return ONLY JSON: {"themes": [{"title": "Theme", "summary": "3-sentence text"}]}. NEWS: ${JSON.stringify(articles)}`;
     const aiText = await callGemini(prompt, apiKey);
     const briefingData = JSON.parse(aiText.replace(/```json|```/g, "").trim());
-    
     renderBriefing(briefingData, articles);
-    status.textContent = "✅ Done.";
+    status.textContent = "✅ Update Complete.";
   } catch (err) { status.innerHTML = "❌ Error: " + err.message; }
 }
 
@@ -96,7 +93,7 @@ function renderBriefing(data, articles) {
       <h2>${theme.title}</h2>
       <p id="sum-${index}">${theme.summary}</p>
       <div class="btn-row">
-        <button class="action-btn" onclick="fetchCleanText('${link}', ${index})">📈 Deep Dive & Chat</button>
+        <button class="action-btn" onclick="fetchDeepDive('${link}', ${index})">📈 Deep Dive & Chat</button>
       </div>
       <div id="detail-${index}" class="detail-box"></div>
     `;
@@ -104,36 +101,57 @@ function renderBriefing(data, articles) {
   });
 }
 
-// THE CLEAN SCRAPER Logic
-async function fetchCleanText(link, index) {
+async function fetchDeepDive(link, index) {
   const box = document.getElementById(`detail-${index}`);
   box.style.display = 'block';
-  box.innerHTML = "<i>✨ Stripping ads and extracting clean text...</i>";
+  box.innerHTML = "<i>✨ Attempting ad-free scrape...</i>";
 
   try {
-    // Using r.jina.ai as a high-performance, ad-stripping proxy for AI
     const cleanRes = await fetch(`https://r.jina.ai/${link}`);
-    const cleanText = await cleanRes.text();
-    
-    articleContexts[index] = cleanText.slice(0, 8000); // Store for chat
-    
-    const prompt = `Act as a senior Research Analyst. Based on this text, provide a Deep Dive report (CORE:, BACKGROUND:, SEQUENCE:, INVESTOR VIEW:). TEXT: ${articleContexts[index]}`;
-    const analysis = await callGemini(prompt, localStorage.getItem('gemini_key'));
+    const text = await cleanRes.text();
 
-    box.innerHTML = `
-      <h3>Deep Dive Analysis</h3>
-      <div>${analysis.replace(/[\[\]{}"]/g, '').replace(/\n/g, '<br>')}</div>
-      <div class="chat-area">
-        <div id="chat-history-${index}" class="chat-history"></div>
-        <div class="chat-input-row">
-          <input type="text" id="chat-input-${index}" class="chat-input" placeholder="Ask a question about this article...">
-          <button class="action-btn" onclick="askQuestion(${index})">ASK</button>
-        </div>
-      </div>
-    `;
+    // Check for Security Block keywords
+    if (text.includes("403 Forbidden") || text.includes("451") || text.includes("Akamai") || text.length < 500) {
+      throw new Error("Scraper Blocked");
+    }
+
+    processAnalysis(text, index);
   } catch (e) {
-    box.innerHTML = "❌ Scraper Blocked. This usually means the site is under heavy protection.";
+    box.innerHTML = `
+      <h3>⚠️ Security Block (DDoS Protection)</h3>
+      <p style="font-size:14px; color:var(--muted)">The site is blocking automated research. Open the link, copy the text (use Reader Mode for no ads), and paste it here:</p>
+      <a href="${link}" target="_blank" style="font-weight:bold; color:var(--accent); display:block; margin:10px 0;">1. Open BusinessLine Article ↗</a>
+      <textarea id="manual-input-${index}" class="article-input" placeholder="Paste article text here..."></textarea>
+      <button class="btn-main" onclick="manualAnalyze(${index})" style="padding:10px; font-size:11px">2. Run Analyst Analysis</button>
+    `;
   }
+}
+
+async function manualAnalyze(index) {
+  const text = document.getElementById(`manual-input-${index}`).value.trim();
+  if(!text) return alert("Paste text first");
+  processAnalysis(text, index);
+}
+
+async function processAnalysis(text, index) {
+  const box = document.getElementById(`detail-${index}`);
+  box.innerHTML = "<i>📊 Analyzing market context...</i>";
+  articleContexts[index] = text.slice(0, 8000);
+  
+  const prompt = `Act as a senior Research Analyst. Analyze: "${articleContexts[index]}". Provide plain headers (CORE:, BACKGROUND:, SEQUENCE:, INVESTOR VIEW:). No brackets or quotes.`;
+  const analysis = await callGemini(prompt, localStorage.getItem('gemini_key'));
+
+  box.innerHTML = `
+    <h3>Deep Dive Analysis</h3>
+    <div style="font-size:16px">${analysis.replace(/[\[\]{}"]/g, '').replace(/\n/g, '<br>')}</div>
+    <div class="chat-area">
+      <div id="chat-history-${index}" class="chat-history"></div>
+      <div class="chat-input-row">
+        <input type="text" id="chat-input-${index}" class="chat-input" style="font-size:14px" placeholder="Ask a clarification...">
+        <button class="action-btn" onclick="askQuestion(${index})">ASK</button>
+      </div>
+    </div>
+  `;
 }
 
 async function askQuestion(index) {
@@ -143,7 +161,7 @@ async function askQuestion(index) {
   if (!question) return;
   
   history.innerHTML += `<div class="chat-msg user-msg"><b>You:</b> ${question}</div>`;
-  const prompt = `Context: ${articleContexts[index]}. Question: ${question}`;
+  const prompt = `Context: ${articleContexts[index]}. Question: ${question}. Plain text only.`;
   input.value = "Thinking...";
   
   try {
