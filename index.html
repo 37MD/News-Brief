@@ -2,133 +2,72 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Raw RSS Feed</title>
+    <title>RSS Feed Reader</title>
     <style>
-        :root {
-            --bg-color: #ffffff;
-            --text-color: #202124;
-            --link-color: #1a0dab;
-            --source-color: #70757a;
-            --border-color: #dadce0;
-        }
-
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-color);
-            color: var(--text-color);
-            line-height: 1.5;
-            padding: 20px;
+            font-family: Arial, sans-serif;
             max-width: 800px;
-            margin: 0 auto;
+            margin: 20px auto;
+            color: #333;
         }
-
-        h2 {
-            border-bottom: 2px solid var(--border-color);
-            padding-bottom: 10px;
-            margin-bottom: 20px;
-        }
-
-        #feed-container {
-            display: flex;
-            flex-direction: column;
-            gap: 16px;
-        }
-
         .feed-item {
-            padding-bottom: 12px;
-            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 16px;
+            line-height: 1.4;
         }
-
-        .feed-item:last-child {
-            border-bottom: none;
-        }
-
-        .feed-link {
+        .headline {
+            font-size: 16px;
+            color: #0044cc;
             text-decoration: none;
-            color: var(--link-color);
-            font-size: 1.1rem;
-            font-weight: 500;
-            display: block;
-            margin-bottom: 2px;
-        }
-
-        .feed-link:hover {
-            text-decoration: underline;
-        }
-
-        /* The "Very Small" Source styling */
-        .feed-source {
-            font-size: 0.6rem; 
-            color: var(--source-color);
-            text-transform: uppercase;
-            letter-spacing: 0.05rem;
-            font-weight: 700;
-        }
-
-        .error {
-            color: #d93025;
             font-weight: bold;
         }
-
-        .loading {
-            font-style: italic;
-            color: var(--source-color);
+        .headline:hover {
+            text-decoration: underline;
+        }
+        .source {
+            font-size: 10px; /* Very small font for the source */
+            color: #777;
+            display: block;
+            margin-top: 2px;
         }
     </style>
 </head>
 <body>
 
-    <h2>Latest Updates</h2>
-    <div id="feed-container">
-        <div class="loading">Fetching raw feed...</div>
-    </div>
+    <h2>BusinessLine Feed</h2>
+    <div id="rss-output">Fetching feeds...</div>
 
     <script>
-        // CONFIGURATION: Replace this URL with your desired RSS feed
-        const RSS_URL = 'https://rss.nytimes.com/services/xml/rss/nyt/World.xml';
+        // The specific URL you requested
+        const targetUrl = 'https://www.thehindubusinessline.com/feeder/default.rss';
         
-        // Using a public CORS proxy to bypass browser restrictions
-        const PROXY_URL = 'https://api.allorigins.win/get?url=';
+        // A CORS proxy is required because browsers block direct cross-origin XML requests
+        const proxyUrl = 'https://api.allorigins.win/raw?url=' + encodeURIComponent(targetUrl);
 
-        async function fetchRSS() {
-            const container = document.getElementById('feed-container');
-            
-            try {
-                const response = await fetch(`${PROXY_URL}${encodeURIComponent(RSS_URL)}`);
-                if (!response.ok) throw new Error('Network response was not ok');
-                
-                const data = await response.json();
-                const parser = new DOMParser();
-                const xmlDoc = parser.parseFromString(data.contents, "text/xml");
-                
-                const items = xmlDoc.querySelectorAll("item");
-                const channelTitle = xmlDoc.querySelector("channel > title")?.textContent || "RSS Feed";
-                
-                let htmlContent = "";
+        fetch(proxyUrl)
+            .then(response => response.text())
+            .then(str => new window.DOMParser().parseFromString(str, "text/xml"))
+            .then(data => {
+                const items = data.querySelectorAll("item");
+                let htmlOutput = "";
 
-                items.forEach(el => {
-                    const title = el.querySelector("title")?.textContent || "No Title";
-                    const link = el.querySelector("link")?.textContent || "#";
+                items.forEach(item => {
+                    const title = item.querySelector("title").textContent;
+                    const link = item.querySelector("link").textContent;
                     
-                    htmlContent += `
+                    htmlOutput += `
                         <div class="feed-item">
-                            <a class="feed-link" href="${link}" target="_blank" rel="noopener">${title}</a>
-                            <div class="feed-source">${channelTitle}</div>
+                            <a href="${link}" class="headline" target="_blank">${title}</a>
+                            <span class="source">Source: The Hindu BusinessLine</span>
                         </div>
                     `;
                 });
 
-                container.innerHTML = htmlContent || "No items found in this feed.";
-
-            } catch (error) {
-                console.error("RSS Fetch Error:", error);
-                container.innerHTML = `<div class="error">Failed to load feed. Check console for details.</div>`;
-            }
-        }
-
-        // Run on load
-        fetchRSS();
+                document.getElementById("rss-output").innerHTML = htmlOutput;
+            })
+            .catch(err => {
+                console.error("Error loading feed:", err);
+                document.getElementById("rss-output").innerHTML = "Error loading the RSS feed.";
+            });
     </script>
 
 </body>
