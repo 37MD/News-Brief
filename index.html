@@ -633,7 +633,7 @@
   }
 
   // ══════════════════════════════════════
-  //  RSS PROXIES (Upgraded to 3-Tier Fallback)
+  //  RSS PROXIES (3-Tier Fallback)
   // ══════════════════════════════════════
   function urlRss2json(feedUrl) { return 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(feedUrl); }
   function urlAllOrigins(feedUrl) { return 'https://api.allorigins.win/get?url=' + encodeURIComponent(feedUrl); }
@@ -677,7 +677,7 @@
 
   async function fetchViaCodetabs(feedUrl) {
     const text = await xhrFetch(urlCodetabs(feedUrl), FETCH_TIMEOUT);
-    return parseXML(text); // Codetabs returns raw text/xml bypassing CORS
+    return parseXML(text);
   }
 
   async function fetchFeed(feedUrl) {
@@ -791,7 +791,7 @@
   }
 
   // ══════════════════════════════════════
-  //  READER MODE
+  //  READER MODE / ARTICLE EXTRACTOR
   // ══════════════════════════════════════
   const readerPanel    = document.getElementById('reader-panel');
   const readerBackdrop = document.getElementById('reader-backdrop');
@@ -839,36 +839,50 @@
     readerProgress.style.width = Math.min(100, pct || 0) + '%';
   });
 
+  async function fetchRawHtml(url) {
+    try {
+      const proxy1 = 'https://api.codetabs.com/v1/proxy?quest=' + encodeURIComponent(url);
+      return await xhrFetch(proxy1, 15000);
+    } catch(e1) {
+      console.warn('Reader Proxy 1 blocked, trying Proxy 2...');
+      const proxy2 = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
+      const text = await xhrFetch(proxy2, 15000);
+      try {
+        const data = JSON.parse(text);
+        if (data.contents) return data.contents;
+        throw new Error('Empty contents');
+      } catch(e) {
+        throw new Error('Failed to parse proxy response.');
+      }
+    }
+  }
+
   const CONTENT_SELECTORS = [
     '[itemprop="articleBody"]',
-    '[class*="article-body"]',
-    '[class*="article-content"]',
-    '[class*="articleBody"]',
-    '[class*="story-body"]',
-    '[class*="story-content"]',
-    '[class*="post-content"]',
-    '[class*="entry-content"]',
-    '[class*="main-content"]',
-    '[class*="content-body"]',
-    '[class*="article__body"]',
+    '.artText',
+    '.storyPage_storyContent__m9wB_',
+    '#content_txt',
+    '.story-details',
+    '.article-body',
+    '.article-content',
+    '.story-body',
+    '.story-content',
+    '.post-content',
+    '.article__body',
     'article',
     'main'
   ];
 
-  const STRIP_SELECTORS = 'script,style,noscript,iframe,nav,header,footer,aside,form,button,svg,canvas,video,audio,[class*="ad"],[class*="advertisement"],[class*="social"],[class*="share"],[class*="related"],[class*="recommended"],[class*="newsletter"],[class*="subscribe"],[class*="comments"],[class*="sidebar"],[class*="widget"],[class*="popup"],[class*="cookie"],[class*="banner"],[class*="promo"]';
+  const STRIP_SELECTORS = 'script,style,noscript,iframe,nav,header,footer,aside,form,button,svg,canvas,video,audio,[class*="ad"],[class*="advertisement"],[class*="social"],[class*="share"],[class*="related"],[class*="recommended"],[class*="newsletter"],[class*="subscribe"],[class*="comments"],[class*="sidebar"],[class*="widget"],[class*="popup"],[class*="cookie"],[class*="banner"],[class*="promo"],[class*="outbrain"],[class*="taboola"]';
 
   async function fetchArticle(url, title, feedName, pubDate) {
     readerProgress.style.width = '15%';
     try {
-      const proxyUrl = 'https://api.allorigins.win/get?url=' + encodeURIComponent(url);
-      const text = await xhrFetch(proxyUrl, 18000);
+      const htmlContent = await fetchRawHtml(url);
       readerProgress.style.width = '50%';
 
-      const data = JSON.parse(text);
-      if (!data.contents) throw new Error('No content returned');
-
       const parser = new DOMParser();
-      const doc    = parser.parseFromString(data.contents, 'text/html');
+      const doc    = parser.parseFromString(htmlContent, 'text/html');
 
       rebaseUrls(doc, url);
 
@@ -891,7 +905,7 @@
         }
       }
 
-      if (!bodyEl || bodyEl.textContent.trim().length < 100) throw new Error('PAYWALL');
+      if (!bodyEl || bodyEl.textContent.trim().length < 150) throw new Error('PAYWALL_OR_BOT_BLOCK');
 
       readerProgress.style.width = '80%';
       const cleanHtml = sanitizeHtml(bodyEl.innerHTML);
@@ -911,14 +925,14 @@
       setTimeout(function(){ readerProgress.style.width = '0%'; }, 600);
 
       let msg, hint;
-      if (err.message === 'PAYWALL') {
-        msg  = '🔒 Article behind paywall or login wall';
-        hint = 'Open the original to read the full article.';
+      if (err.message === 'PAYWALL_OR_BOT_BLOCK') {
+        msg  = '🔒 Content blocked by site security or paywall';
+        hint = 'The publisher prevents terminal reading. Open the original to read.';
       } else if (err.message === 'TIMEOUT') {
         msg  = '⏱ Article took too long to load';
-        hint = 'The site may be slow. Try the original link.';
+        hint = 'The site proxy may be slow. Try the original link.';
       } else {
-        msg  = '❌ Could not load article';
+        msg  = '❌ Could not extract article content';
         hint = escapeHtml(err.message);
       }
 
@@ -934,15 +948,22 @@
     try {
       const base   = new URL(baseUrl);
       const origin = base.origin;
-      doc.querySelectorAll('img[src]').forEach(function(el) {
-        const src = el.getAttribute('src');
-        if (src && !src.startsWith('http') && !src.startsWith('data:'))
-          el.setAttribute('src', src.startsWith('/') ? origin + src : base.href.replace(/\/[^\/]*$/,'/') + src);
+      
+      doc.querySelectorAll('img').forEach(function(el) {
+        let src = el.getAttribute('data-src') || el.getAttribute('data-original') || el.getAttribute('src');
+        if (!src || src.startsWith('data:')) return;
+        
+        if (src.startsWith('/')) { src = origin + src; } 
+        else if (!src.startsWith('http')) { src = base.href.replace(/\/[^\/]*$/,'/') + src; }
+        
+        el.setAttribute('src', src);
       });
+
       doc.querySelectorAll('a[href]').forEach(function(el) {
-        const href = el.getAttribute('href');
-        if (href && !href.startsWith('http') && !href.startsWith('#') && !href.startsWith('javascript'))
+        let href = el.getAttribute('href');
+        if (href && !href.startsWith('http') && !href.startsWith('#') && !href.startsWith('javascript')) {
           el.setAttribute('href', href.startsWith('/') ? origin + href : base.href.replace(/\/[^\/]*$/,'/') + href);
+        }
       });
     } catch(e) {}
   }
@@ -962,7 +983,7 @@
     const children = Array.from(node.childNodes);
     for (let i = 0; i < children.length; i++) {
       const child = children[i];
-      if (child.nodeType !== 1) continue; // skip text/comment nodes
+      if (child.nodeType !== 1) continue; 
       const tag = child.tagName.toLowerCase();
       if (!ALLOWED_TAGS.has(tag)) {
         while (child.firstChild) node.insertBefore(child.firstChild, child);
