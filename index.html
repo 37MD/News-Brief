@@ -3,96 +3,182 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gemini Pulse Terminal</title>
+<title>Pulse: Strict Reader</title>
+<link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkdlbWluaSBGaW5hbmNlIFB1bHNlIiwKICAic2hvcnRfbmFtZSI6ICJHZW1pbmkgTmV3cyIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjZjVmMGV4IiwKICAidGhlbWVfY29sb3IiOiAiIzFhNWMzYSIsCiAgImljb25zIjogW3sgInNyYyI6ICJodHRwczovL2Nkbi1pY29ucy1wbmcuZmxhdGljb24uY29tLzUxMi8yNzg5LzI3ODkyNTkucG5nIiwgInNpemVzIjogIjUxMng1MTIiLCAidHlwZSI6ICJpbWFnZS9wbmciIH1dCn0=">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=IBM+Plex+Sans:wght@300;400&family=IBM+Plex+Mono&display=swap" rel="stylesheet">
 <style>
-  :root { --ink: #1a1a18; --paper: #f5f0e8; --accent: #1a5c3a; --rule: #c8c0b0; }
-  body { background: var(--paper); color: var(--ink); font-family: 'IBM Plex Sans', sans-serif; line-height: 1.6; margin: 0; }
-  .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
-  .masthead { border-bottom: 3px double var(--ink); text-align: center; padding-bottom: 20px; margin-bottom: 30px; }
-  h1 { font-family: 'Playfair Display', serif; font-size: 42px; margin: 0; }
-  .section { background: white; padding: 25px; border-left: 6px solid var(--accent); margin-bottom: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
-  h2 { font-family: 'Playfair Display', serif; color: var(--accent); margin-top: 0; }
-  .summary { font-size: 18px; color: #222; }
-  .detail { font-size: 16px; margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px; }
-  #status { font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-align: center; color: #7a7468; margin-bottom: 20px; }
-  .btn-main { background: var(--ink); color: white; width: 100%; padding: 15px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; }
-  .hidden { display: none; }
+  :root { --ink: #1a1a18; --paper: #f5f0e8; --accent: #1a5c3a; --rule: #c8c0b0; --muted: #7a7468; }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--paper); color: var(--ink); font-family: 'IBM Plex Sans', sans-serif; line-height: 1.6; }
+  
+  .terminal-grid { display: grid; grid-template-columns: 300px 1fr; height: 100vh; }
+  
+  /* Left Panel: The News Wire */
+  .wire-panel { border-right: 1px solid var(--rule); padding: 20px; overflow-y: auto; background: var(--paper); }
+  .wire-title { font-family: 'IBM Plex Mono'; font-size: 10px; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 20px; color: var(--accent); font-weight: bold; }
+  .headline-card { margin-bottom: 20px; padding-bottom: 15px; border-bottom: 1px solid #eee; cursor: pointer; }
+  .headline-card:hover { opacity: 0.7; }
+  .headline-card h4 { font-family: 'Playfair Display', serif; font-size: 16px; margin-bottom: 5px; }
+  .headline-card span { font-family: 'IBM Plex Mono'; font-size: 10px; color: var(--muted); }
+
+  /* Right Panel: The Reader */
+  .reader-panel { padding: 40px; overflow-y: auto; background: #fff; position: relative; }
+  .reader-container { max-width: 700px; margin: 0 auto; }
+  .reader-title { font-family: 'Playfair Display', serif; font-size: 32px; line-height: 1.2; margin-bottom: 30px; }
+  .reader-content { font-size: 18px; color: #222; margin-bottom: 40px; }
+  
+  /* Analysis & Chat */
+  .analyst-box { background: var(--paper); padding: 25px; border-left: 5px solid var(--accent); margin-top: 30px; font-size: 16px; }
+  .chat-row { display: flex; gap: 10px; margin-top: 20px; }
+  input, button, textarea { font-family: 'IBM Plex Mono'; padding: 12px; border: 1px solid var(--rule); }
+  .btn-accent { background: var(--accent); color: white; border: none; font-weight: bold; cursor: pointer; }
+  
+  .status-bar { position: fixed; bottom: 0; width: 100%; background: var(--ink); color: #fff; font-family: 'IBM Plex Mono'; font-size: 10px; padding: 5px 20px; z-index: 100; }
+  .fallback-box { background: #fff0f0; border: 1px dashed red; padding: 15px; margin: 20px 0; }
+
+  @media (max-width: 768px) { .terminal-grid { grid-template-columns: 1fr; } .wire-panel { display: none; } }
 </style>
 </head>
 <body>
 
-<div class="container">
-  <div class="masthead">
-    <h1>Gemini Pulse</h1>
-    <div style="font-family: 'IBM Plex Mono'; font-size: 10px; letter-spacing: 2px; margin-top: 5px;">RESEARCH TERMINAL</div>
-  </div>
+<div class="terminal-grid">
+  <aside class="wire-panel">
+    <div class="wire-title">Market Wire: BusinessLine</div>
+    <div id="wire-content">Loading headlines...</div>
+  </aside>
 
-  <div id="status">Ready for Feed or Zap...</div>
-  <button class="btn-main" id="pull-btn" onclick="runRSS()">Pull Latest Headlines</button>
-  
-  <div id="output"></div>
+  <main class="reader-panel">
+    <div class="reader-container">
+        <div id="reader-view">
+            <div class="reader-title">Select an article to begin research.</div>
+            <p class="reader-content">Your ad-free workspace will appear here.</p>
+        </div>
+        <div id="analyst-view"></div>
+    </div>
+  </main>
 </div>
+
+<div class="status-bar" id="status">System Ready</div>
 
 <script>
 const MODEL_ID = "gemini-3.1-flash-lite-preview";
+const RSS_FEED = "https://www.thehindubusinessline.com/feeder/default.rss";
+let currentContext = "";
 
-// 1. RECEIVER LOGIC: Look for "Zapped" text in the URL
-window.onload = async () => {
-  const urlParams = new URLSearchParams(window.location.search);
-  const zappedText = urlParams.get('zap');
-  
-  if (zappedText) {
-    document.getElementById('pull-btn').classList.add('hidden');
-    processAnalysis(decodeURIComponent(zappedText));
-  }
+window.onload = () => {
+    fetchRSS();
+    if(!localStorage.getItem('gemini_key')) {
+        const key = prompt("Enter Gemini API Key:");
+        if(key) localStorage.setItem('gemini_key', key);
+    }
 };
 
-async function runRSS() {
-  const status = document.getElementById('status');
-  status.textContent = "🔍 Fetching BusinessLine...";
-  try {
-    const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fwww.thehindubusinessline.com%2Ffeeder%2Fdefault.rss`);
-    const data = await res.json();
-    renderHeadlines(data.items.slice(0, 5));
-    status.textContent = "✅ Headlines Loaded. Click an article on BusinessLine and use your 'Pulse Zap' bookmark.";
-  } catch (e) { status.textContent = "❌ RSS Error."; }
+async function fetchRSS() {
+    try {
+        const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(RSS_FEED)}`);
+        const data = await res.json();
+        const wire = document.getElementById('wire-content');
+        wire.innerHTML = "";
+        data.items.slice(0, 8).forEach((item, i) => {
+            wire.innerHTML += `
+                <div class="headline-card" onclick="loadArticle('${item.link}', '${item.title.replace(/'/g, "\\'")}')">
+                    <h4>${item.title}</h4>
+                    <span>${new Date(item.pubDate).toLocaleTimeString()}</span>
+                </div>`;
+        });
+    } catch (e) { document.getElementById('wire-content').innerHTML = "RSS Load Failed."; }
 }
 
-function renderHeadlines(articles) {
-  const out = document.getElementById('output');
-  out.innerHTML = "<h3>Latest Headlines</h3>";
-  articles.forEach(a => {
-    out.innerHTML += `<div style="margin-bottom:15px">
-      <a href="${a.link}" target="_blank" style="color:var(--accent); font-weight:bold; text-decoration:none;">${a.title} ↗</a>
-      <div style="font-size:12px; color:#7a7468">${a.pubDate}</div>
-    </div>`;
-  });
+async function loadArticle(link, title) {
+    const reader = document.getElementById('reader-view');
+    const status = document.getElementById('status');
+    const analyst = document.getElementById('analyst-view');
+    
+    analyst.innerHTML = "";
+    reader.innerHTML = `<h1 class="reader-title">${title}</h1><p class="reader-content"><i>✨ Stripping ads and trackers...</i></p>`;
+    status.textContent = "🔍 CLEANING PAGE: " + link;
+
+    try {
+        const res = await fetch(`https://r.jina.ai/${link}`);
+        const text = await res.text();
+
+        if(text.includes("403 Forbidden") || text.includes("451") || text.length < 500) {
+            throw new Error("Firewall Detected");
+        }
+
+        currentContext = text.slice(0, 8000);
+        reader.innerHTML = `<h1 class="reader-title">${title}</h1><div class="reader-content">${currentContext.replace(/\n/g, '<br>')}</div>`;
+        runAnalysis(title);
+    } catch (e) {
+        reader.innerHTML = `
+            <h1 class="reader-title">${title}</h1>
+            <div class="fallback-box">
+                <b>SECURITY BLOCK:</b> The site blocked the clean-view proxy.<br><br>
+                1. <a href="${link}" target="_blank">Open the original article here</a><br>
+                2. Copy the text (use your browser's Reader Mode)<br>
+                3. Paste it here to start the AI Deep Dive:
+            </div>
+            <textarea id="manual-paste" style="width:100%; height:200px; margin-bottom:10px;" placeholder="Paste text here..."></textarea>
+            <button class="btn-accent" onclick="processManual('${title}')">START ANALYSIS</button>
+        `;
+        status.textContent = "⚠️ SCRAPER BLOCKED: Manual Input Required";
+    }
 }
 
-async function processAnalysis(text) {
-  const out = document.getElementById('output');
-  const status = document.getElementById('status');
-  status.textContent = "🤖 Gemini is performing Deep Dive...";
-  
-  const prompt = `Act as a senior Research Analyst. Analyze this text: "${text.slice(0, 5000)}". Provide a Deep Dive report with plain headers: CORE:, BACKGROUND:, SEQUENCE:, INVESTOR VIEW:. No brackets.`;
-  
-  try {
-    const apiKey = localStorage.getItem('gemini_key');
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${apiKey}`;
-    const res = await fetch(url, { method: 'POST', body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
-    const data = await res.json();
-    const result = data.candidates[0].content.parts[0].text;
+async function processManual(title) {
+    const text = document.getElementById('manual-paste').value.trim();
+    if(!text) return;
+    currentContext = text.slice(0, 8000);
+    document.getElementById('reader-view').innerHTML = `<h1 class="reader-title">${title}</h1><div class="reader-content">${currentContext.replace(/\n/g, '<br>')}</div>`;
+    runAnalysis(title);
+}
 
-    out.innerHTML = `
-      <div class="section">
-        <h2>Deep Dive Analysis</h2>
-        <div class="detail">${result.replace(/[\[\]{}"]/g, '').replace(/\n/g, '<br>')}</div>
-        <button class="btn-main" style="margin-top:20px; background:var(--accent)" onclick="window.location.href=window.location.pathname">Return to Terminal</button>
-      </div>
-    `;
-    status.textContent = "✅ Analysis Complete.";
-  } catch (e) { status.textContent = "❌ AI Analysis Error."; }
+async function runAnalysis(title) {
+    const analyst = document.getElementById('analyst-view');
+    const status = document.getElementById('status');
+    analyst.innerHTML = "<h3>📊 Analyst's Deep Dive</h3><p>Generating report...</p>";
+    status.textContent = "🤖 GEMINI IS ANALYZING ARTICLE...";
+
+    const prompt = `Act as a senior Research Analyst. Based on this article about "${title}", provide: CORE, BACKGROUND, SEQUENCE, and INVESTOR VIEW. Use plain bold headers. No brackets. Article Text: ${currentContext}`;
+    
+    try {
+        const key = localStorage.getItem('gemini_key');
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${key}`;
+        const res = await fetch(url, { method: 'POST', body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
+        const data = await res.json();
+        const report = data.candidates[0].content.parts[0].text;
+
+        analyst.innerHTML = `
+            <div class="analyst-box">
+                <h3>📊 Analyst's Deep Dive</h3>
+                <div style="margin-bottom:20px;">${report.replace(/[\[\]{}"]/g, '').replace(/\n/g, '<br>')}</div>
+                <div class="chat-row">
+                    <input type="text" id="chat-in" style="flex:1" placeholder="Ask a clarification...">
+                    <button class="btn-accent" onclick="askChat()">ASK</button>
+                </div>
+                <div id="chat-out" style="font-size:14px; margin-top:15px; border-top:1px solid #ddd; padding-top:10px;"></div>
+            </div>`;
+        status.textContent = "✅ ANALYSIS READY";
+    } catch (e) { analyst.innerHTML = "Analysis failed."; status.textContent = "❌ AI ERROR"; }
+}
+
+async function askChat() {
+    const input = document.getElementById('chat-in');
+    const output = document.getElementById('chat-out');
+    const question = input.value;
+    if(!question) return;
+
+    output.innerHTML = "<i>Gemini is thinking...</i>";
+    const prompt = `Article: ${currentContext}. Question: ${question}. Answer concisely.`;
+    
+    try {
+        const key = localStorage.getItem('gemini_key');
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${key}`;
+        const res = await fetch(url, { method: 'POST', body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
+        const data = await res.json();
+        output.innerHTML = `<b>Gemini:</b> ${data.candidates[0].content.parts[0].text.replace(/[\[\]{}"]/g, '')}`;
+        input.value = "";
+    } catch (e) { output.innerHTML = "Error."; }
 }
 </script>
 </body>
