@@ -3,39 +3,39 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Pulse Terminal: Heavy Duty</title>
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=IBM+Plex+Sans:wght@300;400&family=IBM+Plex+Mono&display=swap" rel="stylesheet">
+<title>Pulse Terminal: Stealth Edition</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=IBM+Plex+Sans:wght@300;400;500&family=IBM+Plex+Mono&display=swap" rel="stylesheet">
 <style>
-  :root { --ink: #1a1a18; --paper: #f5f0e8; --accent: #1a5c3a; --rule: #c8c0b0; }
+  :root { --ink: #1a1a18; --paper: #f5f0e8; --accent: #1a5c3a; --rule: #c8c0b0; --red: #b32d2d; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: var(--paper); color: var(--ink); font-family: 'IBM Plex Sans', sans-serif; height: 100vh; overflow: hidden; }
   
   .terminal-grid { display: grid; grid-template-columns: 350px 1fr; height: 100vh; }
   
   /* LEFT: THE WIRE */
-  .wire-panel { border-right: 1px solid var(--rule); display: flex; flex-direction: column; background: var(--paper); }
-  .wire-header { padding: 20px; border-bottom: 1px solid var(--rule); }
+  .wire-panel { border-right: 1px solid var(--rule); display: flex; flex-direction: column; background: var(--paper2); }
+  .wire-header { padding: 25px; border-bottom: 1px solid var(--rule); background: #eee8de; }
   .wire-scroll { flex: 1; overflow-y: auto; padding: 20px; }
   
   /* RIGHT: THE READER */
-  .reader-panel { background: #fff; overflow-y: auto; padding: 40px; }
-  .reader-inner { max-width: 750px; margin: 0 auto; }
+  .reader-panel { background: #fff; overflow-y: auto; padding: 50px; }
+  .reader-inner { max-width: 800px; margin: 0 auto; }
 
   /* UI COMPONENTS */
-  .headline-card { padding: 15px 0; border-bottom: 1px solid #ddd; cursor: pointer; transition: 0.2s; }
-  .headline-card:hover { background: #efebe4; padding-left: 5px; }
-  .headline-card h4 { font-family: 'Playfair Display', serif; font-size: 17px; margin-bottom: 5px; line-height: 1.3; }
-  .headline-card span { font-family: 'IBM Plex Mono'; font-size: 10px; color: #7a7468; }
+  .headline-card { padding: 18px 0; border-bottom: 1px solid #ddd; cursor: pointer; transition: 0.2s; }
+  .headline-card:hover { border-bottom: 1px solid var(--accent); opacity: 0.8; }
+  .headline-card h4 { font-family: 'Playfair Display', serif; font-size: 18px; margin-bottom: 5px; line-height: 1.3; }
+  .headline-card span { font-family: 'IBM Plex Mono'; font-size: 10px; color: #7a7468; text-transform: uppercase; }
   
-  .btn-action { background: var(--ink); color: #fff; border: none; padding: 10px; font-family: 'IBM Plex Mono'; font-size: 11px; cursor: pointer; width: 100%; font-weight: bold; }
-  .status-tag { font-family: 'IBM Plex Mono'; font-size: 10px; color: var(--accent); margin-top: 10px; display: block; }
+  .btn-action { background: var(--ink); color: #fff; border: none; padding: 12px; font-family: 'IBM Plex Mono'; font-size: 11px; cursor: pointer; width: 100%; font-weight: bold; letter-spacing: 1px; }
+  .status-bar { font-family: 'IBM Plex Mono'; font-size: 10px; padding: 8px 25px; background: var(--ink); color: #fff; display: flex; justify-content: space-between; }
   
-  input[type="password"] { width: 100%; padding: 8px; font-size: 11px; border: 1px solid var(--rule); margin-bottom: 5px; }
-  .reader-title { font-family: 'Playfair Display', serif; font-size: 36px; margin-bottom: 20px; border-bottom: 3px double var(--ink); padding-bottom: 10px; }
+  input[type="password"] { width: 100%; padding: 10px; font-size: 12px; border: 1px solid var(--rule); margin-bottom: 8px; }
+  .reader-title { font-family: 'Playfair Display', serif; font-size: 38px; margin-bottom: 25px; line-height: 1.1; }
   .reader-text { font-size: 19px; line-height: 1.8; color: #222; }
 
-  .analyst-box { background: var(--paper); border-left: 5px solid var(--accent); padding: 25px; margin-top: 40px; box-shadow: 0 4px 15px rgba(0,0,0,0.05); }
-  .analyst-box h3 { font-family: 'Playfair Display', serif; margin-bottom: 15px; }
+  .analyst-box { background: var(--paper); border-left: 6px solid var(--accent); padding: 30px; margin-top: 40px; }
+  .error-box { background: #fff0f0; border: 1px solid var(--red); padding: 20px; margin-top: 20px; border-radius: 4px; }
 </style>
 </head>
 <body>
@@ -43,129 +43,149 @@
 <div class="terminal-grid">
   <aside class="wire-panel">
     <div class="wire-header">
-        <div style="font-family: 'IBM Plex Mono'; font-size: 10px; letter-spacing: 2px; margin-bottom: 15px;">PULSE: BUSINESSLINE</div>
-        <input type="password" id="api-key" placeholder="Enter Gemini API Key">
-        <button class="btn-action" onclick="saveKey()">SAVE KEY & REFRESH</button>
-        <span id="sys-status" class="status-tag">Status: Initializing...</span>
+        <div style="font-family: 'IBM Plex Mono'; font-size: 10px; letter-spacing: 3px; margin-bottom: 15px; font-weight: bold;">WIRE: BUSINESSLINE</div>
+        <input type="password" id="api-key" placeholder="Enter Gemini Key">
+        <button class="btn-action" onclick="saveKey()">ACTIVATE TERMINAL</button>
     </div>
     <div class="wire-scroll" id="wire-list">
-        <p style="font-size:12px; color:#7a7468;">Waiting for feed data...</p>
+        <p style="font-size:12px; color:#7a7468; text-align:center; margin-top:20px;">Initialize system to load news...</p>
     </div>
   </aside>
 
   <main class="reader-panel">
     <div class="reader-inner" id="reader-view">
-        <h1 class="reader-title">Terminal Ready</h1>
-        <p class="reader-text">Select a report from the Left Wire to begin your ad-free analysis.</p>
+        <h1 class="reader-title">Terminal Standby</h1>
+        <p class="reader-text">System is ready. Select a report from the wire to bypass firewalls and begin deep research.</p>
     </div>
     <div class="reader-inner" id="analysis-view"></div>
   </main>
 </div>
 
+<div class="status-bar">
+    <span id="sys-status">STATUS: STANDBY</span>
+    <span id="sys-time">MONDAY PRE-MARKET</span>
+</div>
+
 <script>
 const MODEL_ID = "gemini-3.1-flash-lite-preview";
-const FEED_URL = "https://www.thehindubusinessline.com/feeder/default.rss";
-let currentText = "";
+const RSS_FEED = "https://www.thehindubusinessline.com/feeder/default.rss";
+let activeText = "";
 
 window.onload = () => {
-    const savedKey = localStorage.getItem('gemini_key');
-    if(savedKey) {
-        document.getElementById('api-key').value = savedKey;
-        fetchRSS();
-    } else {
-        document.getElementById('sys-status').textContent = "Status: ⚠️ Key Missing";
+    const key = localStorage.getItem('gemini_key');
+    if(key) {
+        document.getElementById('api-key').value = key;
+        fetchNews();
     }
+    setInterval(() => { document.getElementById('sys-time').textContent = new Date().toLocaleTimeString(); }, 1000);
 };
 
 function saveKey() {
-    const val = document.getElementById('api-key').value.trim();
-    if(val) {
-        localStorage.setItem('gemini_key', val);
-        location.reload();
-    }
+    const k = document.getElementById('api-key').value.trim();
+    if(k) { localStorage.setItem('gemini_key', k); location.reload(); }
 }
 
-async function fetchRSS() {
-    const list = document.getElementById('wire-list');
+async function fetchNews() {
     const status = document.getElementById('sys-status');
-    status.textContent = "Status: 🔍 Fetching RSS Wire...";
-
+    const list = document.getElementById('wire-list');
+    status.textContent = "STATUS: 🔍 SCANNING WIRE...";
+    
     try {
-        const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(FEED_URL)}&t=${Date.now()}`);
+        // Primary RSS Proxy
+        const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(RSS_FEED)}&t=${Date.now()}`);
         const data = await res.json();
         
-        if(!data.items || data.items.length === 0) throw new Error("Empty Feed");
+        if(!data.items) throw new Error("Feed Access Denied");
 
         list.innerHTML = "";
-        data.items.slice(0, 10).forEach(item => {
-            const time = new Date(item.pubDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        data.items.slice(0, 12).forEach(item => {
             list.innerHTML += `
-                <div class="headline-card" onclick="loadContent('${item.link}', '${item.title.replace(/'/g, "\\'")}')">
-                    <span>${time} | HINDU BUSINESSLINE</span>
+                <div class="headline-card" onclick="openStealth('${item.link}', '${item.title.replace(/'/g, "\\'")}')">
+                    <span>${new Date(item.pubDate).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})} | BUSINESSLINE</span>
                     <h4>${item.title}</h4>
                 </div>`;
         });
-        status.textContent = "Status: ✅ Wire Active";
+        status.textContent = "STATUS: ✅ WIRE ACTIVE";
     } catch (e) {
-        status.textContent = "Status: ❌ RSS Fail: " + e.message;
-        list.innerHTML = `<p style="font-size:12px; color:red">Failed to load BusinessLine. Check connection or Proxy status.</p>`;
+        status.textContent = "STATUS: ❌ RSS BLOCKED";
+        list.innerHTML = `<button class="btn-action" onclick="fetchNews()">RETRY CONNECTION</button>`;
     }
 }
 
-async function loadContent(link, title) {
+async function openStealth(link, title) {
     const reader = document.getElementById('reader-view');
     const analysis = document.getElementById('analysis-view');
     const status = document.getElementById('sys-status');
-
+    
     analysis.innerHTML = "";
-    reader.innerHTML = `<h1 class="reader-title">${title}</h1><p class="reader-text"><i>✨ Generating Clean Reader view...</i></p>`;
-    status.textContent = "Status: ⚡ Cleaning Page...";
+    reader.innerHTML = `<h1 class="reader-title">${title}</h1><p class="reader-text"><i>⚡ Engaging Stealth Reader (Bypassing Firewalls)...</i></p>`;
+    status.textContent = "STATUS: 🔓 BYPASSING...";
 
-    try {
-        const res = await fetch(`https://r.jina.ai/${link}`);
-        const text = await res.text();
+    // PROXY ROTATION STRATEGY
+    const stealthRoutes = [
+        `https://r.jina.ai/${link}`,
+        `https://api.allorigins.win/get?url=${encodeURIComponent(link)}`,
+        `https://corsproxy.io/?${encodeURIComponent(link)}`
+    ];
 
-        if(text.includes("403 Forbidden") || text.includes("451") || text.length < 500) {
-            throw new Error("Firewall block detected.");
-        }
+    for (let route of stealthRoutes) {
+        try {
+            const res = await fetch(route);
+            let rawData = "";
+            
+            if(route.includes("allorigins")) {
+                const json = await res.json();
+                rawData = json.contents;
+            } else {
+                rawData = await res.text();
+            }
 
-        currentText = text.slice(0, 8000);
-        reader.innerHTML = `<h1 class="reader-title">${title}</h1><div class="reader-text">${currentText.replace(/\n/g, '<br>')}</div>`;
-        triggerAI(title);
-    } catch (e) {
-        reader.innerHTML = `
-            <h1 class="reader-title">${title}</h1>
-            <div style="background:#fff0f0; border:1px dashed red; padding:20px; font-size:14px;">
-                <b>FIREWALL BLOCK:</b> The newspaper is blocking the automated reader.<br><br>
-                1. <a href="${link}" target="_blank" style="color:var(--accent); font-weight:bold;">Open the original article here</a><br>
-                2. Copy the text content.<br>
-                3. Paste it here to start the Analyst report:
-            </div>
-            <textarea id="manual-box" style="width:100%; height:150px; margin-top:15px; padding:10px;" placeholder="Paste text here..."></textarea>
-            <button class="btn-action" style="margin-top:10px;" onclick="processManual('${title}')">PROCESS MANUALLY</button>
-        `;
-        status.textContent = "Status: ⚠️ Blocked / Manual Mode";
+            // Validation
+            if(rawData.includes("403 Forbidden") || rawData.includes("451") || rawData.length < 600) continue;
+
+            // Success!
+            const doc = new DOMParser().parseFromString(rawData, 'text/html');
+            activeText = (doc.body.innerText || rawData).replace(/\s\s+/g, ' ').slice(0, 7000);
+            
+            reader.innerHTML = `<h1 class="reader-title">${title}</h1><div class="reader-text">${activeText.replace(/\n/g, '<br>')}</div>`;
+            runAI(title);
+            return; // Exit loop on success
+        } catch (e) { console.warn("Route failed: " + route); }
     }
+
+    // ALL ROUTES FAILED: FALLBACK TO MANUAL
+    status.textContent = "STATUS: ⚠️ STEALTH FAILED";
+    reader.innerHTML = `
+        <h1 class="reader-title">${title}</h1>
+        <div class="error-box">
+            <b>SECURITY ARMS RACE:</b> BusinessLine is aggressively blocking automated readers this morning.<br><br>
+            1. <a href="${link}" target="_blank" style="color:var(--accent); font-weight:bold;">Open Source Article ↗</a><br>
+            2. Copy the text content.<br>
+            3. Paste it below to generate the Analyst Report.
+        </div>
+        <textarea id="manual-input" style="width:100%; height:150px; margin-top:20px; padding:15px;" placeholder="Paste text here..."></textarea>
+        <button class="btn-action" style="margin-top:10px;" onclick="manualStart('${title}')">MANUAL ANALYZE</button>
+    `;
 }
 
-function processManual(title) {
-    const val = document.getElementById('manual-box').value.trim();
+function manualStart(title) {
+    const val = document.getElementById('manual-input').value;
     if(val) {
-        currentText = val;
+        activeText = val;
         document.getElementById('reader-view').innerHTML = `<h1 class="reader-title">${title}</h1><div class="reader-text">${val.replace(/\n/g, '<br>')}</div>`;
-        triggerAI(title);
+        runAI(title);
     }
 }
 
-async function triggerAI(title) {
+async function runAI(title) {
     const analysis = document.getElementById('analysis-view');
     const status = document.getElementById('sys-status');
     const key = localStorage.getItem('gemini_key');
+    
+    analysis.innerHTML = `<div class="analyst-box"><h3>📊 Analyst Intelligence</h3><p>Synthesizing research...</p></div>`;
+    status.textContent = "STATUS: 🤖 AI ANALYZING...";
 
-    analysis.innerHTML = `<div class="analyst-box"><h3>📊 Analyst Intelligence</h3><p>Synthesizing market context...</p></div>`;
-    status.textContent = "Status: 🤖 AI Analyzing...";
-
-    const prompt = `Act as a senior Research Analyst. Based on this text, provide a Deep Dive report with plain bold headers (CORE:, BACKGROUND:, SEQUENCE:, INVESTOR VIEW:). No brackets. Article: ${currentText}`;
+    const prompt = `Act as a senior Research Analyst. Based on this text, provide a Deep Dive report with plain bold headers (CORE:, BACKGROUND:, SEQUENCE:, INVESTOR VIEW:). No brackets. Article: ${activeText}`;
 
     try {
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${key}`;
@@ -176,12 +196,12 @@ async function triggerAI(title) {
         analysis.innerHTML = `
             <div class="analyst-box">
                 <h3>📊 Analyst Intelligence</h3>
-                <div style="font-size:16px; color:#333;">${report.replace(/[\[\]{}"]/g, '').replace(/\n/g, '<br>')}</div>
+                <div style="font-size:17px; color:#333; line-height:1.7;">${report.replace(/[\[\]{}"]/g, '').replace(/\n/g, '<br>')}</div>
             </div>`;
-        status.textContent = "Status: ✅ Analysis Complete";
+        status.textContent = "STATUS: ✅ RESEARCH READY";
     } catch (e) {
-        analysis.innerHTML = `<div class="analyst-box" style="color:red">AI Error: ${e.message}</div>`;
-        status.textContent = "Status: ❌ AI Error";
+        status.textContent = "STATUS: ❌ AI FAIL";
+        analysis.innerHTML = `<div class="error-box">AI Error: ${e.message}</div>`;
     }
 }
 </script>
