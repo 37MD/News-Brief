@@ -1,591 +1,225 @@
-DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gemini Pulse — Intelligence Feed</title>
+<title>Gemini Pulse Research</title>
+<link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkdlbWluaSBGaW5hbmNlIFB1bHNlIiwKICAic2hvcnRfbmFtZSI6ICJHZW1pbmkgTmV3cyIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjZjVmMGV4IiwKICAidGhlbWVfY29sb3IiOiAiIzFhNWMzYSIsCiAgImljb25zIjogW3sgInNyYyI6ICJodHRwczovL2Nkbi1pY29ucy1wbmcuZmxhdGljb24uY29tLzUxMi8yNzg5LzI3ODkyNTkucG5nIiwgInNpemVzIjogIjUxMng1MTIiLCAidHlwZSI6ICJpbWFnZS9wbmciIH1dCn0=">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-  :root {
-    --ink: #1a1a18;
-    --paper: #f5f0e8;
-    --paper2: #ede8de;
-    --accent: #1a5c3a;
-    --amber: #b45309;
-    --rule: #c8c0b0;
-    --muted: #7a7468;
-    --red: #c0392b;
-  }
+  :root { --ink: #1a1a18; --paper: #f5f0e8; --paper2: #ede8de; --accent: #1a5c3a; --rule: #c8c0b0; --muted: #7a7468; }
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--paper); color: var(--ink); font-family: 'IBM Plex Sans', sans-serif; min-height: 100vh; }
+  body { background: var(--paper); color: var(--ink); font-family: 'IBM Plex Sans', sans-serif; min-height: 100vh; line-height: 1.6; }
+  .masthead { border-bottom: 3px double var(--ink); padding: 30px 20px; text-align: center; background: var(--paper); }
+  .masthead-title { font-family: 'Playfair Display', serif; font-size: clamp(32px, 5vw, 56px); font-weight: 700; }
+  .tagline { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-top: 8px; }
+  .container { max-width: 800px; margin: 0 auto; padding: 20px 20px 80px; }
+  .setup-box { background: var(--paper2); padding: 20px; border: 1px solid var(--rule); margin-bottom: 30px; border-radius: 4px; }
+  input, button, textarea { font-family: 'IBM Plex Mono', monospace; padding: 12px; border: 1px solid var(--rule); font-size: 13px; }
+  .btn-main { background: var(--ink); color: white; cursor: pointer; width: 100%; font-weight: bold; text-transform: uppercase; border: none; letter-spacing: 1px; padding: 15px; }
+  #status { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); text-align: center; margin: 20px 0; padding: 10px; border: 1px dashed var(--rule); background: #fff; }
+  .section { margin-bottom: 40px; border-bottom: 1px solid var(--rule); padding-bottom: 25px; }
+  .section h2 { font-family: 'Playfair Display', serif; color: var(--accent); font-size: 26px; margin-bottom: 12px; }
+  .section p { font-size: 18px; color: #222; margin-bottom: 15px; line-height: 1.7; }
+  .btn-row { display: flex; gap: 10px; margin-top: 15px; }
+  .action-btn { font-size: 10px; background: white; border: 1px solid var(--accent); color: var(--accent); cursor: pointer; padding: 8px 16px; border-radius: 4px; font-weight: bold; text-transform: uppercase; }
 
-  /* ── Masthead ── */
-  .masthead { border-bottom: 3px double var(--ink); padding: 24px 20px 14px; text-align: center; }
-  .masthead-title { font-family: 'Playfair Display', serif; font-size: clamp(28px, 6vw, 54px); font-weight: 700; letter-spacing: -1px; }
-  .masthead-row { display: flex; justify-content: space-between; align-items: center; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--rule); flex-wrap: wrap; gap: 4px; }
-  .tagline { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--muted); }
+  /* Deep Dive UI */
+  .detail-box { background: white; padding: 25px; border-left: 6px solid var(--accent); margin-top: 20px; display: none; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); line-height: 1.7; }
+  .detail-box h3 { margin-bottom: 15px; color: var(--accent); border-bottom: 1px solid #eee; padding-bottom: 8px; font-family: 'Playfair Display', serif; font-size: 22px; }
+  
+  .research-tools { background: #f9f9f7; padding: 15px; border-radius: 4px; border: 1px solid #eee; margin-bottom: 20px; }
+  textarea.article-input { width: 100%; height: 100px; margin: 10px 0; font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; border: 1px solid var(--rule); padding: 10px; resize: vertical; }
 
-  /* ── Setup ── */
-  .setup-box { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; background: var(--paper2); padding: 12px 20px; border-bottom: 1px solid var(--rule); }
-  .setup-box label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); white-space: nowrap; }
-  .setup-box input { font-family: 'IBM Plex Mono', monospace; padding: 8px 12px; border: 1px solid var(--rule); font-size: 12px; flex: 1; min-width: 200px; background: white; }
-
-  /* ── Toolbar ── */
-  .toolbar { background: var(--ink); padding: 10px 16px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
-  .tb-btn { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.08em; padding: 7px 13px; border: 1px solid rgba(255,255,255,0.25); background: transparent; color: white; cursor: pointer; border-radius: 2px; transition: background 0.15s, border-color 0.15s; white-space: nowrap; }
-  .tb-btn:hover { background: rgba(255,255,255,0.12); }
-  .tb-btn.green { background: var(--accent); border-color: var(--accent); }
-  .tb-btn.green:hover { background: #155230; }
-  .tb-btn.danger { border-color: #e74c3c; color: #e74c3c; }
-  .tb-btn.danger:hover { background: #e74c3c; color: white; }
-  .tb-spacer { flex: 1; }
-  #read-count { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: rgba(255,255,255,0.35); }
-
-  /* ── Status bar ── */
-  #status { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); text-align: center; padding: 11px 20px; border-bottom: 1px solid var(--rule); background: #fff; min-height: 41px; line-height: 1.5; }
-
-  /* ── Sources Panel ── */
-  .sources-panel { display: none; background: var(--paper2); border-bottom: 1px solid var(--rule); padding: 16px 20px; }
-  .sources-panel h3 { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 12px; }
-  .source-item { display: flex; align-items: center; gap: 10px; padding: 7px 0; border-bottom: 1px solid var(--rule); }
-  .source-item:last-child { border-bottom: none; }
-  .source-item label { font-size: 13px; flex: 1; cursor: pointer; }
-  .source-item label span { font-size: 11px; color: var(--muted); }
-  .sbadge { font-family: 'IBM Plex Mono', monospace; font-size: 9px; padding: 2px 7px; border-radius: 2px; font-weight: 500; }
-  .rm-src { font-size: 12px; background: none; border: none; cursor: pointer; color: var(--muted); padding: 2px 6px; }
-  .rm-src:hover { color: var(--red); }
-  .add-src-row { display: flex; gap: 8px; margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--rule); flex-wrap: wrap; }
-  .add-src-row input { font-family: 'IBM Plex Mono', monospace; font-size: 12px; padding: 8px 10px; border: 1px solid var(--rule); background: white; flex: 1; min-width: 140px; }
-
-  /* ── Feed ── */
-  .feed { max-width: 740px; margin: 0 auto; padding: 20px 16px 80px; }
-  .feed-header { display: none; align-items: baseline; gap: 12px; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 2px solid var(--ink); }
-  .feed-header h2 { font-family: 'Playfair Display', serif; font-size: 22px; }
-  #article-count { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); }
-
-  /* ── Article Card ── */
-  .article-card { border-bottom: 1px solid var(--rule); padding: 18px 0; animation: fadeIn 0.3s ease both; }
-  .card-meta { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; flex-wrap: wrap; }
-  .src-badge { font-family: 'IBM Plex Mono', monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 0.08em; padding: 2px 8px; border-radius: 2px; }
-  .card-time { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); }
-  .card-title { font-family: 'Playfair Display', serif; font-size: 20px; line-height: 1.35; margin-bottom: 6px; }
-  .card-snippet { font-size: 13px; color: var(--muted); line-height: 1.6; margin-bottom: 10px; }
-  .card-actions { display: flex; gap: 6px; flex-wrap: wrap; }
-  .ca-btn { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.06em; padding: 6px 13px; border-radius: 2px; cursor: pointer; border: 1px solid; background: transparent; transition: all 0.15s; }
-  .ca-btn.br { border-color: var(--muted); color: var(--muted); }
-  .ca-btn.br:hover { border-color: var(--ink); color: var(--ink); background: var(--paper2); }
-  .ca-btn.rd { border-color: var(--accent); color: var(--accent); }
-  .ca-btn.rd:hover { background: var(--accent); color: white; }
-  .ca-btn.ch { border-color: var(--amber); color: var(--amber); }
-  .ca-btn.ch:hover { background: var(--amber); color: white; }
-  .ca-btn.sm { font-size: 9px; padding: 4px 9px; }
-
-  /* ── Expand Panels ── */
-  .reader-panel { display: none; margin-top: 14px; border-left: 4px solid var(--accent); padding: 16px 18px; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.07); }
-  .chat-panel { display: none; margin-top: 10px; border-left: 4px solid var(--amber); padding: 14px 16px; background: #fffdf7; box-shadow: 0 2px 10px rgba(0,0,0,0.06); }
-  .panel-label { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; }
-
-  /* ── Reader ── */
-  .reader-content { font-size: 15px; line-height: 1.78; color: #2a2a26; }
-  .reader-content p { margin-bottom: 13px; }
-
-  /* ── Chat ── */
-  .chat-history { max-height: 260px; overflow-y: auto; margin-bottom: 12px; }
-  .chat-msg { padding: 8px 12px; border-radius: 3px; margin-bottom: 8px; font-size: 13px; line-height: 1.55; }
-  .u-msg { background: var(--paper2); border-left: 3px solid var(--muted); }
-  .a-msg { background: #fdf8f0; border-left: 3px solid var(--amber); }
-  .a-msg b { color: var(--amber); }
-  .chat-row { display: flex; gap: 8px; }
-  .chat-row input { flex: 1; font-family: 'IBM Plex Sans', sans-serif; font-size: 13px; padding: 9px 12px; border: 1px solid var(--rule); border-radius: 2px; background: white; }
-  .chat-row button { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; padding: 0 16px; background: var(--amber); color: white; border: none; border-radius: 2px; cursor: pointer; white-space: nowrap; }
-
-  /* ── Empty / Digest Modal ── */
-  .empty-state { text-align: center; padding: 60px 20px; }
-  .empty-state .icon { font-size: 38px; margin-bottom: 14px; }
-  .empty-state p { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); line-height: 1.8; }
-  .digest-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.72); z-index: 999; display: flex; align-items: center; justify-content: center; padding: 20px; }
-  .digest-box { background: var(--paper); max-width: 620px; width: 100%; padding: 28px; max-height: 82vh; overflow-y: auto; border-top: 4px solid var(--accent); }
-  .digest-box h2 { font-family: 'Playfair Display', serif; font-size: 24px; margin-bottom: 16px; }
-  .digest-body { font-size: 14px; line-height: 1.8; }
-  .digest-close { background: none; border: 1px solid var(--rule); padding: 6px 14px; cursor: pointer; font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; }
-
-  /* ── Animations ── */
-  @keyframes fadeIn  { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
-  @keyframes fadeOut { from { opacity:1; transform:translateX(0);   } to { opacity:0; transform:translateX(20px); } }
-
-  /* ── Badge palette ── */
-  .b0 { background:#1a5c3a1a; color:#1a5c3a; }
-  .b1 { background:#1a3c5c1a; color:#1a3c5c; }
-  .b2 { background:#5c1a3a1a; color:#5c1a3a; }
-  .b3 { background:#7a4a001a; color:#7a4a00; }
-  .b4 { background:#3a1a5c1a; color:#3a1a5c; }
-  .b5 { background:#1a5c5c1a; color:#1a5c5c; }
+  .chat-area { margin-top: 25px; border-top: 1px solid #eee; padding-top: 20px; }
+  .chat-history { font-size: 14px; margin-bottom: 15px; max-height: 300px; overflow-y: auto; border-bottom: 1px solid #f0f0f0; }
+  .chat-msg { margin-bottom: 10px; padding: 8px 12px; border-radius: 6px; }
+  .user-msg { background: var(--paper2); color: var(--ink); border-left: 3px solid var(--muted); }
+  .ai-msg { background: #f0f7f2; color: var(--accent); border-left: 3px solid var(--accent); }
+  
+  .chat-input-row { display: flex; gap: 8px; }
+  .chat-input { flex: 1; padding: 10px; border: 1px solid var(--rule); border-radius: 4px; font-size: 14px; }
+  .chat-send { background: var(--accent); color: white; border: none; padding: 0 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
 </style>
 </head>
 <body>
 
-<!-- ─── Masthead ─────────────────────────────────────────────── -->
 <div class="masthead">
-  <div class="masthead-title">Gemini Pulse</div>
-  <div class="masthead-row">
-    <div class="tagline" id="header-date"></div>
-    <div class="tagline">Financial Intelligence Terminal</div>
-    <div class="tagline" id="unread-info">No articles loaded</div>
+    <div class="tagline" id="header-date">Financial Intelligence Terminal</div>
+    <div class="masthead-title">Gemini Pulse</div>
+    <div class="tagline" id="last-update">System Online</div>
+</div>
+
+<div class="container">
+  <div id="setup" class="setup-box">
+    <input type="password" id="api-key" placeholder="AI Studio API Key" style="width: 70%">
+    <button onclick="saveKey()">Save Key</button>
   </div>
+
+  <button class="btn-main" onclick="runBriefing()">Pull New Intelligence</button>
+  <div id="status">System Ready</div>
+  <div id="briefing-output"></div>
 </div>
 
-<!-- ─── API Key Setup ─────────────────────────────────────────── -->
-<div class="setup-box" id="setup">
-  <label>Gemini API Key:</label>
-  <input type="password" id="api-key" placeholder="Paste your Google AI Studio key here…">
-  <button class="tb-btn green" onclick="saveKey()">Save & Hide</button>
-  <button class="tb-btn" onclick="document.getElementById('setup').style.display='none'">Dismiss</button>
-</div>
-
-<!-- ─── Toolbar ──────────────────────────────────────────────── -->
-<div class="toolbar">
-  <button class="tb-btn green" onclick="loadFeeds()">↻ Fetch New</button>
-  <button class="tb-btn" onclick="toggleSources()">⚙ Sources</button>
-  <button class="tb-btn" onclick="runAIDigest()">✦ AI Digest</button>
-  <div class="tb-spacer"></div>
-  <span id="read-count"></span>
-  <button class="tb-btn" onclick="document.getElementById('setup').style.display='flex'" style="border-color:rgba(255,255,255,0.15)">🔑 Key</button>
-  <button class="tb-btn danger" onclick="clearHistory()">✕ Clear History</button>
-</div>
-
-<!-- ─── Sources Panel ─────────────────────────────────────────── -->
-<div class="sources-panel" id="sources-panel">
-  <h3>RSS Feed Sources — Toggle to Enable / Disable</h3>
-  <div id="sources-list"></div>
-  <div class="add-src-row">
-    <input type="text" id="new-src-name" placeholder="Source name…">
-    <input type="text" id="new-src-url"  placeholder="RSS feed URL…">
-    <button class="tb-btn green" onclick="addSource()" style="background:var(--accent)">+ Add Feed</button>
-  </div>
-</div>
-
-<!-- ─── Status ───────────────────────────────────────────────── -->
-<div id="status">System Ready — press Fetch New to load your feed</div>
-
-<!-- ─── Feed ─────────────────────────────────────────────────── -->
-<div class="feed">
-  <div class="feed-header" id="feed-header">
-    <h2>Latest Intelligence</h2>
-    <span id="article-count"></span>
-  </div>
-  <div id="articles-container">
-    <div class="empty-state">
-      <div class="icon">📡</div>
-      <p>Press <b>Fetch New</b> to load your intelligence feed.<br>Articles disappear once you read or open them.</p>
-    </div>
-  </div>
-</div>
-
-<!-- ─── Script ───────────────────────────────────────────────── -->
 <script>
-// ── Config ──────────────────────────────────────────────────────────────────
-const MODEL_ID = "gemini-1.5-flash-latest";
+const MODEL_ID = "gemini-3.1-flash-lite-preview"; 
+const FEED_URLS = ['https://pulse.zerodha.com/feed.php', 'https://economictimes.indiatimes.com/rssfeedsdefault.cms', 'https://www.livemint.com/rss/markets', 'https://www.moneycontrol.com/rss/MCtopnews.xml'];
+let articleContexts = {}; 
 
-const DEFAULT_SOURCES = [
-  { name: 'Zerodha Pulse',     url: 'https://pulse.zerodha.com/feed.php',                               category: 'Markets',  enabled: true },
-  { name: 'Economic Times',    url: 'https://economictimes.indiatimes.com/rssfeedsdefault.cms',          category: 'Business', enabled: true },
-  { name: 'Livemint Markets',  url: 'https://www.livemint.com/rss/markets',                             category: 'Markets',  enabled: true },
-  { name: 'Moneycontrol',      url: 'https://www.moneycontrol.com/rss/MCtopnews.xml',                   category: 'Business', enabled: true },
-  { name: 'BusinessLine',      url: 'https://www.thehindubusinessline.com/feeder/default.rss',          category: 'Business', enabled: true },
-  { name: 'NDTV Business',     url: 'https://feeds.feedburner.com/ndtvprofit-latest',                   category: 'Business', enabled: false },
-  { name: 'Financial Express', url: 'https://www.financialexpress.com/feed/',                           category: 'Markets',  enabled: false },
-];
+function saveKey() { localStorage.setItem('gemini_key', document.getElementById('api-key').value.trim()); document.getElementById('setup').style.display = 'none'; }
+window.onload = () => { if(localStorage.getItem('gemini_key')) document.getElementById('setup').style.display = 'none'; document.getElementById('header-date').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' }); };
 
-// ── State ────────────────────────────────────────────────────────────────────
-let viewedSet   = new Set(JSON.parse(localStorage.getItem('viewed_v3') || '[]'));
-let sources     = JSON.parse(localStorage.getItem('sources_v3') || 'null') || DEFAULT_SOURCES;
-let articleStore   = {};   // id → article
-let articleContent = {};   // id → full text (after reader mode)
-let chatHistories  = {};   // id → [{role,text}]
-let aidx = 0;
-
-// ── Init ─────────────────────────────────────────────────────────────────────
-window.onload = () => {
-  if (localStorage.getItem('gemini_key')) document.getElementById('setup').style.display = 'none';
-  document.getElementById('header-date').textContent =
-    new Date().toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long', year:'numeric' });
-  renderSources();
-  updateCounts();
-};
-
-function saveKey() {
-  const k = document.getElementById('api-key').value.trim();
-  if (!k) return;
-  localStorage.setItem('gemini_key', k);
-  document.getElementById('setup').style.display = 'none';
-}
-
-function updateCounts() {
-  document.getElementById('read-count').textContent = `${viewedSet.size} read`;
-  const n = Object.keys(articleStore).length;
-  document.getElementById('unread-info').textContent = n ? `${n} unread` : 'All caught up';
-}
-
-function clearHistory() {
-  if (!confirm('Clear read history? Previously seen articles will reappear on next fetch.')) return;
-  viewedSet.clear();
-  localStorage.removeItem('viewed_v3');
-  updateCounts();
-  setStatus('✓ Read history cleared. Press Fetch New.');
-}
-
-// ── Sources ──────────────────────────────────────────────────────────────────
-function toggleSources() {
-  const p = document.getElementById('sources-panel');
-  p.style.display = p.style.display === 'none' ? 'block' : 'none';
-}
-
-function renderSources() {
-  document.getElementById('sources-list').innerHTML = sources.map((s, i) => `
-    <div class="source-item">
-      <input type="checkbox" id="sc${i}" ${s.enabled ? 'checked' : ''} onchange="toggleSrc(${i})">
-      <label for="sc${i}">
-        <b>${escHtml(s.name)}</b>
-        <span> — ${escHtml(s.url.slice(0, 60))}${s.url.length > 60 ? '…' : ''}</span>
-      </label>
-      <span class="sbadge b${i%6}">${s.category}</span>
-      <button class="rm-src" onclick="removeSrc(${i})" title="Remove">✕</button>
-    </div>`).join('');
-}
-
-function toggleSrc(i) {
-  sources[i].enabled = !sources[i].enabled;
-  localStorage.setItem('sources_v3', JSON.stringify(sources));
-}
-
-function removeSrc(i) {
-  sources.splice(i, 1);
-  localStorage.setItem('sources_v3', JSON.stringify(sources));
-  renderSources();
-}
-
-function addSource() {
-  const name = document.getElementById('new-src-name').value.trim();
-  const url  = document.getElementById('new-src-url').value.trim();
-  if (!name || !url) return alert('Enter both source name and RSS URL.');
-  sources.push({ name, url, category: 'Custom', enabled: true });
-  localStorage.setItem('sources_v3', JSON.stringify(sources));
-  renderSources();
-  document.getElementById('new-src-name').value = '';
-  document.getElementById('new-src-url').value  = '';
-}
-
-// ── Feed Loading ──────────────────────────────────────────────────────────────
-async function loadFeeds() {
-  const enabled = sources.filter(s => s.enabled);
-  if (!enabled.length) return setStatus('⚠ Enable at least one source under ⚙ Sources.');
-
-  setStatus(`🔍 Scanning ${enabled.length} sources…`);
-  articleStore = {}; articleContent = {}; chatHistories = {}; aidx = 0;
-
+async function runBriefing(forceAll = false) {
+  const apiKey = localStorage.getItem('gemini_key');
+  if(!apiKey) return alert("Save API Key first");
+  const status = document.getElementById('status');
+  const lastTimestamp = forceAll ? (Date.now() - 24*60*60*1000) : parseInt(localStorage.getItem('last_timestamp') || "0");
+  status.innerHTML = "🔍 Scanning Financial Feeds...";
+  let allArticles = [];
   const seen = new Set();
-  const all  = [];
-
-  for (let i = 0; i < enabled.length; i++) {
-    const src = enabled[i];
-    setStatus(`🔍 Fetching ${src.name}… (${i+1} / ${enabled.length})`);
+  for (const url of FEED_URLS) {
     try {
-      const r = await fetch(
-        `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(src.url)}&count=25&t=${Date.now()}`
-      );
-      const d = await r.json();
-      if (d.status === 'ok' && d.items) {
-        d.items.forEach(item => {
-          const key = item.title.toLowerCase().trim().slice(0, 60);
-          if (!seen.has(key) && !viewedSet.has(item.link)) {
-            seen.add(key);
-            all.push({
-              title:       item.title,
-              desc:        (item.description || '').replace(/<[^>]+>/g, '').slice(0, 220),
-              link:        item.link,
-              source:      src.name,
-              srcIdx:      sources.indexOf(src),
-              time:        new Date(item.pubDate).getTime(),
-            });
+      const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}&t=${Date.now()}`);
+      const data = await res.json();
+      if(data.status === 'ok' && data.items) {
+        data.items.forEach(item => {
+          const pubTime = new Date(item.pubDate).getTime();
+          const titleKey = item.title.toLowerCase().trim().slice(0, 50);
+          if (pubTime > lastTimestamp && !seen.has(titleKey)) {
+            seen.add(titleKey);
+            allArticles.push({ title: item.title, desc: item.description.replace(/<[^>]+>/g, '').slice(0, 250), link: item.link, time: pubTime });
           }
         });
       }
-    } catch (e) { console.warn(src.name, e); }
+    } catch (e) { console.error(e); }
   }
-
-  all.sort((a, b) => b.time - a.time);
-
-  if (!all.length) {
-    setStatus(`☕ No new articles. All caught up! &nbsp;<button onclick="clearHistory();loadFeeds();" class="tb-btn" style="font-size:10px">Reset & Reload</button>`);
-    document.getElementById('articles-container').innerHTML =
-      `<div class="empty-state"><div class="icon">✅</div><p>You've read everything in your feed.<br>Clear history to reload all articles.</p></div>`;
-    document.getElementById('feed-header').style.display = 'none';
-    return;
-  }
-
-  all.forEach(a => { const id = `a${aidx++}`; articleStore[id] = a; });
-  renderArticles();
-  setStatus(`✅ ${all.length} new articles loaded. Opening an article removes it from the feed.`);
-  updateCounts();
+  if (allArticles.length === 0) { status.innerHTML = "☕ No new developments. <button onclick='runBriefing(true)' style='font-size:10px; cursor:pointer; background:none; border:none; text-decoration:underline; color:var(--accent)'>Force Scan (24h)</button>"; return; }
+  status.textContent = `🤖 Gemini is analyzing ${allArticles.length} events...`;
+  try {
+    const prompt = `Return ONLY JSON format: {"themes": [{"title": "Theme", "summary": "3-sentence text"}]}. NEWS: ${JSON.stringify(allArticles)}`;
+    const rawResponse = await callGemini(prompt, apiKey);
+    const briefingData = JSON.parse(rawResponse.replace(/```json|```/g, "").trim());
+    renderBriefing(briefingData, allArticles);
+    localStorage.setItem('last_timestamp', Math.max(...allArticles.map(a => a.time)).toString());
+    status.textContent = "✅ Intelligence Ready.";
+  } catch (err) { status.innerHTML = "❌ AI Error: " + err.message; }
 }
 
-// ── Render Cards ──────────────────────────────────────────────────────────────
-function renderArticles() {
-  const ids = Object.keys(articleStore);
-  document.getElementById('feed-header').style.display = 'flex';
-  document.getElementById('article-count').textContent = `${ids.length} articles`;
-
-  document.getElementById('articles-container').innerHTML = ids.map((id, n) => {
-    const a = articleStore[id];
-    return `
-    <div class="article-card" id="card-${id}" style="animation-delay:${Math.min(n*0.04,0.6)}s">
-      <div class="card-meta">
-        <span class="src-badge b${a.srcIdx%6}">${escHtml(a.source)}</span>
-        <span class="card-time">${fmtTime(a.time)}</span>
-      </div>
-      <div class="card-title">${escHtml(a.title)}</div>
-      ${a.desc ? `<div class="card-snippet">${escHtml(a.desc)}</div>` : ''}
-      <div class="card-actions" id="actions-${id}">
-        <button class="ca-btn br" onclick="openBrowser('${id}')">🌐 Open in Browser</button>
-        <button class="ca-btn rd" onclick="openReader('${id}')">📖 Read Here</button>
-        <button class="ca-btn ch" onclick="toggleChat('${id}')">💬 Chat</button>
-      </div>
-
-      <!-- Reader panel -->
-      <div class="reader-panel" id="rp-${id}"></div>
-
-      <!-- Chat panel -->
-      <div class="chat-panel" id="cp-${id}">
-        <div class="panel-label">
-          <span style="color:var(--amber)">💬 Article Chat</span>
-          <button class="ca-btn ch sm" onclick="toggleChat('${id}')">Close</button>
-        </div>
-        <div class="chat-history" id="ch-${id}"></div>
-        <div class="chat-row">
-          <input id="ci-${id}" placeholder="Ask anything about this article…"
-                 onkeydown="if(event.key==='Enter')sendChat('${id}')">
-          <button onclick="sendChat('${id}')">Ask →</button>
-        </div>
-      </div>
-    </div>`;
-  }).join('');
+async function callGemini(promptText, key) {
+  const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${key}`;
+  const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }], generationConfig: { responseMimeType: "application/json" } }) });
+  const resData = await response.json();
+  if (resData.error) throw new Error(resData.error.message);
+  return resData.candidates[0].content.parts[0].text;
 }
 
-// ── Article Actions ───────────────────────────────────────────────────────────
-function openBrowser(id) {
-  const a = articleStore[id];
-  markViewed(a.link);
-  window.open(a.link, '_blank');
-  removeCard(id);
+function renderBriefing(data, articles) {
+  const container = document.getElementById('briefing-output');
+  container.innerHTML = "";
+  data.themes.forEach((theme, index) => {
+    const primaryArticle = articles.find(a => theme.summary.includes(a.title.slice(0, 5))) || articles[0];
+    const div = document.createElement('div');
+    div.className = 'section';
+    div.innerHTML = `
+      <h2>${theme.title}</h2>
+      <p id="sum-${index}">${theme.summary}</p>
+      <div class="btn-row">
+        <button class="action-btn" onclick="explainAsStory(${index})">✨ Story Mode</button>
+        <button class="action-btn" onclick="openResearchBox('${primaryArticle.link}', ${index})">📈 Deep Dive / Chat</button>
+      </div>
+      <div id="detail-${index}" class="detail-box"></div>
+    `;
+    container.appendChild(div);
+    articleContexts[index] = theme.summary; 
+  });
 }
 
-async function openReader(id) {
-  const a   = articleStore[id];
-  const rp  = document.getElementById(`rp-${id}`);
-  const act = document.getElementById(`actions-${id}`);
+function openResearchBox(link, index) {
+  const box = document.getElementById(`detail-${index}`);
+  box.style.display = 'block';
+  box.innerHTML = `
+    <h3>Research Analyst Panel</h3>
+    <div class="research-tools">
+      <div class="tagline" style="color:var(--accent); margin-bottom:10px">Step 1: Get the content</div>
+      <a href="${link}" target="_blank" style="color:var(--ink); font-weight:bold; font-size:13px; display:block; margin-bottom:15px">Open Article in New Tab ↗</a>
+      
+      <div class="tagline" style="color:var(--accent); margin-bottom:5px">Step 2: Paste content below</div>
+      <textarea id="article-input-${index}" class="article-input" placeholder="Copy article text and paste here..."></textarea>
+      <button class="btn-main" onclick="analyzePastedText(${index})" style="padding:10px; font-size:11px">Package & Start Research</button>
+    </div>
+    <div id="analysis-output-${index}"></div>
+    <div id="chat-container-${index}" style="display:none">
+       <div class="chat-area">
+          <div class="tagline" style="margin-bottom:10px">Follow-up Clarifications</div>
+          <div id="chat-history-${index}" class="chat-history"></div>
+          <div class="chat-input-row">
+            <input type="text" id="chat-input-${index}" class="chat-input" placeholder="Ask about this article...">
+            <button class="chat-send" onclick="askQuestion(${index})">ASK</button>
+          </div>
+       </div>
+    </div>
+  `;
+  box.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
 
-  markViewed(a.link);
-  act.innerHTML = '';           // remove action buttons — article is consumed
+async function analyzePastedText(index) {
+  const text = document.getElementById(`article-input-${index}`).value.trim();
+  const output = document.getElementById(`analysis-output-${index}`);
+  const chat = document.getElementById(`chat-container-${index}`);
+  const key = localStorage.getItem('gemini_key');
 
-  rp.style.display = 'block';
-  rp.innerHTML = `<div class="panel-label" style="color:var(--accent)">📖 Reader Mode &nbsp;<span style="color:var(--muted);font-size:9px">Fetching…</span></div>
-    <p style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted)">⏳ Fetching article content…</p>`;
-  rp.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  if (!text) return alert("Please paste article text first.");
+
+  output.innerHTML = "<i>Packaging Deep Dive report...</i>";
+  articleContexts[index] = text; // Update context for chat
+
+  const prompt = `Act as a senior Research Analyst. Based on this text: "${text}", provide a Deep Dive report with plain headers (CORE:, BACKGROUND:, SEQUENCE:, INVESTOR VIEW:). No brackets or JSON.`;
 
   try {
-    const text = await fetchContent(a.link);
-    if (text && text.length > 120) {
-      articleContent[id] = text;
-      rp.innerHTML = `
-        <div class="panel-label" style="color:var(--accent)">
-          <span>📖 Reader Mode</span>
-          <div style="display:flex;gap:6px">
-            <button class="ca-btn ch sm" onclick="toggleChat('${id}')">💬 Chat</button>
-            <button class="ca-btn br sm" onclick="removeCard('${id}')">✕ Dismiss</button>
-          </div>
-        </div>
-        <div class="reader-content">
-          ${text.split('\n\n').filter(p=>p.trim()).map(p=>`<p>${escHtml(p.trim())}</p>`).join('')}
-        </div>`;
-    } else { throw new Error('content too short'); }
+    const rawText = await callGemini(prompt, key);
+    const cleanText = rawText.replace(/[\[\]{}"]/g, '').trim();
+    output.innerHTML = `<div style="margin-bottom:20px">${cleanText.replace(/\n/g, '<br>')}</div>`;
+    chat.style.display = 'block';
   } catch (e) {
-    rp.innerHTML = `
-      <div class="panel-label" style="color:var(--accent)">📖 Reader Mode</div>
-      <p style="font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);line-height:1.7">
-        ⚠ Could not fetch full content — site may block external access.<br>
-        <a href="${a.link}" target="_blank" style="color:var(--accent)">Open in browser ↗</a>
-        &nbsp;|&nbsp;
-        <button class="ca-btn ch sm" onclick="toggleChat('${id}')" style="margin:4px 0">💬 Chat with snippet</button>
-        &nbsp;|&nbsp;
-        <button class="ca-btn br sm" onclick="removeCard('${id}')">✕ Dismiss</button>
-      </p>`;
+    output.innerHTML = "❌ AI Analysis failed.";
   }
 }
 
-function toggleChat(id) {
-  const cp = document.getElementById(`cp-${id}`);
-  const open = cp.style.display !== 'block';
-  cp.style.display = open ? 'block' : 'none';
-  if (open) {
-    setTimeout(() => document.getElementById(`ci-${id}`).focus(), 50);
-  }
-}
-
-function removeCard(id) {
-  const card = document.getElementById(`card-${id}`);
-  if (!card) return;
-  card.style.animation = 'fadeOut 0.28s ease forwards';
-  setTimeout(() => { card.remove(); refreshCount(); }, 290);
-}
-
-function refreshCount() {
-  const n = document.querySelectorAll('.article-card').length;
-  document.getElementById('article-count').textContent = `${n} articles`;
-  if (!n) {
-    document.getElementById('articles-container').innerHTML =
-      `<div class="empty-state"><div class="icon">✅</div><p>All caught up! Fetch again for fresh articles.</p></div>`;
-    document.getElementById('feed-header').style.display = 'none';
-  }
-  updateCounts();
-}
-
-// ── Fetch Article Content ─────────────────────────────────────────────────────
-async function fetchContent(url) {
-  const proxy = `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`;
-  const res   = await fetch(proxy, { signal: AbortSignal.timeout(9000) });
-  const html  = await res.text();
-  const doc   = new DOMParser().parseFromString(html, 'text/html');
-
-  ['script','style','nav','header','footer','aside','iframe','noscript','form','figure'].forEach(tag => {
-    doc.querySelectorAll(tag).forEach(el => el.remove());
-  });
-
-  const body =
-    doc.querySelector('article') ||
-    doc.querySelector('[class*="article-body"]') ||
-    doc.querySelector('[class*="story-body"]') ||
-    doc.querySelector('[class*="post-content"]') ||
-    doc.querySelector('main') ||
-    doc.body;
-
-  return Array.from(body.querySelectorAll('p'))
-    .map(p => p.textContent.trim())
-    .filter(t => t.length > 45)
-    .join('\n\n');
-}
-
-// ── Chat ──────────────────────────────────────────────────────────────────────
-async function sendChat(id) {
-  const input    = document.getElementById(`ci-${id}`);
-  const histDiv  = document.getElementById(`ch-${id}`);
+async function askQuestion(index) {
+  const input = document.getElementById(`chat-input-${index}`);
+  const history = document.getElementById(`chat-history-${index}`);
   const question = input.value.trim();
+  const context = articleContexts[index];
+  const key = localStorage.getItem('gemini_key');
+
   if (!question) return;
 
-  const key = localStorage.getItem('gemini_key');
-  if (!key) return alert('Please save your Gemini API key first.');
+  history.innerHTML += `<div class="chat-msg user-msg"><b>You:</b> ${question}</div>`;
+  input.value = "";
+  history.scrollTop = history.scrollHeight;
 
-  input.value = '';
-  const a       = articleStore[id];
-  const context = articleContent[id] || a.desc || a.title;
-
-  if (!chatHistories[id]) chatHistories[id] = [];
-  chatHistories[id].push({ role: 'user', text: question });
-
-  histDiv.innerHTML += `<div class="chat-msg u-msg"><b>You:</b> ${escHtml(question)}</div>`;
-  histDiv.scrollTop  = histDiv.scrollHeight;
-
-  const prior = chatHistories[id].slice(-6)
-    .map(m => `${m.role === 'user' ? 'User' : 'Gemini'}: ${m.text}`)
-    .join('\n');
-
-  const prompt = `You are a sharp financial analyst. Answer the user's question clearly and concisely based on the article context.
-ARTICLE HEADLINE: ${a.title}
-ARTICLE CONTEXT: ${context}
-
-CONVERSATION SO FAR:
-${prior}
-
-Give a direct answer. No fluff.`;
+  const prompt = `Financial analyst mode. Using the provided article text, answer the user's question clearly. 
+  CONTEXT: "${context}"
+  QUESTION: "${question}"`;
 
   try {
-    const reply = await callGemini(prompt, key);
-    chatHistories[id].push({ role: 'ai', text: reply });
-    histDiv.innerHTML += `<div class="chat-msg a-msg"><b>Gemini:</b> ${reply.replace(/\n/g,'<br>').replace(/[{}"[\]]/g,'')}</div>`;
-    histDiv.scrollTop  = histDiv.scrollHeight;
+    const aiResponse = await callGemini(prompt, key);
+    history.innerHTML += `<div class="chat-msg ai-msg"><b>Gemini:</b> ${aiResponse.replace(/[\[\]{}"]/g, '').trim()}</div>`;
+    history.scrollTop = history.scrollHeight;
   } catch (e) {
-    histDiv.innerHTML += `<div class="chat-msg a-msg" style="color:var(--red)">Error: ${e.message}</div>`;
+    history.innerHTML += `<div class="chat-msg ai-msg">Error answering question.</div>`;
   }
 }
 
-// ── AI Digest ─────────────────────────────────────────────────────────────────
-async function runAIDigest() {
-  const key = localStorage.getItem('gemini_key');
-  if (!key) return alert('Save your Gemini API key first.');
-  const articles = Object.values(articleStore);
-  if (!articles.length) return alert('Fetch articles first, then run AI Digest.');
-
-  setStatus(`🤖 Gemini is summarising today's feed…`);
-
-  const prompt = `Act as a senior market analyst. From the articles below, identify 4–5 key themes shaping the market today. For each theme, write a punchy 2-sentence analysis. Format: THEME NAME in ALL CAPS on its own line, then the analysis. Articles: ${JSON.stringify(articles.map(a=>({t:a.title,s:a.desc})))}`;
-
+async function explainAsStory(index) {
+  const text = document.getElementById(`sum-${index}`).textContent;
+  const box = document.getElementById(`detail-${index}`);
+  box.style.display = 'block';
+  box.innerHTML = "<i>Writing story...</i>";
   try {
-    const text = await callGemini(prompt, key);
-
-    const overlay = document.createElement('div');
-    overlay.className = 'digest-overlay';
-    overlay.innerHTML = `
-      <div class="digest-box">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:16px;">
-          <h2>✦ Today's AI Digest</h2>
-          <button class="digest-close" onclick="this.closest('.digest-overlay').remove()">✕ Close</button>
-        </div>
-        <div class="digest-body">${text.replace(/\n/g,'<br>').replace(/[{}"[\]]/g,'')}</div>
-      </div>`;
-    overlay.addEventListener('click', e => { if (e.target === overlay) overlay.remove(); });
-    document.body.appendChild(overlay);
-    setStatus('✅ AI Digest ready.');
-  } catch (e) {
-    setStatus('❌ Digest failed: ' + e.message);
-  }
-}
-
-// ── Gemini API ────────────────────────────────────────────────────────────────
-async function callGemini(prompt, key) {
-  const url  = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${key}`;
-  const res  = await fetch(url, {
-    method:  'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body:    JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-  });
-  const data = await res.json();
-  if (data.error) throw new Error(data.error.message);
-  return data.candidates[0].content.parts[0].text;
-}
-
-// ── Utilities ─────────────────────────────────────────────────────────────────
-function markViewed(link) {
-  viewedSet.add(link);
-  localStorage.setItem('viewed_v3', JSON.stringify([...viewedSet]));
-  updateCounts();
-}
-
-function setStatus(html) {
-  document.getElementById('status').innerHTML = html;
-}
-
-function escHtml(s) {
-  return String(s)
-    .replace(/&/g,'&amp;')
-    .replace(/</g,'&lt;')
-    .replace(/>/g,'&gt;')
-    .replace(/"/g,'&quot;');
-}
-
-function fmtTime(ts) {
-  const d = Date.now() - ts;
-  if (d < 3600000)  return `${Math.round(d/60000)}m ago`;
-  if (d < 86400000) return `${Math.round(d/3600000)}h ago`;
-  return new Date(ts).toLocaleDateString('en-IN', { day:'numeric', month:'short' });
+    const rawText = await callGemini(`Explain as a simple story for a beginner: "${text}"`, localStorage.getItem('gemini_key'));
+    box.innerHTML = `<h3>The Story</h3>` + rawText.replace(/[\[\]{}"]/g, '').replace(/\n/g, '<br>');
+  } catch(e) { box.innerHTML = "Error writing story."; }
 }
 </script>
 </body>
