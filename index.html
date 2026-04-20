@@ -9,7 +9,6 @@
   :root { 
     --ink: #1a1a18; 
     --paper: #f5f0e8; 
-    --paper2: #ede8de; 
     --accent: #1a5c3a; 
     --rule: #c8c0b0; 
     --muted: #7a7468; 
@@ -25,11 +24,29 @@
     line-height: 1.6; 
   }
   
+  /* Top Right Settings Wheel */
+  .settings-wheel {
+    position: absolute;
+    top: 20px;
+    right: 25px;
+    font-size: 18px;
+    cursor: pointer;
+    color: var(--muted);
+    transition: transform 0.4s ease, color 0.2s ease;
+    z-index: 100;
+  }
+
+  .settings-wheel:hover {
+    transform: rotate(90deg);
+    color: var(--ink);
+  }
+
   .masthead { 
     border-bottom: 3px double var(--ink); 
     padding: 30px 20px; 
     text-align: center; 
     background: var(--paper); 
+    position: relative;
   }
   
   .masthead-title { 
@@ -50,63 +67,12 @@
   .container { 
     max-width: 800px; 
     margin: 0 auto; 
-    padding: 20px 20px 80px; 
+    padding: 30px 20px 80px; 
   }
   
-  .setup-box { 
-    background: var(--paper2); 
-    padding: 20px; 
-    border: 1px solid var(--rule); 
-    margin-bottom: 20px; 
-    border-radius: 4px;
-    display: flex;
-    gap: 10px;
-  }
-  
-  input { 
-    font-family: 'IBM Plex Mono', monospace; 
-    padding: 12px; 
-    border: 1px solid var(--rule); 
-    font-size: 13px; 
-    flex: 1;
-    background: white;
-  }
-
-  input:focus {
-    outline: none;
-    border-color: var(--accent);
-  }
-  
-  .btn-main { 
-    background: var(--ink); 
-    color: white; 
-    cursor: pointer; 
-    font-weight: bold; 
-    text-transform: uppercase; 
-    border: none; 
-    letter-spacing: 1px; 
-    padding: 12px 20px; 
-    font-family: 'IBM Plex Mono', monospace;
-  }
-
-  .btn-main:hover {
-    background: var(--accent);
-  }
-  
-  #status { 
-    font-family: 'IBM Plex Mono', monospace; 
-    font-size: 11px; 
-    color: var(--muted); 
-    text-align: center; 
-    margin: 20px 0; 
-    padding: 10px; 
-    border: 1px dashed var(--rule); 
-    background: #fff; 
-  }
-
   .feed-item {
-    margin-bottom: 25px;
-    border-bottom: 1px solid var(--rule);
+    margin-bottom: 20px;
+    border-bottom: 1px dashed var(--rule);
     padding-bottom: 15px;
   }
 
@@ -116,13 +82,12 @@
 
   .headline {
     font-family: 'Playfair Display', serif;
-    font-size: 22px;
+    font-size: 20px;
     color: var(--accent);
     text-decoration: none;
     font-weight: 700;
-    display: block;
-    margin-bottom: 6px;
-    line-height: 1.3;
+    display: inline; /* Forces it to sit on the same line as the source */
+    line-height: 1.4;
   }
 
   .headline:hover {
@@ -131,38 +96,44 @@
 
   .source {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px; 
+    font-size: 9px; /* Smallest legible font */
     color: var(--muted);
     text-transform: uppercase;
-    letter-spacing: 0.1em;
-    display: block;
+    letter-spacing: 0.05em;
+    display: inline-block; /* Sits next to the headline */
+    margin-left: 12px;
+    vertical-align: middle;
   }
 
-  .error-text {
-    color: #d93025;
-    font-weight: bold;
+  .system-msg {
+    font-family: 'IBM Plex Mono', monospace; 
+    font-size: 12px; 
+    color: var(--muted); 
+    text-align: center;
+    margin-top: 40px;
   }
 </style>
 </head>
 <body>
 
+<div class="settings-wheel" onclick="changeFeed()" title="Change RSS Feed">⚙️</div>
+
 <div class="masthead">
     <div class="tagline" id="header-date">Financial Intelligence Terminal</div>
     <div class="masthead-title">Gemini Pulse</div>
-    <div class="tagline" id="last-update">System Online</div>
+    <div class="tagline">Live Feed</div>
 </div>
 
 <div class="container">
-  <div class="setup-box">
-    <input type="text" id="feed-url" placeholder="Paste RSS URL here..." value="https://www.thehindubusinessline.com/feeder/default.rss" />
-    <button class="btn-main" onclick="loadFeed()">Load Feed</button>
+  <div id="rss-output">
+      <div class="system-msg">Initializing secure terminal...</div>
   </div>
-
-  <div id="status">System Ready</div>
-  <div id="rss-output"></div>
 </div>
 
 <script>
+    // Default Feed
+    let currentFeedUrl = "https://www.thehindubusinessline.com/feeder/default.rss";
+
     window.onload = () => {
         document.getElementById('header-date').textContent = new Date().toLocaleDateString('en-IN', { 
             weekday: 'long', day: 'numeric', month: 'long' 
@@ -170,20 +141,20 @@
         loadFeed(); 
     };
 
+    function changeFeed() {
+        // Simple native browser prompt to keep UI clean
+        const newUrl = prompt("Enter new RSS Feed URL:", currentFeedUrl);
+        if (newUrl && newUrl.trim() !== "") {
+            currentFeedUrl = newUrl.trim();
+            loadFeed();
+        }
+    }
+
     function loadFeed() {
         const outputContainer = document.getElementById("rss-output");
-        const statusBox = document.getElementById("status");
-        const targetUrl = document.getElementById("feed-url").value.trim();
+        outputContainer.innerHTML = "<div class='system-msg'>📡 Fetching data stream...</div>";
 
-        if (!targetUrl) {
-            statusBox.innerHTML = "<span class='error-text'>Please enter a valid RSS URL.</span>";
-            return;
-        }
-
-        statusBox.innerHTML = "📡 Fetching terminal data...";
-        outputContainer.innerHTML = "";
-
-        const apiUrl = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(targetUrl);
+        const apiUrl = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(currentFeedUrl);
 
         fetch(apiUrl)
             .then(response => response.json())
@@ -192,24 +163,23 @@
                     throw new Error("Failed to fetch the feed.");
                 }
 
-                const feedTitle = data.feed.title || "External Source";
+                const feedTitle = data.feed.title || "External Link";
                 let htmlOutput = "";
 
                 data.items.forEach(item => {
                     htmlOutput += `
                         <div class="feed-item">
                             <a href="${item.link}" class="headline" target="_blank" rel="noopener">${item.title}</a>
-                            <span class="source">Source: ${feedTitle}</span>
+                            <span class="source">&mdash; ${feedTitle}</span>
                         </div>
                     `;
                 });
 
                 outputContainer.innerHTML = htmlOutput;
-                statusBox.innerHTML = `✅ Displaying feed: ${feedTitle}`;
             })
             .catch(err => {
-                console.error("Error loading feed:", err);
-                statusBox.innerHTML = "<span class='error-text'>❌ Error loading feed. Check URL or network.</span>";
+                console.error("Terminal Error:", err);
+                outputContainer.innerHTML = "<div class='system-msg' style='color:#d93025'>❌ Connection lost or invalid feed.</div>";
             });
     }
 </script>
