@@ -3,173 +3,96 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gemini Pulse: Hybrid Terminal</title>
-<link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkdlbWluaSBGaW5hbmNlIFB1bHNlIiwKICAic2hvcnRfbmFtZSI6ICJHZW1pbmkgTmV3cyIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjZjVmMGV4IiwKICAidGhlbWVfY29sb3IiOiAiIzFhNWMzYSIsCiAgImljb25zIjogW3sgInNyYyI6ICJodHRwczovL2Nkbi1pY29ucy1wbmcuZmxhdGljb24uY29tLzUxMi8yNzg5LzI3ODkyNTkucG5nIiwgInNpemVzIjogIjUxMng1MTIiLCAidHlwZSI6ICJpbWFnZS9wbmciIH1dCn0=">
-<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<title>Gemini Pulse Terminal</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=IBM+Plex+Sans:wght@300;400&family=IBM+Plex+Mono&display=swap" rel="stylesheet">
 <style>
-  :root { --ink: #1a1a18; --paper: #f5f0e8; --paper2: #ede8de; --accent: #1a5c3a; --rule: #c8c0b0; --muted: #7a7468; }
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--paper); color: var(--ink); font-family: 'IBM Plex Sans', sans-serif; min-height: 100vh; line-height: 1.6; }
-  .masthead { border-bottom: 3px double var(--ink); padding: 30px 20px; text-align: center; }
-  .masthead-title { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 700; }
-  .container { max-width: 800px; margin: 0 auto; padding: 20px 20px 80px; }
-  .setup-box { background: var(--paper2); padding: 20px; border: 1px solid var(--rule); margin-bottom: 30px; border-radius: 4px; }
-  input, button, textarea { font-family: 'IBM Plex Mono', monospace; padding: 12px; border: 1px solid var(--rule); font-size: 13px; }
-  .btn-main { background: var(--ink); color: white; cursor: pointer; width: 100%; font-weight: bold; text-transform: uppercase; border: none; padding: 15px; }
-  #status { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); text-align: center; margin: 20px 0; padding: 10px; border: 1px dashed var(--rule); background: #fff; }
-  .section { margin-bottom: 40px; border-bottom: 1px solid var(--rule); padding-bottom: 25px; }
-  .section h2 { font-family: 'Playfair Display', serif; color: var(--accent); font-size: 26px; }
-  .section p { font-size: 18px; color: #222; margin-top: 10px; line-height: 1.7; }
-  .btn-row { display: flex; gap: 10px; margin-top: 15px; }
-  .action-btn { font-size: 10px; background: white; border: 1px solid var(--accent); color: var(--accent); cursor: pointer; padding: 8px 16px; border-radius: 4px; font-weight: bold; text-transform: uppercase; }
-  .detail-box { background: white; padding: 25px; border-left: 6px solid var(--accent); margin-top: 20px; display: none; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); line-height: 1.7; }
-  .detail-box h3 { margin-bottom: 15px; color: var(--accent); border-bottom: 1px solid #eee; padding-bottom: 8px; font-family: 'Playfair Display', serif; font-size: 22px; }
-  .chat-area { margin-top: 25px; border-top: 1px solid #eee; padding-top: 20px; }
-  .chat-history { font-size: 14px; margin-bottom: 15px; max-height: 300px; overflow-y: auto; }
-  .chat-msg { margin-bottom: 10px; padding: 8px 12px; border-radius: 6px; }
-  .user-msg { background: var(--paper2); border-left: 3px solid var(--muted); }
-  .ai-msg { background: #f0f7f2; border-left: 3px solid var(--accent); }
-  textarea.article-input { width: 100%; height: 120px; margin: 10px 0; border: 1px dashed var(--accent); background: #fdfdfd; padding: 10px; }
+  :root { --ink: #1a1a18; --paper: #f5f0e8; --accent: #1a5c3a; --rule: #c8c0b0; }
+  body { background: var(--paper); color: var(--ink); font-family: 'IBM Plex Sans', sans-serif; line-height: 1.6; margin: 0; }
+  .container { max-width: 800px; margin: 0 auto; padding: 40px 20px; }
+  .masthead { border-bottom: 3px double var(--ink); text-align: center; padding-bottom: 20px; margin-bottom: 30px; }
+  h1 { font-family: 'Playfair Display', serif; font-size: 42px; margin: 0; }
+  .section { background: white; padding: 25px; border-left: 6px solid var(--accent); margin-bottom: 30px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+  h2 { font-family: 'Playfair Display', serif; color: var(--accent); margin-top: 0; }
+  .summary { font-size: 18px; color: #222; }
+  .detail { font-size: 16px; margin-top: 15px; border-top: 1px solid #eee; padding-top: 15px; }
+  #status { font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-align: center; color: #7a7468; margin-bottom: 20px; }
+  .btn-main { background: var(--ink); color: white; width: 100%; padding: 15px; border: none; font-weight: bold; cursor: pointer; text-transform: uppercase; }
+  .hidden { display: none; }
 </style>
 </head>
 <body>
 
-<div class="masthead">
-    <div class="masthead-title">Gemini Pulse</div>
-    <div class="tagline" id="header-date"></div>
-</div>
-
 <div class="container">
-  <div id="setup" class="setup-box">
-    <input type="password" id="api-key" placeholder="AI Studio Key" style="width: 70%">
-    <button onclick="saveKey()">Save</button>
+  <div class="masthead">
+    <h1>Gemini Pulse</h1>
+    <div style="font-family: 'IBM Plex Mono'; font-size: 10px; letter-spacing: 2px; margin-top: 5px;">RESEARCH TERMINAL</div>
   </div>
-  <button class="btn-main" onclick="runBriefing()">Pull BusinessLine News</button>
-  <div id="status">Ready</div>
-  <div id="briefing-output"></div>
+
+  <div id="status">Ready for Feed or Zap...</div>
+  <button class="btn-main" id="pull-btn" onclick="runRSS()">Pull Latest Headlines</button>
+  
+  <div id="output"></div>
 </div>
 
 <script>
-const MODEL_ID = "gemini-3.1-flash-lite-preview"; 
-const FEED_URL = 'https://www.thehindubusinessline.com/feeder/default.rss';
-let articleContexts = {};
+const MODEL_ID = "gemini-3.1-flash-lite-preview";
 
-function saveKey() { localStorage.setItem('gemini_key', document.getElementById('api-key').value.trim()); document.getElementById('setup').style.display = 'none'; }
-window.onload = () => { if(localStorage.getItem('gemini_key')) document.getElementById('setup').style.display = 'none'; document.getElementById('header-date').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' }); };
+// 1. RECEIVER LOGIC: Look for "Zapped" text in the URL
+window.onload = async () => {
+  const urlParams = new URLSearchParams(window.location.search);
+  const zappedText = urlParams.get('zap');
+  
+  if (zappedText) {
+    document.getElementById('pull-btn').classList.add('hidden');
+    processAnalysis(decodeURIComponent(zappedText));
+  }
+};
 
-async function runBriefing() {
-  const apiKey = localStorage.getItem('gemini_key');
-  if(!apiKey) return alert("Save Key first");
+async function runRSS() {
   const status = document.getElementById('status');
-  status.innerHTML = "🔍 Fetching RSS...";
+  status.textContent = "🔍 Fetching BusinessLine...";
   try {
-    const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(FEED_URL)}&t=${Date.now()}`);
+    const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=https%3A%2F%2Fwww.thehindubusinessline.com%2Ffeeder%2Fdefault.rss`);
     const data = await res.json();
-    const articles = data.items.slice(0, 3);
-    status.textContent = "🤖 Analyzing Themes...";
-    const prompt = `Return ONLY JSON: {"themes": [{"title": "Theme", "summary": "3-sentence text"}]}. NEWS: ${JSON.stringify(articles)}`;
-    const aiText = await callGemini(prompt, apiKey);
-    const briefingData = JSON.parse(aiText.replace(/```json|```/g, "").trim());
-    renderBriefing(briefingData, articles);
-    status.textContent = "✅ Update Complete.";
-  } catch (err) { status.innerHTML = "❌ Error: " + err.message; }
+    renderHeadlines(data.items.slice(0, 5));
+    status.textContent = "✅ Headlines Loaded. Click an article on BusinessLine and use your 'Pulse Zap' bookmark.";
+  } catch (e) { status.textContent = "❌ RSS Error."; }
 }
 
-async function callGemini(prompt, key) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${key}`;
-  const res = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }], generationConfig: { responseMimeType: "application/json" } }) });
-  const data = await res.json();
-  return data.candidates[0].content.parts[0].text;
-}
-
-function renderBriefing(data, articles) {
-  const container = document.getElementById('briefing-output');
-  container.innerHTML = "";
-  data.themes.forEach((theme, index) => {
-    const link = articles[index].link;
-    const div = document.createElement('div');
-    div.className = 'section';
-    div.innerHTML = `
-      <h2>${theme.title}</h2>
-      <p id="sum-${index}">${theme.summary}</p>
-      <div class="btn-row">
-        <button class="action-btn" onclick="fetchDeepDive('${link}', ${index})">📈 Deep Dive & Chat</button>
-      </div>
-      <div id="detail-${index}" class="detail-box"></div>
-    `;
-    container.appendChild(div);
+function renderHeadlines(articles) {
+  const out = document.getElementById('output');
+  out.innerHTML = "<h3>Latest Headlines</h3>";
+  articles.forEach(a => {
+    out.innerHTML += `<div style="margin-bottom:15px">
+      <a href="${a.link}" target="_blank" style="color:var(--accent); font-weight:bold; text-decoration:none;">${a.title} ↗</a>
+      <div style="font-size:12px; color:#7a7468">${a.pubDate}</div>
+    </div>`;
   });
 }
 
-async function fetchDeepDive(link, index) {
-  const box = document.getElementById(`detail-${index}`);
-  box.style.display = 'block';
-  box.innerHTML = "<i>✨ Attempting ad-free scrape...</i>";
-
-  try {
-    const cleanRes = await fetch(`https://r.jina.ai/${link}`);
-    const text = await cleanRes.text();
-
-    // Check for Security Block keywords
-    if (text.includes("403 Forbidden") || text.includes("451") || text.includes("Akamai") || text.length < 500) {
-      throw new Error("Scraper Blocked");
-    }
-
-    processAnalysis(text, index);
-  } catch (e) {
-    box.innerHTML = `
-      <h3>⚠️ Security Block (DDoS Protection)</h3>
-      <p style="font-size:14px; color:var(--muted)">The site is blocking automated research. Open the link, copy the text (use Reader Mode for no ads), and paste it here:</p>
-      <a href="${link}" target="_blank" style="font-weight:bold; color:var(--accent); display:block; margin:10px 0;">1. Open BusinessLine Article ↗</a>
-      <textarea id="manual-input-${index}" class="article-input" placeholder="Paste article text here..."></textarea>
-      <button class="btn-main" onclick="manualAnalyze(${index})" style="padding:10px; font-size:11px">2. Run Analyst Analysis</button>
-    `;
-  }
-}
-
-async function manualAnalyze(index) {
-  const text = document.getElementById(`manual-input-${index}`).value.trim();
-  if(!text) return alert("Paste text first");
-  processAnalysis(text, index);
-}
-
-async function processAnalysis(text, index) {
-  const box = document.getElementById(`detail-${index}`);
-  box.innerHTML = "<i>📊 Analyzing market context...</i>";
-  articleContexts[index] = text.slice(0, 8000);
+async function processAnalysis(text) {
+  const out = document.getElementById('output');
+  const status = document.getElementById('status');
+  status.textContent = "🤖 Gemini is performing Deep Dive...";
   
-  const prompt = `Act as a senior Research Analyst. Analyze: "${articleContexts[index]}". Provide plain headers (CORE:, BACKGROUND:, SEQUENCE:, INVESTOR VIEW:). No brackets or quotes.`;
-  const analysis = await callGemini(prompt, localStorage.getItem('gemini_key'));
+  const prompt = `Act as a senior Research Analyst. Analyze this text: "${text.slice(0, 5000)}". Provide a Deep Dive report with plain headers: CORE:, BACKGROUND:, SEQUENCE:, INVESTOR VIEW:. No brackets.`;
+  
+  try {
+    const apiKey = localStorage.getItem('gemini_key');
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${apiKey}`;
+    const res = await fetch(url, { method: 'POST', body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }) });
+    const data = await res.json();
+    const result = data.candidates[0].content.parts[0].text;
 
-  box.innerHTML = `
-    <h3>Deep Dive Analysis</h3>
-    <div style="font-size:16px">${analysis.replace(/[\[\]{}"]/g, '').replace(/\n/g, '<br>')}</div>
-    <div class="chat-area">
-      <div id="chat-history-${index}" class="chat-history"></div>
-      <div class="chat-input-row">
-        <input type="text" id="chat-input-${index}" class="chat-input" style="font-size:14px" placeholder="Ask a clarification...">
-        <button class="action-btn" onclick="askQuestion(${index})">ASK</button>
+    out.innerHTML = `
+      <div class="section">
+        <h2>Deep Dive Analysis</h2>
+        <div class="detail">${result.replace(/[\[\]{}"]/g, '').replace(/\n/g, '<br>')}</div>
+        <button class="btn-main" style="margin-top:20px; background:var(--accent)" onclick="window.location.href=window.location.pathname">Return to Terminal</button>
       </div>
-    </div>
-  `;
-}
-
-async function askQuestion(index) {
-  const input = document.getElementById(`chat-input-${index}`);
-  const history = document.getElementById(`chat-history-${index}`);
-  const question = input.value.trim();
-  if (!question) return;
-  
-  history.innerHTML += `<div class="chat-msg user-msg"><b>You:</b> ${question}</div>`;
-  const prompt = `Context: ${articleContexts[index]}. Question: ${question}. Plain text only.`;
-  input.value = "Thinking...";
-  
-  try {
-    const answer = await callGemini(prompt, localStorage.getItem('gemini_key'));
-    history.innerHTML += `<div class="chat-msg ai-msg"><b>Gemini:</b> ${answer.replace(/[\[\]{}"]/g, '')}</div>`;
-    input.value = "";
-    history.scrollTop = history.scrollHeight;
-  } catch (e) { input.value = "Error."; }
+    `;
+    status.textContent = "✅ Analysis Complete.";
+  } catch (e) { status.textContent = "❌ AI Analysis Error."; }
 }
 </script>
 </body>
