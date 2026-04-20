@@ -17,6 +17,7 @@
     --chat-bg: #ffffff;
     --user-msg: #f0f4f8;
     --ai-msg: #f2f7f4;
+    --hermit: #ff5722;
   }
   
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -127,6 +128,12 @@
   .description { font-size: 15px; color: var(--muted); margin-bottom: 12px; }
   .meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--meta-color); text-transform: uppercase; }
 
+  .btn-row {
+    display: flex;
+    gap: 10px;
+    margin-top: 12px;
+  }
+
   .action-btn { 
     font-family: 'IBM Plex Mono', monospace;
     font-size: 10px; 
@@ -135,13 +142,21 @@
     color: var(--accent); 
     cursor: pointer; 
     padding: 6px 12px; 
-    margin-top: 10px;
     font-weight: bold; 
     text-transform: uppercase; 
+    text-decoration: none;
+    display: inline-block;
     transition: all 0.2s;
   }
   
   .action-btn:hover { background: var(--accent); color: white; }
+
+  .hermit-btn {
+    border-color: var(--hermit);
+    color: var(--hermit);
+  }
+  
+  .hermit-btn:hover { background: var(--hermit); color: white; }
 
   /* AI Panel */
   .ai-panel {
@@ -164,7 +179,6 @@
     padding-bottom: 5px;
   }
 
-  /* Chat UI */
   .chat-history {
     max-height: 250px;
     overflow-y: auto;
@@ -220,7 +234,6 @@
 </div>
 
 <script>
-    // Restored your working model ID
     const GEMINI_MODEL = "gemini-3.1-flash-lite-preview"; 
     let articleContexts = {}; 
 
@@ -268,12 +281,20 @@
 
                     articleContexts[index] = { text: cleanDesc, title: item.title, link: item.link };
 
+                    // Convert standard URL into Hermit Android Intent URI
+                    const urlWithoutProtocol = item.link.replace(/^https?:\/\//, '');
+                    const hermitIntent = `intent://${urlWithoutProtocol}#Intent;scheme=https;package=com.chimbori.hermitcrab;end;`;
+
                     htmlOutput += `
                         <div class="feed-item">
                             <a href="${item.link}" class="headline" target="_blank">${item.title}</a>
                             ${cleanDesc ? `<p class="description">${cleanDesc}</p>` : ''}
                             <div class="meta">${timeSince(item.pubDate)} &mdash; ${selectedFeedName}</div>
-                            <button class="action-btn" onclick="startAI(${index}, '${item.link}')">✨ AI Deep Dive & Chat</button>
+                            
+                            <div class="btn-row">
+                                <a href="${hermitIntent}" class="action-btn hermit-btn">🦀 Read in Hermit</a>
+                                <button class="action-btn" onclick="startAI(${index}, '${item.link}')">✨ AI Deep Dive</button>
+                            </div>
                             
                             <div id="ai-panel-${index}" class="ai-panel">
                                 <h4>Intelligence Briefing</h4>
@@ -298,7 +319,7 @@
             });
     }
 
-    // -- AI FUNCTIONS --
+    // -- AI FUNCTIONS (Kept intact for sites that don't block it) --
 
     async function fetchArticleText(url) {
         try {
@@ -309,9 +330,7 @@
             const paragraphs = Array.from(doc.querySelectorAll('p')).map(p => p.innerText.trim());
             let fullText = paragraphs.join('\n\n').trim();
             return fullText.length > 200 ? fullText.substring(0, 15000) : null; 
-        } catch (e) {
-            return null;
-        }
+        } catch (e) { return null; }
     }
 
     async function callGemini(promptText, apiKey) {
@@ -319,9 +338,7 @@
         const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-                contents: [{ parts: [{ text: promptText }] }] 
-            })
+            body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }] })
         });
         const resData = await response.json();
         if (resData.error) throw new Error(resData.error.message);
