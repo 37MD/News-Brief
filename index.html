@@ -3,224 +3,491 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Gemini Pulse Research</title>
-<link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIkdlbWluaSBGaW5hbmNlIFB1bHNlIiwKICAic2hvcnRfbmFtZSI6ICJHZW1pbmkgTmV3cyIsCiAgInN0YXJ0X3VybCI6ICIuIiwKICAiZGlzcGxheSI6ICJzdGFuZGFsb25lIiwKICAiYmFja2dyb3VuZF9jb2xvciI6ICIjZjVmMGV4IiwKICAidGhlbWVfY29sb3IiOiAiIzFhNWMzYSIsCiAgImljb25zIjogW3sgInNyYyI6ICJodHRwczovL2Nkbi1pY29ucy1wbmcuZmxhdGljb24uY29tLzUxMi8yNzg5LzI3ODkyNTkucG5nIiwgInNpemVzIjogIjUxMng1MTIiLCAidHlwZSI6ICJpbWFnZS9wbmciIH1dCn0=">
+<title>Gemini Pulse</title>
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
-  :root { --ink: #1a1a18; --paper: #f5f0e8; --paper2: #ede8de; --accent: #1a5c3a; --rule: #c8c0b0; --muted: #7a7468; }
+  :root { 
+    --ink: #1a1a18; 
+    --paper: #f5f0e8; 
+    --accent: #1a5c3a; 
+    --rule: #c8c0b0; 
+    --muted: #5a554c; 
+    --meta-color: #8c867a;
+    --error: #c0392b;
+  }
+  
   * { box-sizing: border-box; margin: 0; padding: 0; }
-  body { background: var(--paper); color: var(--ink); font-family: 'IBM Plex Sans', sans-serif; min-height: 100vh; line-height: 1.6; }
-  .masthead { border-bottom: 3px double var(--ink); padding: 30px 20px; text-align: center; background: var(--paper); }
-  .masthead-title { font-family: 'Playfair Display', serif; font-size: clamp(32px, 5vw, 56px); font-weight: 700; }
-  .tagline { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); margin-top: 8px; }
-  .container { max-width: 800px; margin: 0 auto; padding: 20px 20px 80px; }
-  .setup-box { background: var(--paper2); padding: 20px; border: 1px solid var(--rule); margin-bottom: 30px; border-radius: 4px; }
-  input, button, textarea { font-family: 'IBM Plex Mono', monospace; padding: 12px; border: 1px solid var(--rule); font-size: 13px; }
-  .btn-main { background: var(--ink); color: white; cursor: pointer; width: 100%; font-weight: bold; text-transform: uppercase; border: none; letter-spacing: 1px; padding: 15px; }
-  #status { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); text-align: center; margin: 20px 0; padding: 10px; border: 1px dashed var(--rule); background: #fff; }
-  .section { margin-bottom: 40px; border-bottom: 1px solid var(--rule); padding-bottom: 25px; }
-  .section h2 { font-family: 'Playfair Display', serif; color: var(--accent); font-size: 26px; margin-bottom: 12px; }
-  .section p { font-size: 18px; color: #222; margin-bottom: 15px; line-height: 1.7; }
-  .btn-row { display: flex; gap: 10px; margin-top: 15px; }
-  .action-btn { font-size: 10px; background: white; border: 1px solid var(--accent); color: var(--accent); cursor: pointer; padding: 8px 16px; border-radius: 4px; font-weight: bold; text-transform: uppercase; }
-
-  /* Deep Dive UI */
-  .detail-box { background: white; padding: 25px; border-left: 6px solid var(--accent); margin-top: 20px; display: none; font-size: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.06); line-height: 1.7; }
-  .detail-box h3 { margin-bottom: 15px; color: var(--accent); border-bottom: 1px solid #eee; padding-bottom: 8px; font-family: 'Playfair Display', serif; font-size: 22px; }
   
-  .research-tools { background: #f9f9f7; padding: 15px; border-radius: 4px; border: 1px solid #eee; margin-bottom: 20px; }
-  textarea.article-input { width: 100%; height: 100px; margin: 10px 0; font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; border: 1px solid var(--rule); padding: 10px; resize: vertical; }
-
-  .chat-area { margin-top: 25px; border-top: 1px solid #eee; padding-top: 20px; }
-  .chat-history { font-size: 14px; margin-bottom: 15px; max-height: 300px; overflow-y: auto; border-bottom: 1px solid #f0f0f0; }
-  .chat-msg { margin-bottom: 10px; padding: 8px 12px; border-radius: 6px; }
-  .user-msg { background: var(--paper2); color: var(--ink); border-left: 3px solid var(--muted); }
-  .ai-msg { background: #f0f7f2; color: var(--accent); border-left: 3px solid var(--accent); }
+  body { 
+    background: var(--paper); 
+    color: var(--ink); 
+    font-family: 'IBM Plex Sans', sans-serif; 
+    min-height: 100vh; 
+    line-height: 1.6; 
+  }
   
-  .chat-input-row { display: flex; gap: 8px; }
-  .chat-input { flex: 1; padding: 10px; border: 1px solid var(--rule); border-radius: 4px; font-size: 14px; }
-  .chat-send { background: var(--accent); color: white; border: none; padding: 0 15px; border-radius: 4px; cursor: pointer; font-weight: bold; }
+  /* ── Top Controls Bar ── */
+  .controls-bar {
+    position: absolute;
+    top: 16px;
+    right: 20px;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  select {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background-color: transparent;
+    color: var(--ink);
+    border: 1px solid var(--rule);
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    outline: none;
+    text-transform: uppercase;
+    font-weight: 500;
+    max-width: 200px;
+  }
+
+  select:hover { border-color: var(--accent); }
+
+  /* Refresh button */
+  #refresh-btn {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background: transparent;
+    color: var(--accent);
+    border: 1px solid var(--accent);
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    text-transform: uppercase;
+    font-weight: 500;
+    transition: background 0.2s, color 0.2s;
+    white-space: nowrap;
+  }
+  #refresh-btn:hover { background: var(--accent); color: var(--paper); }
+  #refresh-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  #refresh-btn.spinning { animation: spin 1s linear infinite; }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ── Masthead ── */
+  .masthead { 
+    border-bottom: 3px double var(--ink); 
+    padding: 30px 20px; 
+    text-align: center; 
+    background: var(--paper); 
+    position: relative;
+  }
+  
+  .masthead-title { 
+    font-family: 'Playfair Display', serif; 
+    font-size: clamp(32px, 5vw, 56px); 
+    font-weight: 700; 
+  }
+  
+  .tagline { 
+    font-family: 'IBM Plex Mono', monospace; 
+    font-size: 10px; 
+    letter-spacing: 0.2em; 
+    text-transform: uppercase; 
+    color: var(--meta-color); 
+    margin-top: 8px; 
+  }
+
+  /* ── Feed status bar ── */
+  .feed-status-bar {
+    max-width: 800px;
+    margin: 16px auto 0;
+    padding: 0 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    color: var(--meta-color);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── Container ── */
+  .container { 
+    max-width: 800px; 
+    margin: 0 auto; 
+    padding: 20px 20px 80px; 
+  }
+  
+  /* ── Feed Items ── */
+  .feed-item {
+    margin-bottom: 35px;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 25px;
+    animation: fadeIn 0.3s ease forwards;
+    opacity: 0;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+
+  .feed-item:last-child { border-bottom: none; }
+
+  .headline {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: var(--ink);
+    text-decoration: none;
+    font-weight: 700;
+    display: block; 
+    line-height: 1.3;
+    margin-bottom: 10px;
+    word-break: break-word;
+  }
+
+  .headline:hover { color: var(--accent); text-decoration: underline; }
+
+  .description {
+    font-size: 15px;
+    color: var(--muted);
+    margin-bottom: 12px;
+    line-height: 1.6;
+  }
+
+  .meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; 
+    color: var(--meta-color);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  /* ── System Messages ── */
+  .system-msg {
+    font-family: 'IBM Plex Mono', monospace; 
+    font-size: 12px; 
+    color: var(--meta-color); 
+    text-align: center;
+    margin-top: 60px;
+    line-height: 2;
+  }
+
+  .system-msg.error { color: var(--error); }
+
+  /* ── Auto-refresh countdown ── */
+  #next-refresh {
+    color: var(--meta-color);
+    font-size: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+  }
+
+  /* ── Cache badge ── */
+  .cached-badge {
+    display: inline-block;
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 9px;
+    background: var(--rule);
+    color: var(--muted);
+    padding: 1px 5px;
+    border-radius: 2px;
+    text-transform: uppercase;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+
+  /* ── Responsive ── */
+  @media (max-width: 520px) {
+    .controls-bar { 
+      position: static; 
+      padding: 12px 16px; 
+      justify-content: flex-end;
+      border-bottom: 1px solid var(--rule);
+    }
+    select { max-width: 160px; font-size: 10px; }
+    .masthead { padding: 20px 16px; }
+  }
 </style>
 </head>
 <body>
 
-<div class="masthead">
-    <div class="tagline" id="header-date">Financial Intelligence Terminal</div>
-    <div class="masthead-title">Gemini Pulse</div>
-    <div class="tagline" id="last-update">System Online</div>
+<!-- ── Controls Bar ── -->
+<div class="controls-bar">
+  <select id="feed-dropdown" aria-label="Select news feed">
+    <optgroup label="Business News">
+      <option value="https://www.thehindubusinessline.com/feeder/default.rss">Business Line</option>
+      <option value="https://economictimes.indiatimes.com/rssfeedsdefault.cms">Economic Times</option>
+      <option value="https://www.livemint.com/rss/markets">Livemint Markets</option>
+      <option value="https://www.moneycontrol.com/rss/MCtopnews.xml">Moneycontrol</option>
+      <option value="https://wap.business-standard.com/rss/markets-106.rss">Business Standard</option>
+      <option value="https://www.financialexpress.com/feed/">Financial Express</option>
+    </optgroup>
+    <optgroup label="Daily News">
+      <option value="https://theprint.in/feed/">ThePrint</option>
+      <option value="https://indianexpress.com/feed/">The Indian Express</option>
+      <option value="https://www.livemint.com/rss/news">Livemint News</option>
+      <option value="https://timesofindia.indiatimes.com/rssfeedstopstories.cms?x=1">Times of India Top</option>
+      <option value="https://m.hindustantimes.com/rss/topnews/rssfeed.xml">Hindustan Times</option>
+    </optgroup>
+    <optgroup label="Personal Finance">
+      <option value="https://www.livemint.com/rss/Mutual%20Funds">Livemint Mutual Fund</option>
+      <option value="https://economictimes.indiatimes.com/rssfeeds/837555174.cms">ET Wealth</option>
+    </optgroup>
+    <optgroup label="Mumbai & Thane">
+      <option value="https://timesofindia.indiatimes.com/rssfeeds/3831863.cms">TOI Thane News</option>
+      <option value="https://timesofindia.indiatimes.com/rssfeeds/-2128838597.cms">TOI Mumbai News</option>
+      <option value="https://www.mid-day.com/Resources/midday/rss/news.xml">Mid-Day Mumbai</option>
+    </optgroup>
+    <optgroup label="Editorial">
+      <option value="https://www.epw.in/taxonomy/term/65/feed">EPW Editorials</option>
+      <option value="https://www.livemint.com/rss/opinion">Livemint Opinion</option>
+    </optgroup>
+  </select>
+  <button id="refresh-btn" title="Refresh feed" aria-label="Refresh feed">⟳ Refresh</button>
 </div>
 
-<div class="container">
-  <div id="setup" class="setup-box">
-    <input type="password" id="api-key" placeholder="AI Studio API Key" style="width: 70%">
-    <button onclick="saveKey()">Save Key</button>
-  </div>
+<!-- ── Masthead ── -->
+<div class="masthead">
+  <div class="tagline" id="header-date">Financial Intelligence Terminal</div>
+  <div class="masthead-title">Gemini Pulse</div>
+  <div class="tagline">Live Feed</div>
+</div>
 
-  <button class="btn-main" onclick="runBriefing()">Pull New Intelligence</button>
-  <div id="status">System Ready</div>
-  <div id="briefing-output"></div>
+<!-- ── Status Bar ── -->
+<div class="feed-status-bar">
+  <span id="item-count"></span>
+  <span id="next-refresh"></span>
+</div>
+
+<!-- ── Feed Output ── -->
+<div class="container">
+  <div id="rss-output">
+    <div class="system-msg">Initializing secure terminal...</div>
+  </div>
 </div>
 
 <script>
-const MODEL_ID = "gemini-3.1-flash-lite-preview"; 
-const FEED_URLS = ['https://pulse.zerodha.com/feed.php', 'https://economictimes.indiatimes.com/rssfeedsdefault.cms', 'https://www.livemint.com/rss/markets', 'https://www.moneycontrol.com/rss/MCtopnews.xml'];
-let articleContexts = {}; 
+  // ── Constants ──
+  const CACHE_TTL_MS   = 5 * 60 * 1000;  // 5-minute cache
+  const FETCH_TIMEOUT  = 12000;           // 12-second timeout
+  const AUTO_REFRESH_S = 600;             // 10-min auto-refresh
+  const MAX_DESC_CHARS = 350;
+  const RSS_API        = 'https://api.rss2json.com/v1/api.json?rss_url=';
 
-function saveKey() { localStorage.setItem('gemini_key', document.getElementById('api-key').value.trim()); document.getElementById('setup').style.display = 'none'; }
-window.onload = () => { if(localStorage.getItem('gemini_key')) document.getElementById('setup').style.display = 'none'; document.getElementById('header-date').textContent = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' }); };
+  // ── State ──
+  const cache       = {};          // { url: { timestamp, items, feedName } }
+  let   currentCtrl = null;        // AbortController for in-flight request
+  let   debounceTimer = null;
+  let   refreshTimer  = null;
+  let   countdownInterval = null;
+  let   secondsLeft = AUTO_REFRESH_S;
 
-async function runBriefing(forceAll = false) {
-  const apiKey = localStorage.getItem('gemini_key');
-  if(!apiKey) return alert("Save API Key first");
-  const status = document.getElementById('status');
-  const lastTimestamp = forceAll ? (Date.now() - 24*60*60*1000) : parseInt(localStorage.getItem('last_timestamp') || "0");
-  status.innerHTML = "🔍 Scanning Financial Feeds...";
-  let allArticles = [];
-  const seen = new Set();
-  for (const url of FEED_URLS) {
+  // ── DOM refs ──
+  const output      = document.getElementById('rss-output');
+  const dropdown    = document.getElementById('feed-dropdown');
+  const refreshBtn  = document.getElementById('refresh-btn');
+  const itemCount   = document.getElementById('item-count');
+  const nextRefresh = document.getElementById('next-refresh');
+
+  // ── Helpers ──
+
+  /**
+   * Safe text escape to prevent XSS when inserting into HTML.
+   */
+  function escapeHtml(str) {
+    if (!str) return '';
+    return str
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  /**
+   * Validate that a URL is safe (http/https only).
+   * Prevents javascript: or data: URL injection from malicious feeds.
+   */
+  function safeUrl(url) {
     try {
-      const res = await fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}&t=${Date.now()}`);
-      const data = await res.json();
-      if(data.status === 'ok' && data.items) {
-        data.items.forEach(item => {
-          const pubTime = new Date(item.pubDate).getTime();
-          const titleKey = item.title.toLowerCase().trim().slice(0, 50);
-          if (pubTime > lastTimestamp && !seen.has(titleKey)) {
-            seen.add(titleKey);
-            allArticles.push({ title: item.title, desc: item.description.replace(/<[^>]+>/g, '').slice(0, 250), link: item.link, time: pubTime });
-          }
-        });
+      const parsed = new URL(url);
+      return (parsed.protocol === 'http:' || parsed.protocol === 'https:') ? url : '#';
+    } catch {
+      return '#';
+    }
+  }
+
+  /**
+   * Human-readable relative time. Handles null / invalid dates gracefully.
+   */
+  function timeSince(dateString) {
+    if (!dateString) return 'Unknown time';
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return 'Unknown time';
+
+    const seconds = Math.floor((Date.now() - date) / 1000);
+    if (seconds < 0)   return 'Just now';
+    if (seconds < 60)  return 'Just now';
+
+    const mins  = Math.floor(seconds / 60);
+    const hours = Math.floor(seconds / 3600);
+    const days  = Math.floor(seconds / 86400);
+
+    if (days  > 1) return `${days} days ago`;
+    if (days === 1) return '1 day ago';
+    if (hours > 1) return `${hours} hours ago`;
+    if (hours === 1) return '1 hour ago';
+    if (mins  > 1) return `${mins} mins ago`;
+    return '1 min ago';
+  }
+
+  /**
+   * Strip HTML tags from description text.
+   */
+  function stripHtml(html) {
+    if (!html) return '';
+    return html.replace(/<[^>]*>?/gm, '').trim();
+  }
+
+  // ── Countdown display ──
+  function startCountdown() {
+    clearInterval(countdownInterval);
+    secondsLeft = AUTO_REFRESH_S;
+    countdownInterval = setInterval(() => {
+      secondsLeft--;
+      const m = Math.floor(secondsLeft / 60);
+      const s = secondsLeft % 60;
+      nextRefresh.textContent = `Auto-refresh in ${m}:${String(s).padStart(2,'0')}`;
+      if (secondsLeft <= 0) {
+        clearInterval(countdownInterval);
+        loadFeed(true);  // force-refresh, bypass cache
       }
-    } catch (e) { console.error(e); }
+    }, 1000);
   }
-  if (allArticles.length === 0) { status.innerHTML = "☕ No new developments. <button onclick='runBriefing(true)' style='font-size:10px; cursor:pointer; background:none; border:none; text-decoration:underline; color:var(--accent)'>Force Scan (24h)</button>"; return; }
-  status.textContent = `🤖 Gemini is analyzing ${allArticles.length} events...`;
-  try {
-    const prompt = `Return ONLY JSON format: {"themes": [{"title": "Theme", "summary": "3-sentence text"}]}. NEWS: ${JSON.stringify(allArticles)}`;
-    const rawResponse = await callGemini(prompt, apiKey);
-    const briefingData = JSON.parse(rawResponse.replace(/```json|```/g, "").trim());
-    renderBriefing(briefingData, allArticles);
-    localStorage.setItem('last_timestamp', Math.max(...allArticles.map(a => a.time)).toString());
-    status.textContent = "✅ Intelligence Ready.";
-  } catch (err) { status.innerHTML = "❌ AI Error: " + err.message; }
-}
 
-async function callGemini(promptText, key) {
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${key}`;
-  const response = await fetch(url, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ contents: [{ parts: [{ text: promptText }] }], generationConfig: { responseMimeType: "application/json" } }) });
-  const resData = await response.json();
-  if (resData.error) throw new Error(resData.error.message);
-  return resData.candidates[0].content.parts[0].text;
-}
+  // ── Core feed loader ──
+  function loadFeed(forceRefresh = false) {
+    clearTimeout(debounceTimer);
 
-function renderBriefing(data, articles) {
-  const container = document.getElementById('briefing-output');
-  container.innerHTML = "";
-  data.themes.forEach((theme, index) => {
-    const primaryArticle = articles.find(a => theme.summary.includes(a.title.slice(0, 5))) || articles[0];
-    const div = document.createElement('div');
-    div.className = 'section';
-    div.innerHTML = `
-      <h2>${theme.title}</h2>
-      <p id="sum-${index}">${theme.summary}</p>
-      <div class="btn-row">
-        <button class="action-btn" onclick="explainAsStory(${index})">✨ Story Mode</button>
-        <button class="action-btn" onclick="openResearchBox('${primaryArticle.link}', ${index})">📈 Deep Dive / Chat</button>
-      </div>
-      <div id="detail-${index}" class="detail-box"></div>
-    `;
-    container.appendChild(div);
-    articleContexts[index] = theme.summary; 
+    debounceTimer = setTimeout(async () => {
+      const feedUrl      = dropdown.value;
+      const feedName     = dropdown.options[dropdown.selectedIndex].text;
+      const cacheEntry   = cache[feedUrl];
+      const cacheValid   = cacheEntry && (Date.now() - cacheEntry.timestamp < CACHE_TTL_MS);
+
+      // Cancel any previous in-flight request
+      if (currentCtrl) {
+        currentCtrl.abort();
+        currentCtrl = null;
+      }
+
+      // Serve from cache if fresh (and not a forced refresh)
+      if (!forceRefresh && cacheValid) {
+        renderItems(cacheEntry.items, cacheEntry.feedName, true);
+        startCountdown();
+        return;
+      }
+
+      // Show loading state
+      output.innerHTML = "<div class='system-msg'>📡 Fetching data stream…</div>";
+      itemCount.textContent = '';
+      refreshBtn.disabled   = true;
+
+      currentCtrl = new AbortController();
+      const timeoutId = setTimeout(() => currentCtrl.abort(), FETCH_TIMEOUT);
+
+      try {
+        const resp = await fetch(RSS_API + encodeURIComponent(feedUrl), {
+          signal: currentCtrl.signal
+        });
+        clearTimeout(timeoutId);
+
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+
+        if (data.status !== 'ok') {
+          throw new Error(data.message || 'Feed returned an error status.');
+        }
+
+        if (!Array.isArray(data.items) || data.items.length === 0) {
+          output.innerHTML = "<div class='system-msg'>📭 No articles found in this feed.</div>";
+          itemCount.textContent = '0 articles';
+          return;
+        }
+
+        // Store in cache
+        cache[feedUrl] = { timestamp: Date.now(), items: data.items, feedName };
+        renderItems(data.items, feedName, false);
+        startCountdown();
+
+      } catch (err) {
+        if (err.name === 'AbortError') {
+          output.innerHTML = "<div class='system-msg error'>⏱ Request timed out. The feed may be slow or unavailable.</div>";
+        } else {
+          console.error('Feed error:', err.message);
+          output.innerHTML = `<div class='system-msg error'>❌ Could not load feed.<br><small style="font-size:10px;opacity:.7">${escapeHtml(err.message)}</small></div>`;
+        }
+        itemCount.textContent = '';
+      } finally {
+        refreshBtn.disabled = false;
+        currentCtrl = null;
+      }
+
+    }, 200); // 200ms debounce
+  }
+
+  // ── Render items into DOM ──
+  function renderItems(items, feedName, fromCache) {
+    const cacheBadge = fromCache
+      ? `<span class="cached-badge" title="Served from local cache">Cached</span>`
+      : '';
+
+    const fragments = items.map((item, i) => {
+      let desc = stripHtml(item.description);
+      if (desc.length > MAX_DESC_CHARS) desc = desc.substring(0, MAX_DESC_CHARS) + '…';
+
+      const timeAgo  = timeSince(item.pubDate);
+      const safeLink = safeUrl(item.link);
+      const safeTitle = escapeHtml(item.title || 'Untitled');
+      const safeDesc  = escapeHtml(desc);
+
+      // Stagger fade-in animation for each card
+      return `
+        <div class="feed-item" style="animation-delay:${i * 40}ms">
+          <a href="${safeLink}" class="headline" target="_blank" rel="noopener noreferrer">${safeTitle}</a>
+          ${safeDesc ? `<p class="description">${safeDesc}</p>` : ''}
+          <div class="meta">${timeAgo} &mdash; ${escapeHtml(feedName)}${i === 0 ? cacheBadge : ''}</div>
+        </div>
+      `;
+    });
+
+    output.innerHTML = fragments.join('');
+    itemCount.textContent = `${items.length} articles`;
+  }
+
+  // ── Init ──
+  window.addEventListener('load', () => {
+    // Set date in header
+    document.getElementById('header-date').textContent = new Date().toLocaleDateString('en-IN', { 
+      weekday: 'long', day: 'numeric', month: 'long' 
+    });
+
+    // Wire up dropdown (debounce is inside loadFeed)
+    dropdown.addEventListener('change', () => loadFeed(false));
+
+    // Manual refresh clears cache for current feed and reloads
+    refreshBtn.addEventListener('click', () => {
+      const feedUrl = dropdown.value;
+      delete cache[feedUrl];   // invalidate cache for this feed
+      loadFeed(true);
+    });
+
+    // Initial load
+    loadFeed();
   });
-}
-
-function openResearchBox(link, index) {
-  const box = document.getElementById(`detail-${index}`);
-  box.style.display = 'block';
-  box.innerHTML = `
-    <h3>Research Analyst Panel</h3>
-    <div class="research-tools">
-      <div class="tagline" style="color:var(--accent); margin-bottom:10px">Step 1: Get the content</div>
-      <a href="${link}" target="_blank" style="color:var(--ink); font-weight:bold; font-size:13px; display:block; margin-bottom:15px">Open Article in New Tab ↗</a>
-      
-      <div class="tagline" style="color:var(--accent); margin-bottom:5px">Step 2: Paste content below</div>
-      <textarea id="article-input-${index}" class="article-input" placeholder="Copy article text and paste here..."></textarea>
-      <button class="btn-main" onclick="analyzePastedText(${index})" style="padding:10px; font-size:11px">Package & Start Research</button>
-    </div>
-    <div id="analysis-output-${index}"></div>
-    <div id="chat-container-${index}" style="display:none">
-       <div class="chat-area">
-          <div class="tagline" style="margin-bottom:10px">Follow-up Clarifications</div>
-          <div id="chat-history-${index}" class="chat-history"></div>
-          <div class="chat-input-row">
-            <input type="text" id="chat-input-${index}" class="chat-input" placeholder="Ask about this article...">
-            <button class="chat-send" onclick="askQuestion(${index})">ASK</button>
-          </div>
-       </div>
-    </div>
-  `;
-  box.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
-async function analyzePastedText(index) {
-  const text = document.getElementById(`article-input-${index}`).value.trim();
-  const output = document.getElementById(`analysis-output-${index}`);
-  const chat = document.getElementById(`chat-container-${index}`);
-  const key = localStorage.getItem('gemini_key');
-
-  if (!text) return alert("Please paste article text first.");
-
-  output.innerHTML = "<i>Packaging Deep Dive report...</i>";
-  articleContexts[index] = text; // Update context for chat
-
-  const prompt = `Act as a senior Research Analyst. Based on this text: "${text}", provide a Deep Dive report with plain headers (CORE:, BACKGROUND:, SEQUENCE:, INVESTOR VIEW:). No brackets or JSON.`;
-
-  try {
-    const rawText = await callGemini(prompt, key);
-    const cleanText = rawText.replace(/[\[\]{}"]/g, '').trim();
-    output.innerHTML = `<div style="margin-bottom:20px">${cleanText.replace(/\n/g, '<br>')}</div>`;
-    chat.style.display = 'block';
-  } catch (e) {
-    output.innerHTML = "❌ AI Analysis failed.";
-  }
-}
-
-async function askQuestion(index) {
-  const input = document.getElementById(`chat-input-${index}`);
-  const history = document.getElementById(`chat-history-${index}`);
-  const question = input.value.trim();
-  const context = articleContexts[index];
-  const key = localStorage.getItem('gemini_key');
-
-  if (!question) return;
-
-  history.innerHTML += `<div class="chat-msg user-msg"><b>You:</b> ${question}</div>`;
-  input.value = "";
-  history.scrollTop = history.scrollHeight;
-
-  const prompt = `Financial analyst mode. Using the provided article text, answer the user's question clearly. 
-  CONTEXT: "${context}"
-  QUESTION: "${question}"`;
-
-  try {
-    const aiResponse = await callGemini(prompt, key);
-    history.innerHTML += `<div class="chat-msg ai-msg"><b>Gemini:</b> ${aiResponse.replace(/[\[\]{}"]/g, '').trim()}</div>`;
-    history.scrollTop = history.scrollHeight;
-  } catch (e) {
-    history.innerHTML += `<div class="chat-msg ai-msg">Error answering question.</div>`;
-  }
-}
-
-async function explainAsStory(index) {
-  const text = document.getElementById(`sum-${index}`).textContent;
-  const box = document.getElementById(`detail-${index}`);
-  box.style.display = 'block';
-  box.innerHTML = "<i>Writing story...</i>";
-  try {
-    const rawText = await callGemini(`Explain as a simple story for a beginner: "${text}"`, localStorage.getItem('gemini_key'));
-    box.innerHTML = `<h3>The Story</h3>` + rawText.replace(/[\[\]{}"]/g, '').replace(/\n/g, '<br>');
-  } catch(e) { box.innerHTML = "Error writing story."; }
-}
 </script>
 </body>
 </html>
