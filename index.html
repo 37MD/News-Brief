@@ -25,21 +25,30 @@
     line-height: 1.6; 
   }
   
-  /* Top Right Settings Wheel */
-  .settings-wheel {
+  /* Top Right Dropdown Container */
+  .feed-selector-container {
     position: absolute;
     top: 20px;
     right: 25px;
-    font-size: 18px;
-    cursor: pointer;
-    color: var(--meta-color);
-    transition: transform 0.4s ease, color 0.2s ease;
     z-index: 100;
   }
 
-  .settings-wheel:hover {
-    transform: rotate(90deg);
+  select {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background-color: transparent;
     color: var(--ink);
+    border: 1px solid var(--rule);
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    outline: none;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+
+  select:hover {
+    border-color: var(--accent);
   }
 
   .masthead { 
@@ -106,7 +115,7 @@
 
   .meta {
     font-family: 'IBM Plex Mono', monospace;
-    font-size: 10px; /* Smallest font requested */
+    font-size: 10px; 
     color: var(--meta-color);
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -123,7 +132,38 @@
 </head>
 <body>
 
-<div class="settings-wheel" onclick="changeFeed()" title="Change RSS Feed">⚙️</div>
+<div class="feed-selector-container">
+    <select id="feed-dropdown" onchange="loadFeed()">
+        <optgroup label="Business News">
+            <option value="https://www.thehindubusinessline.com/feeder/default.rss">Business Line</option>
+            <option value="https://economictimes.indiatimes.com/rssfeedsdefault.cms">Economic Times</option>
+            <option value="https://www.livemint.com/rss/markets">Livemint Markets</option>
+            <option value="https://www.moneycontrol.com/rss/MCtopnews.xml">Moneycontrol</option>
+            <option value="https://wap.business-standard.com/rss/markets-106.rss">Business Standard</option>
+            <option value="https://www.financialexpress.com/feed/">Financial Express</option>
+        </optgroup>
+        <optgroup label="Daily News">
+            <option value="https://theprint.in/feed/">ThePrint</option>
+            <option value="https://indianexpress.com/feed/">The Indian Express</option>
+            <option value="https://www.livemint.com/rss/news">Livemint News</option>
+            <option value="https://timesofindia.indiatimes.com/rssfeedstopstories.cms?x=1">Times of India Top</option>
+            <option value="https://m.hindustantimes.com/rss/topnews/rssfeed.xml">Hindustan Times</option>
+        </optgroup>
+        <optgroup label="Personal Finance">
+            <option value="https://www.livemint.com/rss/Mutual%20Funds">Livemint Mutual Fund</option>
+            <option value="https://economictimes.indiatimes.com/rssfeeds/837555174.cms">ET Wealth</option>
+        </optgroup>
+        <optgroup label="Mumbai & Thane">
+            <option value="https://timesofindia.indiatimes.com/rssfeeds/3831863.cms">TOI Thane News</option>
+            <option value="https://timesofindia.indiatimes.com/rssfeeds/-2128838597.cms">TOI Mumbai News</option>
+            <option value="https://www.mid-day.com/Resources/midday/rss/news.xml">Mid-Day Mumbai</option>
+        </optgroup>
+        <optgroup label="Editorial">
+            <option value="https://www.epw.in/taxonomy/term/65/feed">EPW Editorials</option>
+            <option value="https://www.livemint.com/rss/opinion">Livemint Opinion</option>
+        </optgroup>
+    </select>
+</div>
 
 <div class="masthead">
     <div class="tagline" id="header-date">Financial Intelligence Terminal</div>
@@ -138,8 +178,6 @@
 </div>
 
 <script>
-    let currentFeedUrl = "https://www.thehindubusinessline.com/feeder/default.rss";
-
     window.onload = () => {
         document.getElementById('header-date').textContent = new Date().toLocaleDateString('en-IN', { 
             weekday: 'long', day: 'numeric', month: 'long' 
@@ -147,15 +185,6 @@
         loadFeed(); 
     };
 
-    function changeFeed() {
-        const newUrl = prompt("Enter new RSS Feed URL:", currentFeedUrl);
-        if (newUrl && newUrl.trim() !== "") {
-            currentFeedUrl = newUrl.trim();
-            loadFeed();
-        }
-    }
-
-    // Function to calculate "X hours ago"
     function timeSince(dateString) {
         const date = new Date(dateString);
         const seconds = Math.floor((new Date() - date) / 1000);
@@ -174,6 +203,10 @@
 
     function loadFeed() {
         const outputContainer = document.getElementById("rss-output");
+        const dropdown = document.getElementById("feed-dropdown");
+        const currentFeedUrl = dropdown.value;
+        const selectedFeedName = dropdown.options[dropdown.selectedIndex].text;
+
         outputContainer.innerHTML = "<div class='system-msg'>📡 Fetching data stream...</div>";
 
         const apiUrl = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(currentFeedUrl);
@@ -185,14 +218,11 @@
                     throw new Error("Failed to fetch the feed.");
                 }
 
-                const feedTitle = data.feed.title || "External Link";
                 let htmlOutput = "";
 
                 data.items.forEach(item => {
-                    // Strip HTML tags from the summary/description
                     let cleanDesc = item.description ? item.description.replace(/<[^>]*>?/gm, '').trim() : "";
                     
-                    // Optional: Truncate if it's too long
                     if (cleanDesc.length > 350) {
                         cleanDesc = cleanDesc.substring(0, 350) + "...";
                     }
@@ -203,7 +233,7 @@
                         <div class="feed-item">
                             <a href="${item.link}" class="headline" target="_blank" rel="noopener">${item.title}</a>
                             ${cleanDesc ? `<p class="description">${cleanDesc}</p>` : ''}
-                            <div class="meta">${timeAgo} &mdash; ${feedTitle}</div>
+                            <div class="meta">${timeAgo} &mdash; ${selectedFeedName}</div>
                         </div>
                     `;
                 });
@@ -212,7 +242,7 @@
             })
             .catch(err => {
                 console.error("Terminal Error:", err);
-                outputContainer.innerHTML = "<div class='system-msg' style='color:#d93025'>❌ Connection lost or invalid feed.</div>";
+                outputContainer.innerHTML = "<div class='system-msg' style='color:#d93025'>❌ Connection lost or dead feed link.</div>";
             });
     }
 </script>
