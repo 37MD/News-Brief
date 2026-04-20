@@ -1,164 +1,249 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gemini Pulse</title>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-    <style>
-        :root { --ink: #1a1a18; --paper: #f5f0e8; --paper2: #ede8de; --accent: #1a5c3a; --rule: #c8c0b0; --muted: #7a7468; }
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        body { background: var(--paper); color: var(--ink); font-family: 'IBM Plex Sans', sans-serif; line-height: 1.6; padding-bottom: 50px; }
-        
-        /* Masthead */
-        .masthead { border-bottom: 3px double var(--ink); padding: 25px; text-align: center; position: sticky; top: 0; background: var(--paper); z-index: 100; }
-        .masthead-title { font-family: 'Playfair Display', serif; font-size: 32px; font-weight: 700; }
-        .tagline { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--muted); }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gemini Pulse</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root { 
+    --ink: #1a1a18; 
+    --paper: #f5f0e8; 
+    --accent: #1a5c3a; 
+    --rule: #c8c0b0; 
+    --muted: #5a554c; 
+    --meta-color: #8c867a;
+  }
+  
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  
+  body { 
+    background: var(--paper); 
+    color: var(--ink); 
+    font-family: 'IBM Plex Sans', sans-serif; 
+    min-height: 100vh; 
+    line-height: 1.6; 
+  }
+  
+  /* Top Right Dropdown Container */
+  .feed-selector-container {
+    position: absolute;
+    top: 20px;
+    right: 25px;
+    z-index: 100;
+  }
 
-        /* Controls */
-        .controls { display: flex; flex-direction: column; gap: 10px; padding: 20px; background: var(--paper2); border-bottom: 1px solid var(--rule); }
-        input, select, button { font-family: 'IBM Plex Mono', monospace; padding: 10px; border: 1px solid var(--rule); font-size: 12px; }
-        .btn-main { background: var(--ink); color: white; border: none; cursor: pointer; font-weight: bold; }
+  select {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 11px;
+    background-color: transparent;
+    color: var(--ink);
+    border: 1px solid var(--rule);
+    padding: 6px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    outline: none;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
 
-        /* Feed List */
-        .container { max-width: 800px; margin: 0 auto; padding: 20px; }
-        .feed-item { margin-bottom: 30px; border-bottom: 1px solid var(--rule); padding-bottom: 20px; }
-        .headline { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--ink); text-decoration: none; font-weight: 700; display: block; margin-bottom: 8px; }
-        .headline:hover { color: var(--accent); text-decoration: underline; }
-        .description { font-size: 15px; color: #444; margin-bottom: 10px; }
-        .meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); text-transform: uppercase; }
+  select:hover {
+    border-color: var(--accent);
+  }
 
-        /* AI Deep Dive Overlay */
-        #reader-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: var(--paper); z-index: 200; overflow-y: auto; padding: 20px; }
-        .reader-header { display: flex; justify-content: space-between; border-bottom: 2px solid var(--ink); padding-bottom: 10px; margin-bottom: 20px; }
-        .ai-chat-box { background: white; border: 2px solid var(--accent); padding: 15px; margin-top: 20px; border-radius: 6px; }
-        .chat-history { max-height: 200px; overflow-y: auto; margin-bottom: 10px; font-size: 14px; }
-    </style>
+  .masthead { 
+    border-bottom: 3px double var(--ink); 
+    padding: 30px 20px; 
+    text-align: center; 
+    background: var(--paper); 
+    position: relative;
+  }
+  
+  .masthead-title { 
+    font-family: 'Playfair Display', serif; 
+    font-size: clamp(32px, 5vw, 56px); 
+    font-weight: 700; 
+  }
+  
+  .tagline { 
+    font-family: 'IBM Plex Mono', monospace; 
+    font-size: 10px; 
+    letter-spacing: 0.2em; 
+    text-transform: uppercase; 
+    color: var(--meta-color); 
+    margin-top: 8px; 
+  }
+  
+  .container { 
+    max-width: 800px; 
+    margin: 0 auto; 
+    padding: 30px 20px 80px; 
+  }
+  
+  .feed-item {
+    margin-bottom: 35px;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: 25px;
+  }
+
+  .feed-item:last-child {
+    border-bottom: none;
+  }
+
+  .headline {
+    font-family: 'Playfair Display', serif;
+    font-size: 22px;
+    color: var(--ink);
+    text-decoration: none;
+    font-weight: 700;
+    display: block; 
+    line-height: 1.3;
+    margin-bottom: 10px;
+  }
+
+  .headline:hover {
+    color: var(--accent);
+    text-decoration: underline;
+  }
+
+  .description {
+    font-size: 15px;
+    color: var(--muted);
+    margin-bottom: 12px;
+    line-height: 1.6;
+  }
+
+  .meta {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px; 
+    color: var(--meta-color);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .system-msg {
+    font-family: 'IBM Plex Mono', monospace; 
+    font-size: 12px; 
+    color: var(--meta-color); 
+    text-align: center;
+    margin-top: 40px;
+  }
+</style>
 </head>
 <body>
 
-<div class="masthead">
-    <div class="tagline" id="current-date">Terminal Intelligence</div>
-    <div class="masthead-title">Gemini Pulse</div>
-</div>
-
-<div class="controls">
-    <input type="password" id="api-key" placeholder="Enter Gemini API Key">
-    <select id="feed-selector" onchange="loadFeed()">
+<div class="feed-selector-container">
+    <select id="feed-dropdown" onchange="loadFeed()">
         <optgroup label="Business News">
             <option value="https://www.thehindubusinessline.com/feeder/default.rss">Business Line</option>
             <option value="https://economictimes.indiatimes.com/rssfeedsdefault.cms">Economic Times</option>
             <option value="https://www.livemint.com/rss/markets">Livemint Markets</option>
             <option value="https://www.moneycontrol.com/rss/MCtopnews.xml">Moneycontrol</option>
+            <option value="https://wap.business-standard.com/rss/markets-106.rss">Business Standard</option>
+            <option value="https://www.financialexpress.com/feed/">Financial Express</option>
         </optgroup>
         <optgroup label="Daily News">
             <option value="https://theprint.in/feed/">ThePrint</option>
             <option value="https://indianexpress.com/feed/">The Indian Express</option>
+            <option value="https://www.livemint.com/rss/news">Livemint News</option>
+            <option value="https://timesofindia.indiatimes.com/rssfeedstopstories.cms?x=1">Times of India Top</option>
+            <option value="https://m.hindustantimes.com/rss/topnews/rssfeed.xml">Hindustan Times</option>
+        </optgroup>
+        <optgroup label="Personal Finance">
+            <option value="https://www.livemint.com/rss/Mutual%20Funds">Livemint Mutual Fund</option>
+            <option value="https://economictimes.indiatimes.com/rssfeeds/837555174.cms">ET Wealth</option>
+        </optgroup>
+        <optgroup label="Mumbai & Thane">
+            <option value="https://timesofindia.indiatimes.com/rssfeeds/3831863.cms">TOI Thane News</option>
+            <option value="https://timesofindia.indiatimes.com/rssfeeds/-2128838597.cms">TOI Mumbai News</option>
+            <option value="https://www.mid-day.com/Resources/midday/rss/news.xml">Mid-Day Mumbai</option>
+        </optgroup>
+        <optgroup label="Editorial">
+            <option value="https://www.epw.in/taxonomy/term/65/feed">EPW Editorials</option>
+            <option value="https://www.livemint.com/rss/opinion">Livemint Opinion</option>
         </optgroup>
     </select>
 </div>
 
-<div class="container" id="rss-output"></div>
+<div class="masthead">
+    <div class="tagline" id="header-date">Financial Intelligence Terminal</div>
+    <div class="masthead-title">Gemini Pulse</div>
+    <div class="tagline">Live Feed</div>
+</div>
 
-<div id="reader-overlay">
-    <div class="reader-header">
-        <button onclick="closeReader()">🔙 BACK</button>
-        <span class="tagline">Deep Dive Terminal</span>
-    </div>
-    <div id="reader-content"></div>
-    <div class="ai-chat-box">
-        <div class="tagline" style="color:var(--accent)">Pulse AI Analyst</div>
-        <div id="chat-history" class="chat-history"></div>
-        <div style="display:flex; gap:5px;">
-            <input type="text" id="chat-input" style="flex:1" placeholder="Ask about this article...">
-            <button class="btn-main" onclick="askAI()">ASK</button>
-        </div>
-    </div>
+<div class="container">
+  <div id="rss-output">
+      <div class="system-msg">Initializing secure terminal...</div>
+  </div>
 </div>
 
 <script>
-    const MODEL = "gemini-3.1-flash-lite-preview"; //
-    let activeArticleText = "";
-
     window.onload = () => {
-        document.getElementById('current-date').innerText = new Date().toDateString();
-        const savedKey = localStorage.getItem('pulse_key');
-        if(savedKey) document.getElementById('api-key').value = savedKey;
-        loadFeed();
+        document.getElementById('header-date').textContent = new Date().toLocaleDateString('en-IN', { 
+            weekday: 'long', day: 'numeric', month: 'long' 
+        });
+        loadFeed(); 
     };
 
-    function loadFeed() {
-        const url = document.getElementById('feed-selector').value;
-        const out = document.getElementById('rss-output');
-        out.innerHTML = "Fetching...";
-
-        fetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}`)
-            .then(res => res.json())
-            .then(data => {
-                let html = "";
-                data.items.forEach((item, i) => {
-                    html += `
-                        <div class="feed-item">
-                            <a class="headline" href="#" onclick="openDeepDive('${encodeURIComponent(item.link)}', '${encodeURIComponent(item.title)}')">${item.title}</a>
-                            <p class="description">${item.description.replace(/<[^>]*>?/gm, '').substring(0, 180)}...</p>
-                            <div class="meta">${item.pubDate} | <button onclick="openDeepDive('${encodeURIComponent(item.link)}', '${encodeURIComponent(item.title)}')">DEEP DIVE ✨</button></div>
-                        </div>`;
-                });
-                out.innerHTML = html;
-            });
-    }
-
-    async function openDeepDive(url, title) {
-        url = decodeURIComponent(url);
-        title = decodeURIComponent(title);
-        const overlay = document.getElementById('reader-overlay');
-        const content = document.getElementById('reader-content');
-        const apiKey = document.getElementById('api-key').value;
-        localStorage.setItem('pulse_key', apiKey);
-
-        overlay.style.display = 'block';
-        content.innerHTML = `<h1>${title}</h1><p>Attempting to extract intelligence...</p>`;
-
-        // Attempt scraping via CORS proxy
-        try {
-            const res = await fetch(`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`);
-            const data = await res.json();
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(data.contents, "text/html");
-            const paragraphs = Array.from(doc.querySelectorAll('p')).map(p => p.innerText).join("\n\n");
-            activeArticleText = paragraphs || "Source blocked extraction. AI will analyze based on title and context.";
-            content.innerHTML = `<h1>${title}</h1><div style="white-space:pre-wrap">${activeArticleText}</div>`;
-        } catch (e) {
-            activeArticleText = "Extraction failed.";
-            content.innerHTML = "<h1>" + title + "</h1><p>Source blocked extraction.</p>";
-        }
-    }
-
-    function closeReader() { document.getElementById('reader-overlay').style.display = 'none'; }
-
-    async function askAI() {
-        const input = document.getElementById('chat-input');
-        const history = document.getElementById('chat-history');
-        const apiKey = document.getElementById('api-key').value;
-        const question = input.value;
-        if(!question || !apiKey) return;
-
-        history.innerHTML += `<div><b>You:</b> ${question}</div>`;
-        input.value = "Thinking...";
-
-        const prompt = `Analyze this article: ${activeArticleText.substring(0, 5000)}\nQuestion: ${question}`;
+    function timeSince(dateString) {
+        const date = new Date(dateString);
+        const seconds = Math.floor((new Date() - date) / 1000);
         
-        try {
-            const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent?key=${apiKey}`, {
-                method: "POST",
-                headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        let interval = seconds / 86400;
+        if (interval > 1) return Math.floor(interval) + " days ago";
+        
+        interval = seconds / 3600;
+        if (interval > 1) return Math.floor(interval) + " hours ago";
+        
+        interval = seconds / 60;
+        if (interval > 1) return Math.floor(interval) + " mins ago";
+        
+        return "Just now";
+    }
+
+    function loadFeed() {
+        const outputContainer = document.getElementById("rss-output");
+        const dropdown = document.getElementById("feed-dropdown");
+        const currentFeedUrl = dropdown.value;
+        const selectedFeedName = dropdown.options[dropdown.selectedIndex].text;
+
+        outputContainer.innerHTML = "<div class='system-msg'>📡 Fetching data stream...</div>";
+
+        const apiUrl = 'https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(currentFeedUrl);
+
+        fetch(apiUrl)
+            .then(response => response.json())
+            .then(data => {
+                if (data.status !== 'ok') {
+                    throw new Error("Failed to fetch the feed.");
+                }
+
+                let htmlOutput = "";
+
+                data.items.forEach(item => {
+                    let cleanDesc = item.description ? item.description.replace(/<[^>]*>?/gm, '').trim() : "";
+                    
+                    if (cleanDesc.length > 350) {
+                        cleanDesc = cleanDesc.substring(0, 350) + "...";
+                    }
+
+                    const timeAgo = timeSince(item.pubDate);
+
+                    htmlOutput += `
+                        <div class="feed-item">
+                            <a href="${item.link}" class="headline" target="_blank" rel="noopener">${item.title}</a>
+                            ${cleanDesc ? `<p class="description">${cleanDesc}</p>` : ''}
+                            <div class="meta">${timeAgo} &mdash; ${selectedFeedName}</div>
+                        </div>
+                    `;
+                });
+
+                outputContainer.innerHTML = htmlOutput;
+            })
+            .catch(err => {
+                console.error("Terminal Error:", err);
+                outputContainer.innerHTML = "<div class='system-msg' style='color:#d93025'>❌ Connection lost or dead feed link.</div>";
             });
-            const data = await res.json();
-            const answer = data.candidates[0].content.parts[0].text;
-            history.innerHTML += `<div style="color:var(--accent)"><b>AI:</b> ${answer}</div>`;
-        } catch (e) { history.innerHTML += `<div style="color:red">AI Error</div>`; }
-        input.value = "";
     }
 </script>
 </body>
