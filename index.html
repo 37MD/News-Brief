@@ -3,16 +3,15 @@
 <!--
   ╔══════════════════════════════════════════════════════════════════╗
   ║  GEMINI PULSE — Indian News Aggregator with Reader Mode          ║
-  ║  Version  : 4.0 (Native Reader Replication)                      ║
+  ║  Version  : 4.1 (Native Reader Replication - No Txtify)          ║
   ║  Features : Mozilla Readability logic, CORS Proxy routing,       ║
-  ║             Gemini AI Parsing, Native Text-Mode Fallback.        ║
+  ║             Gemini AI Parsing, Clean Original Fallback.          ║
   ╚══════════════════════════════════════════════════════════════════╝
 -->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!-- Content Security Policy: Relaxed slightly to allow modern proxies -->
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self';
                  script-src  'unsafe-inline' https://api.rss2json.com;
@@ -855,7 +854,7 @@ ${rawData.substring(0, 15000)}`;
     }
 
     /* ============================================================
-       8. READER MODE ENGINE (Readability + Text Mode Fallback)
+       8. READER MODE ENGINE (Readability Fallback)
     ============================================================ */
     function openReader(url, title, feedName, pubDate) {
       const validatedUrl = safeUrl(url);
@@ -957,7 +956,7 @@ ${rawData.substring(0, 15000)}`;
          console.warn("Gemini Extraction failed", e);
       }
 
-      // Tier 3: TOTAL BLOCK -> Show Text Mode bypass buttons
+      // Tier 3: TOTAL BLOCK -> Show Clean Original Button
       setReaderProgress(100);
       setTimeout(() => setReaderProgress(0), 500);
       renderReaderError(url);
@@ -977,7 +976,7 @@ ${rawData.substring(0, 15000)}`;
       const prompt = `Act as a precise article extractor. Extract the full article body from the following raw HTML.
 Article Title: "${title}"
 
-Return ONLY the clean article HTML using only these tags: <p>, <h2>, <h3>, <h4>, <strong>, <em>, <ul>, <ol>, <li>, <blockquote>.
+Return ONLY the clean article HTML using only these tags: <p>, <h2>, <h3>, <h4>, <strong>, <em>, <ul>, <ol>, <li>, blockquote>.
 Do NOT include navigation, ads, headers, or footers.
 If the article is strictly paywalled and unreadable, return exactly: PAYWALL
 Do not wrap your response in formatting markers.
@@ -1013,21 +1012,17 @@ ${rawHtml.substring(0, 30000)}`;
     }
 
     function renderReaderError(url) {
-      // Provide the user with the ultimate workaround: a dedicated Text Mode proxy
+      // Provide the user with a clean, straightforward button to view the original content
       DOM.readerContent.innerHTML =
         `<div class="reader-status error" style="margin-top: 40px; border: 1px solid var(--rule); padding: 30px; border-radius: 8px; background: var(--paper);">
            <h3 style="color: var(--ink); font-family: 'Playfair Display', serif; font-size: 24px; margin-bottom: 10px;">Publisher Firewall Detected</h3>
            <p style="color: var(--muted); line-height: 1.5; font-size: 14px; margin-bottom: 25px; text-transform: none; letter-spacing: normal;">
-             This news site strictly blocks external readers to force you to view their ads. However, you can still read it cleanly using our dedicated Text Mode bypass.
+             This news site strictly blocks external readers to force you to view their ads. Please continue reading the original article directly on their website.
            </p>
-           <div style="display:flex; gap:15px; justify-content:center; flex-wrap:wrap;">
-             <a href="https://txtify.it/${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" 
-                style="background: var(--ink); color: var(--paper); font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 500; text-transform: uppercase; padding: 10px 20px; border-radius: 4px; text-decoration: none; transition: opacity 0.2s;">
-                📄 Read in Text Mode
-             </a>
+           <div style="display:flex; justify-content:center;">
              <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" 
-                style="background: transparent; color: var(--ink); border: 1px solid var(--ink); font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 500; text-transform: uppercase; padding: 10px 20px; border-radius: 4px; text-decoration: none; transition: background 0.2s;">
-                ↗ Open Original
+                style="background: var(--ink); color: var(--paper); font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 500; text-transform: uppercase; padding: 10px 20px; border-radius: 4px; text-decoration: none; transition: opacity 0.2s;">
+                ↗ Read Original Article
              </a>
            </div>
         </div>`;
