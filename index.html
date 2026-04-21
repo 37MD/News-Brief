@@ -1351,22 +1351,20 @@
         `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
       ];
 
-      // ── Tier 1: Fetch HTML via CORS proxies (RACING MODE) ───────────
+      // ── Tier 1: Fetch HTML via CORS proxies + local extraction ──────
       let rawHtml = null;
-      
-      const fetchAndValidate = (proxyUrl) => xhrFetch(proxyUrl, CONFIG.ARTICLE_TIMEOUT_MS).then(res => {
-        if (res && res.length > 2000 && !res.includes("Just a moment...") && !res.toLowerCase().includes("enable javascript")) {
-          return res;
-        }
-        throw new Error("Invalid or blocked content");
-      });
-
-      try {
-        rawHtml = await Promise.any(proxies.map(p => fetchAndValidate(p)));
-      } catch (e) {
-        console.warn("All proxies failed or timed out.");
+      for (const proxy of proxies) {
+        try {
+          const res = await xhrFetch(proxy, CONFIG.ARTICLE_TIMEOUT_MS);
+          // Discard Cloudflare challenge pages and blank JS-only shells
+          if (res && res.length > 2000 &&
+              !res.includes("Just a moment...") &&
+              !res.toLowerCase().includes("enable javascript")) {
+            rawHtml = res; break;
+          }
+        } catch (e) { console.warn("Proxy failed", proxy); }
+        setReaderProgress(30);
       }
-      setReaderProgress(30);
 
       if (rawHtml) {
         setReaderProgress(50);
@@ -1381,7 +1379,7 @@
       // ── Tier 2: AI-powered extraction via Gemini CAPI (see JS §8d) ──
       setReaderProgress(60);
       try {
-        await fetchArticleViaApi(url, title, feedName, pubDate, rawHtml);
+        await fetchArticleViaApi(url, title, feedName, pubDate);
         return;
       } catch (e) {
         console.warn("Gemini Extraction failed", e);
@@ -1613,25 +1611,22 @@
      * @param {string} title
      * @param {string} feedName
      * @param {string} pubDate
-     * @param {string} [existingRawHtml=null]
      */
-    async function fetchArticleViaApi(url, title, feedName, pubDate, existingRawHtml = null) {
+    async function fetchArticleViaApi(url, title, feedName, pubDate) {
       const apiKey = getGeminiKey();
       if (!apiKey) throw new Error("GEMINI_KEY_MISSING");
 
-      let rawHtml = existingRawHtml;
-      if (!rawHtml) {
-        try {
-          const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
-          rawHtml   = await res.text();
-        } catch (e) { throw new Error("Could not retrieve page source"); }
-      }
+      let rawHtml = '';
+      try {
+        const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
+        rawHtml   = await res.text();
+      } catch (e) { throw new Error("Could not retrieve page source"); }
 
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
       const prompt =
         `Act as a precise article extractor. Extract the full article body from the following raw HTML.\n` +
         `Article Title: "${title}"\n\n` +
-        `Return ONLY clean article HTML using only: <p>, <h2>, <h3>, <h4>, <strong>, <em>, <ul>, <ol>, <li>, blockquote>.\n` +
+        `Return ONLY clean article HTML using only: <p>, <h2>, <h3>, <h4>, <strong>, <em>, <ul>, <ol>, <li>, <blockquote>.\n` +
         `Do NOT include navigation, ads, headers, or footers.\n` +
         `If the article is strictly paywalled and unreadable, return exactly: PAYWALL\n` +
         `Do not wrap your response in formatting markers.\n\n` +
