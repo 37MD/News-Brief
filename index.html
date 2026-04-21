@@ -3,25 +3,19 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self';
                  script-src  'unsafe-inline' https://api.rss2json.com;
                  style-src   'unsafe-inline' https://fonts.googleapis.com;
                  font-src    https://fonts.gstatic.com;
                  img-src     * data:;
-                 connect-src https://api.rss2json.com
-                             https://api.allorigins.win
-                             https://corsproxy.io
-                             https://generativelanguage.googleapis.com;">
-                             
-  <title>Gemini Pulse | Intelligence Terminal</title>
-  
+                 connect-src *;">
+  <title>Gemini Pulse</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 
   <style>
     /* ================================================================
-       [1] DESIGN TOKENS & BASE STYLES
+       DESIGN TOKENS & BASE STYLES
     ================================================================ */
     :root {
       --ink:            #1a1a18;
@@ -44,7 +38,7 @@
     }
 
     /* ================================================================
-       [2] TOP CONTROLS & NAVIGATION
+       CONTROLS BAR
     ================================================================ */
     .controls-bar {
       position:    absolute;
@@ -99,15 +93,15 @@
     .btn-outline:hover    { background: var(--accent); color: var(--paper); }
     .btn-outline:disabled { opacity: 0.4; cursor: not-allowed; }
     
-    #settings-btn { color: var(--muted); border-color: var(--rule); }
-    #settings-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-    
+    #clear-key-btn { color: var(--muted); border-color: var(--rule); }
+    #clear-key-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
     .icon-spin { display: inline-block; transition: transform 0.2s; }
     .icon-spin.active { animation: slowSpin 1.5s linear infinite; }
     @keyframes slowSpin { to { transform: rotate(360deg); } }
 
     /* ================================================================
-       [3] HEADER / MASTHEAD
+       MASTHEAD
     ================================================================ */
     .masthead {
       border-bottom: 3px double var(--ink);
@@ -131,7 +125,7 @@
     }
 
     /* ================================================================
-       [4] FEED LIST & ITEMS
+       FEED STATUS BAR
     ================================================================ */
     .feed-status-bar {
       max-width:   800px;
@@ -153,6 +147,9 @@
     }
     .clear-history-btn:hover { opacity: 1; text-decoration: underline; }
 
+    /* ================================================================
+       FEED CONTAINER & ARTICLES
+    ================================================================ */
     .container {
       max-width: 800px;
       margin:    0 auto;
@@ -226,7 +223,7 @@
     }
 
     /* ================================================================
-       [5] READER MODE OVERLAY
+       READER MODE PANEL
     ================================================================ */
     #reader-backdrop {
       display:         none;
@@ -373,7 +370,6 @@
       border-bottom:  2px solid var(--rule);
     }
 
-    /* Article Text Formatting */
     .reader-body {
       font-size:   var(--reader-font-sz);
       line-height: 1.85;
@@ -404,22 +400,12 @@
       color:       var(--muted);
       font-style:  italic;
     }
-    .reader-body a { color: var(--accent); word-break: break-word; }
+    .reader-body a    { color: var(--accent); word-break: break-word; }
     .reader-body ul, .reader-body ol { padding-left: 1.6em; margin-bottom: 1.2em; }
-    .reader-body li { margin-bottom: 0.4em; }
-
-    .reader-status {
-      font-family: 'IBM Plex Mono', monospace;
-      font-size:   12px;
-      color:       var(--meta-color);
-      text-align:  center;
-      margin-top:  80px;
-      line-height: 2.5;
-    }
-    .reader-status.error { color: var(--error); }
+    .reader-body li   { margin-bottom: 0.4em; }
 
     /* ================================================================
-       [7] AI CHAT ASSISTANT (Dropdown UI)
+       AI CHAT PANEL (Drops down from top right)
     ================================================================ */
     #ai-panel {
       position: absolute;
@@ -440,11 +426,7 @@
       max-height: 65vh;
       z-index: 1005;
     }
-    #ai-panel.open {
-      opacity: 1;
-      pointer-events: auto;
-      transform: translateY(0);
-    }
+    #ai-panel.open { opacity: 1; pointer-events: auto; transform: translateY(0); }
     
     .ai-header {
       display: flex; justify-content: space-between; align-items: center;
@@ -460,7 +442,6 @@
     .ai-message.user { background: rgba(26, 92, 58, 0.08); border-left: 3px solid var(--accent); }
     .ai-message.system { color: var(--muted); font-style: italic; font-size: 13px; background: transparent; padding: 0; }
     
-    /* Markdown parsing elements in chat */
     .ai-message strong { font-weight: 600; }
     .ai-message ul { margin-left: 20px; margin-top: 8px; }
     .ai-message p { margin-bottom: 8px; }
@@ -481,30 +462,7 @@
     .ai-input-area button:disabled { background: var(--rule); cursor: not-allowed; }
 
     /* ================================================================
-       [8] SETTINGS MODAL UI
-    ================================================================ */
-    #settings-modal-wrapper {
-      display: none; position: fixed; inset: 0; background: rgba(26,26,24,0.6);
-      z-index: 2000; backdrop-filter: blur(3px); align-items: center; justify-content: center;
-    }
-    #settings-modal-wrapper.open { display: flex; }
-    
-    .settings-box { background: var(--paper); border: 1px solid var(--rule); border-radius: 8px; width: 90%; max-width: 420px; padding: 30px; box-shadow: 0 10px 40px rgba(0,0,0,0.2); }
-    .settings-box h2 { font-family: 'Playfair Display', serif; font-size: 24px; margin-bottom: 20px; color: var(--ink); }
-    .settings-group { margin-bottom: 20px; }
-    .settings-group label { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
-    .settings-group input[type="password"], .settings-group input[type="text"] { width: 100%; padding: 10px 12px; border: 1px solid var(--rule); border-radius: 4px; font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; background: #fff; }
-    .settings-group input:focus { outline: none; border-color: var(--accent); }
-    .settings-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 30px; }
-    
-    .btn-primary { background: var(--accent); color: var(--paper); border: none; padding: 10px 20px; border-radius: 4px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 500; text-transform: uppercase; cursor: pointer; }
-    .btn-primary:hover { background: #124028; }
-    .btn-secondary { background: transparent; color: var(--muted); border: 1px solid var(--rule); padding: 10px 20px; border-radius: 4px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 500; text-transform: uppercase; cursor: pointer; }
-    .btn-secondary:hover { color: var(--ink); border-color: var(--ink); }
-    #settings-error { color: var(--error); font-size: 13px; margin-top: 10px; display: none; }
-
-    /* ================================================================
-       [9] RESPONSIVE BREAKPOINTS
+       RESPONSIVE BREAKPOINTS
     ================================================================ */
     @media (max-width: 650px) {
       .controls-bar { position: static; padding: 12px 16px; justify-content: flex-start; border-bottom: 1px solid var(--rule); flex-wrap: wrap; }
@@ -519,24 +477,6 @@
 </head>
 
 <body>
-
-  <div id="settings-modal-wrapper">
-    <div class="settings-box">
-      <h2>Terminal Settings</h2>
-      
-      <div class="settings-group">
-        <label for="api-key-input">Gemini API Key (Starts with AIza...)</label>
-        <input type="password" id="api-key-input" placeholder="Paste your API key here">
-      </div>
-      
-      <div id="settings-error"></div>
-
-      <div class="settings-actions">
-        <button class="btn-secondary" id="close-settings-btn">Cancel</button>
-        <button class="btn-primary" id="save-settings-btn">Verify & Save</button>
-      </div>
-    </div>
-  </div>
 
   <div class="controls-bar">
     <select id="feed-dropdown" class="input-base" aria-label="Select news feed">
@@ -575,7 +515,7 @@
     <button class="btn-outline" id="refresh-btn" title="Refresh feed">
       <span class="icon-spin" id="spin-icon">↻</span> Refresh
     </button>
-    <button class="btn-outline" id="settings-btn" title="API Settings">⚙️ Settings</button>
+    <button class="btn-outline" id="clear-key-btn" title="Clear Gemini Key">🔑 Reset Key</button>
   </div>
 
   <div class="masthead">
@@ -611,7 +551,6 @@
       </div>
       
       <button class="reader-open-btn reader-ai-btn" id="reader-ai-toggle" style="display:none;">✨ Ask AI</button>
-      
       <a class="reader-open-btn" id="reader-ext-link" href="#" target="_blank" rel="noopener noreferrer">↗ Original</a>
     </div>
 
@@ -645,21 +584,24 @@
     'use strict';
 
     /* ============================================================
-       [1] APP CONFIGURATION & STATE
+       1. CONFIG (EXACT V24 MODEL)
     ============================================================ */
     const CONFIG = Object.freeze({
-      CACHE_TTL_MS:       10 * 60 * 1000, 
-      FEED_TIMEOUT_MS:    15_000,
+      CACHE_TTL_MS:      5 * 60 * 1000, 
+      FEED_TIMEOUT_MS:   15_000,
       ARTICLE_TIMEOUT_MS: 12_000,
-      AUTO_REFRESH_S:     600,
-      MAX_DESC_CHARS:     400,
-      READER_FONT_MIN:    13,
-      READER_FONT_MAX:    24,
-      READER_FONT_DEF:    17,
-      // FIRMLY LOCKED TO THE MODEL THAT WORKS FOR YOUR KEY
-      GEMINI_MODEL:       'gemini-3.1-flash-lite-preview' 
+      AUTO_REFRESH_S:    600,
+      MAX_DESC_CHARS:    350,
+      READER_FONT_MIN:   13,
+      READER_FONT_MAX:   24,
+      READER_FONT_DEF:   17,
+      // EXACT MODEL FROM V24 UPLOAD
+      GEMINI_MODEL:      'gemini-2.5-flash-preview-09-2025'
     });
 
+    /* ============================================================
+       2. STATE
+    ============================================================ */
     const feedCache      = {};
     let   requestCounter = 0;
     let   debounceTimer  = null;
@@ -667,11 +609,11 @@
     let   readerFontSize = CONFIG.READER_FONT_DEF;
     let   currentArticleText = ""; 
     
-    // Read Ledger for "Already Read" feature
+    // Phase 2: Read Ledger
     let   readLedger     = JSON.parse(localStorage.getItem('gp_read_ledger') || '[]');
 
     /* ============================================================
-       [2] DOM NODE REFERENCES
+       3. DOM REFS
     ============================================================ */
     const DOM = {
       output:          document.getElementById('rss-output'),
@@ -679,7 +621,7 @@
       customFeedInput: document.getElementById('custom-feed-url'),
       refreshBtn:      document.getElementById('refresh-btn'),
       spinIcon:        document.getElementById('spin-icon'),
-      settingsBtn:     document.getElementById('settings-btn'),
+      clearKeyBtn:     document.getElementById('clear-key-btn'),
       itemCount:       document.getElementById('item-count'),
       nextRefresh:     document.getElementById('next-refresh'),
       clearHistoryBtn: document.getElementById('clear-history-btn'),
@@ -696,12 +638,6 @@
       fontDown:        document.getElementById('font-down'),
       headerDate:      document.getElementById('header-date'),
       
-      settingsModal:   document.getElementById('settings-modal-wrapper'),
-      apiKeyInput:     document.getElementById('api-key-input'),
-      saveSettingsBtn: document.getElementById('save-settings-btn'),
-      closeSettingsBtn:document.getElementById('close-settings-btn'),
-      settingsError:   document.getElementById('settings-error'),
-
       aiToggle:        document.getElementById('reader-ai-toggle'),
       aiPanel:         document.getElementById('ai-panel'),
       aiCloseBtn:      document.getElementById('ai-close-btn'),
@@ -712,68 +648,34 @@
     };
 
     /* ============================================================
-       [3] SECURITY, STORAGE & SETTINGS LOGIC
+       4. SECURITY & STORAGE (EXACT V24 LOGIC)
     ============================================================ */
-    function getStoredConfig() { return { key: localStorage.getItem('gemini_api_key') || '' }; }
-
-    function openSettings() {
-      const conf = getStoredConfig();
-      DOM.apiKeyInput.value = conf.key;
-      DOM.settingsError.style.display = 'none';
-      DOM.settingsModal.classList.add('open');
-    }
-
-    function closeSettings() { DOM.settingsModal.classList.remove('open'); }
-
-    async function verifyAndSaveSettings() {
-      const key = DOM.apiKeyInput.value.trim();
-      if (!key) return showSettingsError("API Key cannot be empty.");
-      if (!key.startsWith("AIza")) return showSettingsError("Invalid Key Format. Google Keys start with 'AIza'.");
-
-      DOM.saveSettingsBtn.textContent = "Verifying...";
-      DOM.saveSettingsBtn.disabled = true;
-      DOM.settingsError.style.display = 'none';
-
-      try {
-        const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${key}`;
-        const response = await fetch(testUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: "Say OK" }] }] })
-        });
-
-        if (response.status === 404) throw new Error(`Model not found (404). Your key lacks access to ${CONFIG.GEMINI_MODEL}.`);
-        if (response.status === 400 || response.status === 403) throw new Error(`API Key invalid or denied (${response.status}).`);
-        if (!response.ok) throw new Error(`Connection failed (${response.status}).`);
-
-        localStorage.setItem('gemini_api_key', key);
-        closeSettings();
-        loadFeed(true); 
-      } catch (err) {
-        showSettingsError(err.message);
-      } finally {
-        DOM.saveSettingsBtn.textContent = "Verify & Save";
-        DOM.saveSettingsBtn.disabled = false;
+    function getGeminiKey() {
+      let key = localStorage.getItem('gemini_api_key');
+      if (!key) {
+        key = prompt(
+          "🔒 Security Check: Enter your Gemini API Key.\n\n" +
+          "This is securely saved in your browser's local storage and will NEVER be uploaded to GitHub.\n" +
+          "Get a free key at: aistudio.google.com/app/apikey"
+        );
+        if (key && key.trim() !== "") {
+          localStorage.setItem('gemini_api_key', key.trim());
+        } else {
+          return null; 
+        }
       }
+      return key;
     }
 
-    function showSettingsError(msg) {
-      DOM.settingsError.textContent = msg;
-      DOM.settingsError.style.display = 'block';
+    function clearGeminiKey() {
+      localStorage.removeItem('gemini_api_key');
+      alert("Gemini API Key removed. It will prompt again on your next fetch.");
     }
 
-    function checkKeyAndRun(callback) {
-      const conf = getStoredConfig();
-      if (!conf.key) openSettings();
-      else callback();
-    }
-
-    // LEDGER MANAGEMENT (Already Read Annihilation)
     function markAsRead(url) {
       if(!url || url === '#') return;
       if(!readLedger.includes(url)) {
         readLedger.push(url);
-        // keep ledger size reasonable
         if (readLedger.length > 500) readLedger.shift();
         localStorage.setItem('gp_read_ledger', JSON.stringify(readLedger));
       }
@@ -792,14 +694,16 @@
     }
 
     /* ============================================================
-       [4] NETWORK, PROXY & API ENGINE
+       5. UTILITY & API ENGINE (EXACT V24 LOGIC)
     ============================================================ */
     function xhrFetch(url, timeoutMs) {
       return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         let didTimeout = false;
         const timer = setTimeout(() => {
-          didTimeout = true; xhr.abort(); reject(new Error('TIMEOUT'));
+          didTimeout = true;
+          xhr.abort();
+          reject(new Error('TIMEOUT'));
         }, timeoutMs);
         xhr.open('GET', url, true);
         xhr.onload = () => {
@@ -814,6 +718,7 @@
       });
     }
 
+    // EXACT V24 Retry Engine (No model loops)
     async function fetchWithRetry(url, options, maxRetries = 3) {
       let attempt = 0;
       while (attempt < maxRetries) {
@@ -822,10 +727,6 @@
           attempt++;
           if (attempt >= maxRetries) throw new Error("Rate limit exceeded (429). Please wait a minute.");
           await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
-        } else if (response.status === 404) {
-          throw new Error(`Model not found (404). Ensure key permissions for ${CONFIG.GEMINI_MODEL}`);
-        } else if (response.status === 400 || response.status === 403) {
-          throw new Error(`API Error (${response.status}). Please check Settings.`);
         } else {
           if (!response.ok) throw new Error(`API Error: ${response.status}`);
           return response;
@@ -833,31 +734,66 @@
       }
     }
 
-    function escapeHtml(str) { return str == null ? '' : String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;'); }
-    function safeUrl(url) { try { const p = new URL(url); return (p.protocol === 'http:' || p.protocol === 'https:') ? url : '#'; } catch { return '#'; } }
-    function stripHtml(html) { return !html ? '' : html.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').trim(); }
-    function cleanAiResponse(text) {
-      let t = text.trim(); const marker = String.fromCharCode(96, 96, 96); 
-      if (t.startsWith(marker)) { const fn = t.indexOf('\n'); if (fn !== -1) t = t.substring(fn + 1); }
-      if (t.endsWith(marker)) t = t.substring(0, t.length - 3); return t.trim();
+    function escapeHtml(str) {
+      if (str == null) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     }
-    function parseMarkdown(md) {
-      if (!md) return '';
-      let html = md.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/^- (.*)$/gm, '<ul><li>$1</li></ul>').replace(/<\/ul>\n<ul>/g, '\n').replace(/\n\n/g, '</p><p>');
-      return `<p>${html}</p>`;
+
+    function safeUrl(url) {
+      if (!url) return '#';
+      try {
+        const parsed = new URL(url);
+        return (parsed.protocol === 'http:' || parsed.protocol === 'https:') ? url : '#';
+      } catch { return '#'; }
     }
+
     function timeSince(dateString) {
-      if (!dateString) return 'Unknown time'; const date = new Date(dateString); if (isNaN(date.getTime())) return 'Unknown time';
+      if (!dateString) return 'Unknown time';
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Unknown time';
       const seconds = Math.floor((Date.now() - date) / 1000);
       if (seconds < 60) return 'Just now';
-      const mins = Math.floor(seconds / 60), hours = Math.floor(seconds / 3600), days = Math.floor(seconds / 86400);
-      if (days > 1) return `${days} days ago`; if (days === 1) return '1 day ago';
-      if (hours > 1) return `${hours} hours ago`; if (hours === 1) return '1 hour ago';
-      if (mins > 1) return `${mins} mins ago`; return '1 min ago';
+      const mins = Math.floor(seconds / 60);
+      const hours = Math.floor(seconds / 3600);
+      const days = Math.floor(seconds / 86400);
+      if (days > 1) return `${days} days ago`;
+      if (days === 1) return '1 day ago';
+      if (hours > 1) return `${hours} hours ago`;
+      if (hours === 1) return '1 hour ago';
+      if (mins > 1) return `${mins} mins ago`;
+      return '1 min ago';
+    }
+
+    function stripHtml(html) {
+      if (!html) return '';
+      return html.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').trim();
+    }
+
+    function cleanAiResponse(text) {
+      let t = text.trim();
+      const marker = String.fromCharCode(96, 96, 96); 
+      if (t.startsWith(marker)) {
+        const firstNewline = t.indexOf('\n');
+        if (firstNewline !== -1) t = t.substring(firstNewline + 1);
+      }
+      if (t.endsWith(marker)) {
+        t = t.substring(0, t.length - 3);
+      }
+      return t.trim();
+    }
+
+    function parseMarkdown(md) {
+      if (!md) return '';
+      let html = md.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+      html = html.replace(/^- (.*)$/gm, '<ul><li>$1</li></ul>');
+      html = html.replace(/<\/ul>\n<ul>/g, '\n');
+      html = html.replace(/\n\n/g, '</p><p>');
+      return `<p>${html}</p>`;
     }
 
     /* ============================================================
-       [5] RSS AGGREGATION & SILENT BACKGROUND CACHING
+       6. RSS PROXIES & AI FETCH
     ============================================================ */
     const proxyUrl = {
       rss2json:   (feed, cb) => `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed)}${cb ? '&callback='+cb : ''}`,
@@ -865,7 +801,7 @@
       corsproxy:  (feed) => `https://corsproxy.io/?${encodeURIComponent(feed)}`
     };
 
-    /** JSONP is used for the Silent Background Cacher to bypass Gemini rate limits */
+    /** JSONP is used for the Silent Background Cacher */
     function jsonpFetch(scriptUrl, fnName, timeoutMs) {
       return new Promise((resolve, reject) => {
         const script = document.createElement('script'); let settled = false;
@@ -885,7 +821,7 @@
       return data.items;
     }
     
-    /** The Silent Cacher - pre-loads all dropdown URLs in the background via JSONP */
+    /** The Silent Cacher - pre-loads all dropdown URLs in the background */
     async function silentBackgroundCache() {
       const options = Array.from(DOM.dropdown.options).map(opt => opt.value).filter(val => val);
       for(const url of options) {
@@ -893,25 +829,28 @@
           try {
              const items = await fetchViaJsonp(url);
              feedCache[url] = { timestamp: Date.now(), items, feedName: 'Cached' };
-          } catch(e) { /* Fail silently in background */ }
+          } catch(e) { /* Fail silently */ }
         }
       }
     }
 
-    /** Tier 0 — The Gemini Extractor (Limit Removed) */
+    /** EXACT V24 Gemini API Implementation + Infinite Articles */
     async function fetchViaGeminiApi(feedUrl, feedName) {
-      const conf = getStoredConfig();
-      if (!conf.key) throw new Error("API_KEY_MISSING");
+      const apiKey = getGeminiKey();
+      if (!apiKey) throw new Error("Gemini API key required");
 
       let rawData = "";
-      try { rawData = await xhrFetch(proxyUrl.corsproxy(feedUrl), CONFIG.FEED_TIMEOUT_MS); } 
-      catch(e) { rawData = await xhrFetch(proxyUrl.allOrigins(feedUrl), CONFIG.FEED_TIMEOUT_MS); }
+      try {
+        rawData = await xhrFetch(proxyUrl.corsproxy(feedUrl), CONFIG.FEED_TIMEOUT_MS);
+      } catch(e) {
+        rawData = await xhrFetch(proxyUrl.allOrigins(feedUrl), CONFIG.FEED_TIMEOUT_MS);
+      }
 
       if(!rawData) throw new Error("Failed to retrieve source XML.");
 
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${conf.key}`;
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
       
-      // Removed the 15 article limit here
+      // Phase 2: Removed 15 item limit
       const prompt = `Parse this raw RSS/Atom XML feed into a JSON array of articles.
 Source name: ${feedName}
 
@@ -936,7 +875,8 @@ ${rawData.substring(0, 15000)}`;
       const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
       
       const stripped = cleanAiResponse(rawText);
-      const start = stripped.indexOf('['); const end = stripped.lastIndexOf(']');
+      const start = stripped.indexOf('[');
+      const end = stripped.lastIndexOf(']');
       
       if (start === -1 || end === -1) throw new Error('API response contained no JSON array');
       const items = JSON.parse(stripped.slice(start, end + 1));
@@ -949,14 +889,14 @@ ${rawData.substring(0, 15000)}`;
       const errors = [];
       try { return await fetchViaGeminiApi(feedUrl, feedName); } 
       catch (err) {
-        if (err.message === "API_KEY_MISSING") throw err;
-        
         errors.push(`T0-Gemini: ${err.message}`);
         console.warn('[Proxy T0 Gemini]', err.message);
         
-        if (err.message.includes('429')) onStatus('📡 AI heavily rate limited. Falling back to basic proxy…');
-        else if (err.message.includes('404') || err.message.includes('400')) onStatus('📡 AI config error. Falling back to basic proxy…');
-        else onStatus('📡 AI unavailable. Retrying via standard proxy…');
+        if (err.message.includes('429')) {
+             onStatus('📡 AI heavily rate limited. Falling back to basic proxy…');
+        } else {
+             onStatus('📡 AI unavailable. Retrying via standard proxy…');
+        }
       }
 
       try { return await fetchViaJsonp(feedUrl); } 
@@ -967,64 +907,60 @@ ${rawData.substring(0, 15000)}`;
     }
 
     /* ============================================================
-       [6] FEED RENDERING & DE-DUPLICATION
+       7. FEED RENDERING & DE-DUPLICATION
     ============================================================ */
     function loadFeed(forceRefresh = false) {
-      checkKeyAndRun(() => {
-        clearTimeout(debounceTimer);
-        debounceTimer = setTimeout(async () => {
-          // Custom Feed support
-          const customUrl = DOM.customFeedInput.value.trim();
-          const feedUrl = customUrl || DOM.dropdown.value;
-          const feedName = customUrl ? "Custom Feed" : DOM.dropdown.options[DOM.dropdown.selectedIndex].text;
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(async () => {
+        // Phase 2: Custom Feed Input
+        const customUrl = DOM.customFeedInput.value.trim();
+        const feedUrl = customUrl || DOM.dropdown.value;
+        const feedName = customUrl ? "Custom Feed" : DOM.dropdown.options[DOM.dropdown.selectedIndex].text;
+        
+        const cached = feedCache[feedUrl];
+        const isCacheHit = cached && (Date.now() - cached.timestamp < CONFIG.CACHE_TTL_MS);
+        const thisId = ++requestCounter;
+
+        if (!forceRefresh && isCacheHit) {
+          renderFeedItems(cached.items, feedName, true);
+          startCountdown();
+          return;
+        }
+
+        setFeedStatus('📡 Fetching via Gemini AI…');
+        DOM.itemCount.textContent = '';
+        setRefreshing(true);
+
+        try {
+          const items = await fetchFeed(feedUrl, feedName, (msg) => { if (thisId === requestCounter) setFeedStatus(msg); });
+          if (thisId !== requestCounter) return;
+          if (!items || !items.length) { setFeedStatus('📭 No articles found.'); return; }
           
-          const cached = feedCache[feedUrl];
-          const isCacheHit = cached && (Date.now() - cached.timestamp < CONFIG.CACHE_TTL_MS);
-          const thisId = ++requestCounter;
-
-          if (!forceRefresh && isCacheHit) {
-            renderFeedItems(cached.items, feedName, true);
-            startCountdown();
-            return;
-          }
-
-          setFeedStatus('📡 Fetching via Gemini AI…');
-          DOM.itemCount.textContent = '';
-          setRefreshing(true);
-
-          try {
-            const items = await fetchFeed(feedUrl, feedName, (msg) => { if (thisId === requestCounter) setFeedStatus(msg); });
-            if (thisId !== requestCounter) return;
-            if (!items || !items.length) { setFeedStatus('📭 No articles found.'); return; }
-            
-            feedCache[feedUrl] = { timestamp: Date.now(), items, feedName };
-            renderFeedItems(items, feedName, false);
-            startCountdown();
-          } catch (err) {
-            if (thisId !== requestCounter) return;
-            if (err.message === "API_KEY_MISSING") return; 
-            DOM.output.innerHTML = `<div class="system-msg error">❌ Feed unavailable.<br><small style="font-size:10px;opacity:.7;line-height:2;white-space:pre-line">${escapeHtml(err.message)}</small></div>`;
-          } finally {
-            if (thisId === requestCounter) setRefreshing(false);
-          }
-        }, 200);
-      });
+          feedCache[feedUrl] = { timestamp: Date.now(), items, feedName };
+          renderFeedItems(items, feedName, false);
+          startCountdown();
+        } catch (err) {
+          if (thisId !== requestCounter) return;
+          DOM.output.innerHTML = `<div class="system-msg error">❌ Feed unavailable.<br>` +
+            `<small style="font-size:10px;opacity:.7;line-height:2;white-space:pre-line">${escapeHtml(err.message)}</small></div>`;
+        } finally {
+          if (thisId === requestCounter) setRefreshing(false);
+        }
+      }, 200);
     }
 
-    /** Renders items applying De-Duplication and Already-Read Filters */
     function renderFeedItems(rawItems, feedName, fromCache) {
       const cacheBadge = fromCache ? `<span class="cached-badge">Cached</span>` : '';
       
-      // 1. De-Duplication Engine
+      // Phase 2: De-Duplication Engine
       const seen = new Set();
       const uniqueItems = rawItems.filter(item => {
          const key = (item.link || item.title).toLowerCase().trim();
          if(seen.has(key)) return false;
-         seen.add(key);
-         return true;
+         seen.add(key); return true;
       });
 
-      // 2. Hide "Already Read" Items
+      // Phase 2: Hide "Already Read" Items
       const unreadItems = uniqueItems.filter(item => !readLedger.includes(safeUrl(item.link)));
 
       if (unreadItems.length === 0) {
@@ -1053,7 +989,6 @@ ${rawData.substring(0, 15000)}`;
     function setFeedStatus(msg) { DOM.output.innerHTML = `<div class="system-msg">${msg}</div>`; }
     function setRefreshing(isLoading) {
       DOM.refreshBtn.disabled = isLoading;
-      // Trigger new icon spin class
       if(isLoading) DOM.spinIcon.classList.add('active');
       else DOM.spinIcon.classList.remove('active');
     }
@@ -1069,7 +1004,7 @@ ${rawData.substring(0, 15000)}`;
     }
 
     /* ============================================================
-       [7] READER MODE CORE
+       8. READER MODE ENGINE 
     ============================================================ */
     function openReader(url, title, feedName, pubDate) {
       const validatedUrl = safeUrl(url);
@@ -1107,7 +1042,7 @@ ${rawData.substring(0, 15000)}`;
       closeAiPanel();
       DOM.aiToggle.style.display = 'none';
       
-      // Reload feed to apply "read" filter visually behind the scenes
+      // Reload feed to visually apply "read" filter
       loadFeed(false); 
     }
 
@@ -1180,9 +1115,6 @@ ${rawData.substring(0, 15000)}`;
          if (e.message.includes('429')) {
              renderReaderError(url, "Google API Rate limit exceeded. Please wait a minute.");
              return;
-         } else if (e.message.includes('404') || e.message.includes('400')) {
-             renderReaderError(url, "API Configuration Error. Please check your Settings.");
-             return;
          }
       }
 
@@ -1191,9 +1123,10 @@ ${rawData.substring(0, 15000)}`;
       renderReaderError(url);
     }
 
+    // EXACT V24 API LOGIC
     async function fetchArticleViaApi(url, title, feedName, pubDate) {
-      const conf = getStoredConfig();
-      if (!conf.key) throw new Error("GEMINI_KEY_MISSING");
+      const apiKey = getGeminiKey();
+      if (!apiKey) throw new Error("GEMINI_KEY_MISSING");
 
       let rawHtml = '';
       try {
@@ -1201,7 +1134,7 @@ ${rawData.substring(0, 15000)}`;
         rawHtml = await res.text();
       } catch (e) { throw new Error("Could not retrieve page source"); }
 
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${conf.key}`;
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
       const prompt = `Act as a precise article extractor. Extract the full article body from the following raw HTML.
 Article Title: "${title}"
 
@@ -1289,7 +1222,7 @@ ${rawHtml.substring(0, 30000)}`;
     }
 
     /* ============================================================
-       [8] AI IN-READER CHAT LOGIC (Smart Guardrails)
+       9. AI IN-READER CHAT LOGIC (EXACT V24 API + SMART GUARDRAILS)
     ============================================================ */
     function toggleAiPanel() {
       DOM.aiPanel.classList.toggle('open');
@@ -1320,12 +1253,12 @@ ${rawHtml.substring(0, 30000)}`;
       DOM.aiChatArea.appendChild(loadingDiv); DOM.aiChatArea.scrollTop = DOM.aiChatArea.scrollHeight;
 
       try {
-        const conf = getStoredConfig();
-        if (!conf.key) throw new Error("API Key missing");
+        const apiKey = getGeminiKey();
+        if (!apiKey) throw new Error("API Key missing");
 
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${conf.key}`;
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
         
-        // UPGRADED PROMPT: Loose guardrails to allow external financial knowledge
+        // Phase 2: Loose guardrails to allow external financial knowledge
         const fullPrompt = `You are an expert financial reading assistant. Use the provided article text as your primary context. 
         However, if the user asks for broader market impacts, sector weightings, index movements (e.g. Nifty FMCG/MNC), or technical insights not explicitly mentioned in the text, you MUST use your general financial knowledge to answer them accurately. Keep answers concise, clear, and highly relevant to an Indian equities trader.
         
@@ -1356,24 +1289,21 @@ ${rawHtml.substring(0, 30000)}`;
     }
 
     /* ============================================================
-       [9] INITIALIZATION & EVENT LISTENERS
+       10. INIT & EVENT LISTENERS
     ============================================================ */
     window.addEventListener('load', () => {
       DOM.headerDate.textContent = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
       updateClearHistoryBtn();
 
-      // UI Triggers
+      // Core Feed Events
       DOM.dropdown.addEventListener('change', () => loadFeed(false));
       DOM.refreshBtn.addEventListener('click', () => { 
-         // Clear specific custom input cache if using custom input
          if(DOM.customFeedInput.value) delete feedCache[DOM.customFeedInput.value];
          else delete feedCache[DOM.dropdown.value]; 
          loadFeed(true); 
       });
       DOM.clearHistoryBtn.addEventListener('click', clearReadHistory);
-      DOM.settingsBtn.addEventListener('click', openSettings);
-      DOM.closeSettingsBtn.addEventListener('click', closeSettings);
-      DOM.saveSettingsBtn.addEventListener('click', verifyAndSaveSettings);
+      DOM.clearKeyBtn.addEventListener('click', clearGeminiKey);
 
       // Reader Triggers
       DOM.output.addEventListener('click', (e) => {
@@ -1396,4 +1326,27 @@ ${rawHtml.substring(0, 30000)}`;
         document.documentElement.style.setProperty('--reader-font-sz', `${readerFontSize}px`);
       });
       DOM.fontDown.addEventListener('click', () => {
-        readerFontSize = Math.max(
+        readerFontSize = Math.max(CONFIG.READER_FONT_MIN, readerFontSize - 1);
+        document.documentElement.style.setProperty('--reader-font-sz', `${readerFontSize}px`);
+      });
+
+      DOM.readerScroll.addEventListener('scroll', () => {
+        const { scrollTop, scrollHeight, clientHeight } = DOM.readerScroll;
+        const denominator = scrollHeight - clientHeight;
+        setReaderProgress(denominator > 0 ? (scrollTop / denominator) * 100 : 0);
+      });
+
+      // AI Panel Triggers
+      DOM.aiToggle.addEventListener('click', toggleAiPanel);
+      DOM.aiCloseBtn.addEventListener('click', closeAiPanel);
+      DOM.aiSubmit.addEventListener('click', () => submitAiPrompt(DOM.aiInput.value));
+      DOM.aiInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitAiPrompt(DOM.aiInput.value); });
+      DOM.aiPromptBtns.forEach(btn => { btn.addEventListener('click', () => { submitAiPrompt(btn.textContent); }); });
+
+      // Start Engine
+      loadFeed();
+      setTimeout(silentBackgroundCache, 2000); 
+    });
+  </script>
+</body>
+</html>
