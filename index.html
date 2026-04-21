@@ -48,11 +48,9 @@
       display:     flex;
       align-items: center;
       gap:         10px;
-      flex-wrap:   wrap;
-      justify-content: flex-end;
     }
 
-    .input-base {
+    select {
       font-family:      'IBM Plex Mono', monospace;
       font-size:        11px;
       background-color: transparent;
@@ -60,18 +58,13 @@
       border:           1px solid var(--rule);
       padding:          6px 10px;
       border-radius:    4px;
+      cursor:           pointer;
       outline:          none;
+      text-transform:   uppercase;
+      font-weight:      500;
+      max-width:        200px;
     }
-    .input-base:focus, .input-base:hover { border-color: var(--accent); }
-
-    select.input-base { cursor: pointer; text-transform: uppercase; font-weight: 500; max-width: 180px; }
-    
-    #custom-feed-url {
-      width: 180px;
-      font-family: 'IBM Plex Sans', sans-serif;
-      text-transform: none;
-    }
-    #custom-feed-url::placeholder { color: var(--rule); text-transform: uppercase; font-family: 'IBM Plex Mono', monospace; font-size: 10px;}
+    select:hover { border-color: var(--accent); }
 
     .btn-outline {
       font-family:    'IBM Plex Mono', monospace;
@@ -84,11 +77,8 @@
       cursor:         pointer;
       text-transform: uppercase;
       font-weight:    500;
-      transition:     all 0.2s;
+      transition:     background 0.2s, color 0.2s;
       white-space:    nowrap;
-      display:        flex;
-      align-items:    center;
-      gap:            4px;
     }
     .btn-outline:hover    { background: var(--accent); color: var(--paper); }
     .btn-outline:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -96,16 +86,15 @@
     #clear-key-btn { color: var(--muted); border-color: var(--rule); }
     #clear-key-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 
-    .icon-spin { display: inline-block; transition: transform 0.2s; }
-    .icon-spin.active { animation: slowSpin 1.5s linear infinite; }
-    @keyframes slowSpin { to { transform: rotate(360deg); } }
+    #refresh-btn.spinning { animation: spin 1s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ================================================================
        MASTHEAD
     ================================================================ */
     .masthead {
       border-bottom: 3px double var(--ink);
-      padding:       40px 20px 30px;
+      padding:       30px 20px;
       text-align:    center;
       background:    var(--paper);
       position:      relative;
@@ -140,12 +129,6 @@
       text-transform:  uppercase;
       letter-spacing:  0.05em;
     }
-    
-    .clear-history-btn {
-      background: none; border: none; color: var(--error); cursor: pointer;
-      font-family: inherit; font-size: 9px; text-transform: uppercase; margin-left: 10px; opacity: 0.7;
-    }
-    .clear-history-btn:hover { opacity: 1; text-decoration: underline; }
 
     /* ================================================================
        FEED CONTAINER & ARTICLES
@@ -199,6 +182,9 @@
       letter-spacing: 0.05em;
     }
 
+    /* ================================================================
+       SYSTEM / STATUS MESSAGES
+    ================================================================ */
     .system-msg {
       font-family: 'IBM Plex Mono', monospace;
       font-size:   12px;
@@ -334,13 +320,17 @@
     }
     .reader-open-btn:hover { border-color: var(--ink); color: var(--ink); }
 
+    /* Highlighted AI Button in Top Bar */
     .reader-ai-btn {
       color: var(--accent);
       border-color: var(--accent);
       background: rgba(26, 92, 58, 0.05);
       font-weight: 600;
     }
-    .reader-ai-btn:hover { background: var(--accent); color: var(--paper); }
+    .reader-ai-btn:hover {
+      background: var(--accent);
+      color: var(--paper);
+    }
 
     .reader-scroll {
       overflow-y: auto;
@@ -404,12 +394,22 @@
     .reader-body ul, .reader-body ol { padding-left: 1.6em; margin-bottom: 1.2em; }
     .reader-body li   { margin-bottom: 0.4em; }
 
+    .reader-status {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size:   12px;
+      color:       var(--meta-color);
+      text-align:  center;
+      margin-top:  80px;
+      line-height: 2.5;
+    }
+    .reader-status.error { color: var(--error); }
+
     /* ================================================================
        AI CHAT PANEL (Drops down from top right)
     ================================================================ */
     #ai-panel {
       position: absolute;
-      top: 65px;
+      top: 65px; /* Just below the topbar */
       right: 20px;
       width: 360px;
       max-width: calc(100vw - 40px);
@@ -426,20 +426,54 @@
       max-height: 65vh;
       z-index: 1005;
     }
-    #ai-panel.open { opacity: 1; pointer-events: auto; transform: translateY(0); }
+    #ai-panel.open {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
     
     .ai-header {
-      display: flex; justify-content: space-between; align-items: center;
-      padding: 12px 16px; background: var(--paper); border-bottom: 1px solid var(--rule);
-      border-radius: 12px 12px 0 0; font-family: 'IBM Plex Mono', monospace;
-      font-size: 11px; font-weight: 500; text-transform: uppercase; color: var(--accent);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      background: var(--paper);
+      border-bottom: 1px solid var(--rule);
+      border-radius: 12px 12px 0 0;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      color: var(--accent);
     }
-    .ai-close-btn { background: transparent; border: none; font-size: 20px; cursor: pointer; color: var(--muted); }
+    .ai-close-btn {
+      background: transparent;
+      border: none;
+      font-size: 20px;
+      line-height: 1;
+      cursor: pointer;
+      color: var(--muted);
+    }
     .ai-close-btn:hover { color: var(--ink); }
     
-    .ai-chat-area { padding: 16px; overflow-y: auto; flex: 1; font-size: 14px; line-height: 1.6; }
-    .ai-message { margin-bottom: 16px; padding: 12px 16px; border-radius: 8px; background: var(--paper); color: var(--ink); }
-    .ai-message.user { background: rgba(26, 92, 58, 0.08); border-left: 3px solid var(--accent); }
+    .ai-chat-area {
+      padding: 16px;
+      overflow-y: auto;
+      flex: 1;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .ai-message {
+      margin-bottom: 16px;
+      padding: 12px 16px;
+      border-radius: 8px;
+      background: var(--paper);
+      color: var(--ink);
+    }
+    .ai-message.user {
+      background: rgba(26, 92, 58, 0.08);
+      border-left: 3px solid var(--accent);
+    }
     .ai-message.system { color: var(--muted); font-style: italic; font-size: 13px; background: transparent; padding: 0; }
     
     .ai-message strong { font-weight: 600; }
@@ -447,29 +481,74 @@
     .ai-message p { margin-bottom: 8px; }
     .ai-message p:last-child { margin-bottom: 0; }
 
-    .ai-quick-prompts { display: flex; gap: 8px; padding: 0 16px 12px; overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
+    .ai-quick-prompts {
+      display: flex;
+      gap: 8px;
+      padding: 0 16px 12px;
+      overflow-x: auto;
+      white-space: nowrap;
+      scrollbar-width: none; 
+    }
     .ai-quick-prompts::-webkit-scrollbar { display: none; }
     .ai-quick-prompts button {
-      background: var(--paper); border: 1px solid var(--rule); padding: 6px 12px;
-      border-radius: 20px; font-size: 12px; color: var(--muted); cursor: pointer; transition: all 0.2s;
+      background: var(--paper);
+      border: 1px solid var(--rule);
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      color: var(--muted);
+      cursor: pointer;
+      transition: all 0.2s;
     }
-    .ai-quick-prompts button:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+    .ai-quick-prompts button:hover {
+      background: var(--ink);
+      color: var(--paper);
+      border-color: var(--ink);
+    }
 
-    .ai-input-area { display: flex; padding: 12px 16px; border-top: 1px solid var(--rule); background: #fff; border-radius: 0 0 12px 12px; }
-    .ai-input-area input { flex: 1; border: 1px solid var(--rule); border-radius: 4px; padding: 10px 14px; font-family: 'IBM Plex Sans', sans-serif; font-size: 14px; outline: none; }
+    .ai-input-area {
+      display: flex;
+      padding: 12px 16px;
+      border-top: 1px solid var(--rule);
+      background: #fff;
+      border-radius: 0 0 12px 12px;
+    }
+    .ai-input-area input {
+      flex: 1;
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      padding: 10px 14px;
+      font-family: 'IBM Plex Sans', sans-serif;
+      font-size: 14px;
+      outline: none;
+    }
     .ai-input-area input:focus { border-color: var(--accent); }
-    .ai-input-area button { background: var(--accent); color: var(--paper); border: none; border-radius: 4px; padding: 0 16px; margin-left: 8px; cursor: pointer; font-weight: 500; }
+    .ai-input-area button {
+      background: var(--accent);
+      color: var(--paper);
+      border: none;
+      border-radius: 4px;
+      padding: 0 16px;
+      margin-left: 8px;
+      cursor: pointer;
+      font-weight: 500;
+    }
     .ai-input-area button:disabled { background: var(--rule); cursor: not-allowed; }
 
     /* ================================================================
-       RESPONSIVE BREAKPOINTS
+       RESPONSIVE
     ================================================================ */
-    @media (max-width: 650px) {
-      .controls-bar { position: static; padding: 12px 16px; justify-content: flex-start; border-bottom: 1px solid var(--rule); flex-wrap: wrap; }
-      #custom-feed-url { width: 100%; }
-      select.input-base { max-width: 100%; flex: 1; }
-      .masthead { padding: 20px 16px; }
-      .reader-scroll { padding: 20px 18px 0px; }
+    @media (max-width: 520px) {
+      .controls-bar {
+        position:     static;
+        padding:      12px 16px;
+        justify-content: flex-end;
+        border-bottom: 1px solid var(--rule);
+        flex-wrap: wrap;
+      }
+      select          { max-width: 140px; font-size: 10px; }
+      .masthead       { padding: 20px 16px; }
+      .reader-scroll  { padding: 20px 18px 0px; }
       .reader-source-url { display: none; }
       #ai-panel { top: 65px; right: 10px; max-width: calc(100vw - 20px); max-height: 70vh;}
     }
@@ -479,42 +558,38 @@
 <body>
 
   <div class="controls-bar">
-    <select id="feed-dropdown" class="input-base" aria-label="Select news feed">
-      <optgroup label="── Latest News ──">
-        <option value="https://feeds.feedburner.com/NDTV-LatestNews">NDTV</option>
-        <option value="https://indianexpress.com/feed/">Indian Express</option>
-        <option value="https://theprint.in/feed/">The Print</option>
-        <option value="https://www.livemint.com/rss/news">Livemint News</option>
+    <select id="feed-dropdown" aria-label="Select news feed">
+      <optgroup label="── Digital & National ──">
+        <option value="https://feeds.feedburner.com/NDTV-LatestNews">NDTV · Latest News</option>
+        <option value="https://feeds.feedburner.com/ScrollinArticles.rss">Scroll.in · Articles</option>
+        <option value="https://indianexpress.com/feed/">IE · Top News</option>
+        <option value="https://theprint.in/feed/">The Print · Top News</option>
       </optgroup>
-      <optgroup label="── Top Stories ──">
-        <option value="https://timesofindia.indiatimes.com/rssfeedstopstories.cms">TOI Top Stories</option>
-        <option value="https://economictimes.indiatimes.com/rssfeedsdefault.cms">ET Top News</option>
-        <option value="https://www.thehindu.com/feeder/default.rss">The Hindu</option>
+      <optgroup label="── Times of India ──">
+        <option value="https://timesofindia.indiatimes.com/rssfeedstopstories.cms">TOI · Top Stories</option>
+        <option value="https://timesofindia.indiatimes.com/rssfeeds/1898055.cms">TOI · Business</option>
+        <option value="https://timesofindia.indiatimes.com/rssfeeds/-2128672765.cms">TOI · Technology</option>
       </optgroup>
-      <optgroup label="── Business & Economy ──">
-        <option value="https://timesofindia.indiatimes.com/rssfeeds/1898055.cms">TOI Business</option>
-        <option value="https://economictimes.indiatimes.com/economy/rssfeeds/20-20.cms">ET Economy</option>
-        <option value="https://www.thehindu.com/business/feeder/default.rss">Hindu Business</option>
-        <option value="https://www.business-standard.com/rss/economy-policy-102.rss">BS Economy & Policy</option>
+      <optgroup label="── Economic Times ──">
+        <option value="https://economictimes.indiatimes.com/rssfeedsdefault.cms">ET · Top News</option>
+        <option value="https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms">ET · Markets</option>
+        <option value="https://economictimes.indiatimes.com/economy/rssfeeds/20-20.cms">ET · Economy</option>
       </optgroup>
-      <optgroup label="── Markets ──">
-        <option value="https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms">ET Markets</option>
-        <option value="https://www.business-standard.com/rss/markets-106.rss">BS Markets</option>
-        <option value="https://www.livemint.com/rss/markets">Mint Markets</option>
+      <optgroup label="── Business Standard ──">
+        <option value="https://www.business-standard.com/rss/markets-106.rss">BS · Markets</option>
+        <option value="https://www.business-standard.com/rss/economy-policy-102.rss">BS · Economy & Policy</option>
       </optgroup>
-      <optgroup label="── Technology ──">
-        <option value="https://timesofindia.indiatimes.com/rssfeeds/-2128672765.cms">TOI Tech</option>
+      <optgroup label="── The Hindu ──">
+        <option value="https://www.thehindu.com/feeder/default.rss">Hindu · Top News</option>
+        <option value="https://www.thehindu.com/business/feeder/default.rss">Hindu · Business</option>
       </optgroup>
-      <optgroup label="── Articles & Editorials ──">
-        <option value="https://feeds.feedburner.com/ScrollinArticles.rss">Scroll.in Articles</option>
+      <optgroup label="── Mint (Livemint) ──">
+        <option value="https://www.livemint.com/rss/news">Mint · Top News</option>
+        <option value="https://www.livemint.com/rss/markets">Mint · Markets</option>
       </optgroup>
     </select>
 
-    <input type="url" id="custom-feed-url" class="input-base" placeholder="Test custom RSS URL...">
-
-    <button class="btn-outline" id="refresh-btn" title="Refresh feed">
-      <span class="icon-spin" id="spin-icon">↻</span> Refresh
-    </button>
+    <button class="btn-outline" id="refresh-btn" title="Refresh feed">⟳ Refresh</button>
     <button class="btn-outline" id="clear-key-btn" title="Clear Gemini Key">🔑 Reset Key</button>
   </div>
 
@@ -525,10 +600,7 @@
   </div>
 
   <div class="feed-status-bar">
-    <div>
-      <span id="item-count"></span>
-      <button id="clear-history-btn" class="clear-history-btn" style="display:none;">[ Clear Read History ]</button>
-    </div>
+    <span id="item-count"></span>
     <span id="next-refresh"></span>
   </div>
 
@@ -551,6 +623,7 @@
       </div>
       
       <button class="reader-open-btn reader-ai-btn" id="reader-ai-toggle" style="display:none;">✨ Ask AI</button>
+      
       <a class="reader-open-btn" id="reader-ext-link" href="#" target="_blank" rel="noopener noreferrer">↗ Original</a>
     </div>
 
@@ -567,10 +640,10 @@
         <div class="ai-message system">Hi! I've read this article. Try a quick prompt below or ask me a specific question.</div>
       </div>
       <div class="ai-quick-prompts">
-        <button class="ai-prompt-btn">Sector Impact?</button>
+        <button class="ai-prompt-btn">Summarize</button>
         <button class="ai-prompt-btn">Explain Jargon</button>
         <button class="ai-prompt-btn">Key Takeaways</button>
-        <button class="ai-prompt-btn">Summarize</button>
+        <button class="ai-prompt-btn">Why does this matter?</button>
       </div>
       <div class="ai-input-area">
         <input type="text" id="ai-input" placeholder="Ask Gemini..." autocomplete="off">
@@ -584,7 +657,7 @@
     'use strict';
 
     /* ============================================================
-       1. CONFIG (EXACT V24 MODEL)
+       1. CONFIG
     ============================================================ */
     const CONFIG = Object.freeze({
       CACHE_TTL_MS:      5 * 60 * 1000, 
@@ -595,8 +668,8 @@
       READER_FONT_MIN:   13,
       READER_FONT_MAX:   24,
       READER_FONT_DEF:   17,
-      // EXACT MODEL FROM V24 UPLOAD
-      GEMINI_MODEL:      'gemini-2.5-flash-preview-09-2025'
+      // 404 Fix: Restored the proper required model for the environment
+      GEMINI_MODEL:      'gemini-2.5-flash-preview-09-2025' 
     });
 
     /* ============================================================
@@ -608,9 +681,6 @@
     let   countdownTimer = null;
     let   readerFontSize = CONFIG.READER_FONT_DEF;
     let   currentArticleText = ""; 
-    
-    // Phase 2: Read Ledger
-    let   readLedger     = JSON.parse(localStorage.getItem('gp_read_ledger') || '[]');
 
     /* ============================================================
        3. DOM REFS
@@ -618,14 +688,10 @@
     const DOM = {
       output:          document.getElementById('rss-output'),
       dropdown:        document.getElementById('feed-dropdown'),
-      customFeedInput: document.getElementById('custom-feed-url'),
       refreshBtn:      document.getElementById('refresh-btn'),
-      spinIcon:        document.getElementById('spin-icon'),
       clearKeyBtn:     document.getElementById('clear-key-btn'),
       itemCount:       document.getElementById('item-count'),
       nextRefresh:     document.getElementById('next-refresh'),
-      clearHistoryBtn: document.getElementById('clear-history-btn'),
-      
       readerPanel:     document.getElementById('reader-panel'),
       readerBackdrop:  document.getElementById('reader-backdrop'),
       readerContent:   document.getElementById('reader-content'),
@@ -638,6 +704,7 @@
       fontDown:        document.getElementById('font-down'),
       headerDate:      document.getElementById('header-date'),
       
+      // Top-Bar AI Refs
       aiToggle:        document.getElementById('reader-ai-toggle'),
       aiPanel:         document.getElementById('ai-panel'),
       aiCloseBtn:      document.getElementById('ai-close-btn'),
@@ -648,7 +715,7 @@
     };
 
     /* ============================================================
-       4. SECURITY & STORAGE (EXACT V24 LOGIC)
+       4. SECURITY & STORAGE (Local Key Vault)
     ============================================================ */
     function getGeminiKey() {
       let key = localStorage.getItem('gemini_api_key');
@@ -672,29 +739,8 @@
       alert("Gemini API Key removed. It will prompt again on your next fetch.");
     }
 
-    function markAsRead(url) {
-      if(!url || url === '#') return;
-      if(!readLedger.includes(url)) {
-        readLedger.push(url);
-        if (readLedger.length > 500) readLedger.shift();
-        localStorage.setItem('gp_read_ledger', JSON.stringify(readLedger));
-      }
-      updateClearHistoryBtn();
-    }
-    
-    function clearReadHistory() {
-      readLedger = [];
-      localStorage.setItem('gp_read_ledger', JSON.stringify([]));
-      updateClearHistoryBtn();
-      loadFeed(true);
-    }
-    
-    function updateClearHistoryBtn() {
-      DOM.clearHistoryBtn.style.display = readLedger.length > 0 ? 'inline-block' : 'none';
-    }
-
     /* ============================================================
-       5. UTILITY & API ENGINE (EXACT V24 LOGIC)
+       5. UTILITY & API ENGINE (With Exponential Backoff Retry)
     ============================================================ */
     function xhrFetch(url, timeoutMs) {
       return new Promise((resolve, reject) => {
@@ -718,14 +764,15 @@
       });
     }
 
-    // EXACT V24 Retry Engine (No model loops)
+    // Advanced fetch engine that automatically retries if Google throws a 429 (Rate Limit) error
     async function fetchWithRetry(url, options, maxRetries = 3) {
       let attempt = 0;
       while (attempt < maxRetries) {
         const response = await fetch(url, options);
         if (response.status === 429) {
           attempt++;
-          if (attempt >= maxRetries) throw new Error("Rate limit exceeded (429). Please wait a minute.");
+          if (attempt >= maxRetries) throw new Error("Rate limit exceeded (429) after multiple retries. Please wait a minute.");
+          // Wait 2s, then 4s, etc.
           await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
         } else {
           if (!response.ok) throw new Error(`API Error: ${response.status}`);
@@ -801,40 +848,9 @@
       corsproxy:  (feed) => `https://corsproxy.io/?${encodeURIComponent(feed)}`
     };
 
-    /** JSONP is used for the Silent Background Cacher */
-    function jsonpFetch(scriptUrl, fnName, timeoutMs) {
-      return new Promise((resolve, reject) => {
-        const script = document.createElement('script'); let settled = false;
-        const timer = setTimeout(() => { if (!settled) { settled = true; cleanup(); reject(new Error('TIMEOUT')); } }, timeoutMs);
-        function cleanup() { clearTimeout(timer); delete window[fnName]; if (script.parentNode) script.parentNode.removeChild(script); }
-        window[fnName] = (data) => { if (!settled) { settled = true; cleanup(); resolve(data); } };
-        script.src = scriptUrl; script.async = true;
-        script.onerror = () => { if (!settled) { settled = true; cleanup(); reject(new Error('Script blocked')); } };
-        document.head.appendChild(script);
-      });
-    }
-
-    async function fetchViaJsonp(feedUrl) {
-      const fnName = '_gp_' + Math.random().toString(36).slice(2, 9);
-      const data = await jsonpFetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}&callback=${fnName}`, fnName, CONFIG.FEED_TIMEOUT_MS);
-      if (!data || data.status !== 'ok') throw new Error(data?.message || 'rss2json: non-ok');
-      return data.items;
-    }
-    
-    /** The Silent Cacher - pre-loads all dropdown URLs in the background */
-    async function silentBackgroundCache() {
-      const options = Array.from(DOM.dropdown.options).map(opt => opt.value).filter(val => val);
-      for(const url of options) {
-        if(!feedCache[url] || (Date.now() - feedCache[url].timestamp > CONFIG.CACHE_TTL_MS)) {
-          try {
-             const items = await fetchViaJsonp(url);
-             feedCache[url] = { timestamp: Date.now(), items, feedName: 'Cached' };
-          } catch(e) { /* Fail silently */ }
-        }
-      }
-    }
-
-    /** EXACT V24 Gemini API Implementation + Infinite Articles */
+    /**
+     * Tier 0 — Gemini API for robust Feed Parsing
+     */
     async function fetchViaGeminiApi(feedUrl, feedName) {
       const apiKey = getGeminiKey();
       if (!apiKey) throw new Error("Gemini API key required");
@@ -849,9 +865,7 @@
       if(!rawData) throw new Error("Failed to retrieve source XML.");
 
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
-      
-      // Phase 2: Removed 15 item limit
-      const prompt = `Parse this raw RSS/Atom XML feed into a JSON array of articles.
+      const prompt = `Parse this raw RSS/Atom XML feed into a JSON array of the latest articles.
 Source name: ${feedName}
 
 Each item must have exactly these fields:
@@ -860,11 +874,12 @@ Each item must have exactly these fields:
   description — 1–2 sentence summary (string)
   pubDate     — publication date, ISO-8601 if available (string)
 
-Extract ALL available articles from the feed. Return ONLY the JSON array. Do not include formatting wrappers.
+Return ONLY the JSON array. Maximum 15 items. Do not include formatting wrappers.
 
 Raw XML data (truncated):
 ${rawData.substring(0, 15000)}`;
 
+      // Utilize the retry engine to bypass 429s
       const response = await fetchWithRetry(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -885,8 +900,39 @@ ${rawData.substring(0, 15000)}`;
       return items;
     }
 
-    async function fetchFeed(feedUrl, feedName, onStatus) {
+    function jsonpFetch(scriptUrl, fnName, timeoutMs) {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        let settled = false;
+        const timer = setTimeout(() => {
+          if (settled) return;
+          settled = true; cleanup(); reject(new Error('TIMEOUT'));
+        }, timeoutMs);
+        function cleanup() {
+          clearTimeout(timer); delete window[fnName];
+          if (script.parentNode) script.parentNode.removeChild(script);
+        }
+        window[fnName] = (data) => {
+          if (settled) return;
+          settled = true; cleanup(); resolve(data);
+        };
+        script.src = scriptUrl; script.async = true;
+        script.onerror = () => { if (settled) return; settled = true; cleanup(); reject(new Error('Script blocked')); };
+        document.head.appendChild(script);
+      });
+    }
+
+    async function fetchViaJsonp(feedUrl) {
+      const fnName = '_gp_' + Math.random().toString(36).slice(2, 9);
+      const data = await jsonpFetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}&callback=${fnName}`, fnName, CONFIG.FEED_TIMEOUT_MS);
+      if (!data || data.status !== 'ok') throw new Error(data?.message || 'rss2json: non-ok');
+      return data.items;
+    }
+
+    async function fetchFeed(feedUrl, onStatus) {
       const errors = [];
+      const feedName = DOM.dropdown.options[DOM.dropdown.selectedIndex].text;
+
       try { return await fetchViaGeminiApi(feedUrl, feedName); } 
       catch (err) {
         errors.push(`T0-Gemini: ${err.message}`);
@@ -907,22 +953,19 @@ ${rawData.substring(0, 15000)}`;
     }
 
     /* ============================================================
-       7. FEED RENDERING & DE-DUPLICATION
+       7. FEED RENDERING
     ============================================================ */
     function loadFeed(forceRefresh = false) {
       clearTimeout(debounceTimer);
       debounceTimer = setTimeout(async () => {
-        // Phase 2: Custom Feed Input
-        const customUrl = DOM.customFeedInput.value.trim();
-        const feedUrl = customUrl || DOM.dropdown.value;
-        const feedName = customUrl ? "Custom Feed" : DOM.dropdown.options[DOM.dropdown.selectedIndex].text;
-        
+        const feedUrl = DOM.dropdown.value;
+        const feedName = DOM.dropdown.options[DOM.dropdown.selectedIndex].text;
         const cached = feedCache[feedUrl];
         const isCacheHit = cached && (Date.now() - cached.timestamp < CONFIG.CACHE_TTL_MS);
         const thisId = ++requestCounter;
 
         if (!forceRefresh && isCacheHit) {
-          renderFeedItems(cached.items, feedName, true);
+          renderFeedItems(cached.items, cached.feedName, true);
           startCountdown();
           return;
         }
@@ -932,7 +975,7 @@ ${rawData.substring(0, 15000)}`;
         setRefreshing(true);
 
         try {
-          const items = await fetchFeed(feedUrl, feedName, (msg) => { if (thisId === requestCounter) setFeedStatus(msg); });
+          const items = await fetchFeed(feedUrl, (msg) => { if (thisId === requestCounter) setFeedStatus(msg); });
           if (thisId !== requestCounter) return;
           if (!items || !items.length) { setFeedStatus('📭 No articles found.'); return; }
           
@@ -949,31 +992,12 @@ ${rawData.substring(0, 15000)}`;
       }, 200);
     }
 
-    function renderFeedItems(rawItems, feedName, fromCache) {
+    function renderFeedItems(items, feedName, fromCache) {
       const cacheBadge = fromCache ? `<span class="cached-badge">Cached</span>` : '';
-      
-      // Phase 2: De-Duplication Engine
-      const seen = new Set();
-      const uniqueItems = rawItems.filter(item => {
-         const key = (item.link || item.title).toLowerCase().trim();
-         if(seen.has(key)) return false;
-         seen.add(key); return true;
-      });
-
-      // Phase 2: Hide "Already Read" Items
-      const unreadItems = uniqueItems.filter(item => !readLedger.includes(safeUrl(item.link)));
-
-      if (unreadItems.length === 0) {
-         DOM.output.innerHTML = `<div class="system-msg">You have read everything in this feed! 🎉</div>`;
-         DOM.itemCount.textContent = `0 unread`;
-         updateClearHistoryBtn();
-         return;
-      }
-
-      DOM.output.innerHTML = unreadItems.map((item, idx) => {
+      DOM.output.innerHTML = items.map((item, idx) => {
         let desc = stripHtml(item.description || '');
         if (desc.length > CONFIG.MAX_DESC_CHARS) desc = desc.substring(0, CONFIG.MAX_DESC_CHARS) + '…';
-        return `<div class="feed-item" style="animation-delay:${idx * 30}ms">` +
+        return `<div class="feed-item" style="animation-delay:${idx * 40}ms">` +
             `<span class="headline reader-trigger" data-url="${escapeHtml(safeUrl(item.link))}" ` +
             `data-title="${escapeHtml(item.title || 'Untitled')}" data-feed="${escapeHtml(feedName)}" ` +
             `data-date="${escapeHtml(item.pubDate || '')}" role="button" tabindex="0">` +
@@ -981,16 +1005,13 @@ ${rawData.substring(0, 15000)}`;
             (desc ? `<p class="description">${escapeHtml(desc)}</p>` : '') +
             `<div class="meta">${timeSince(item.pubDate)} &mdash; ${escapeHtml(feedName)}${idx === 0 ? cacheBadge : ''}</div></div>`;
       }).join('');
-      
-      DOM.itemCount.textContent = `${unreadItems.length} articles`;
-      updateClearHistoryBtn();
+      DOM.itemCount.textContent = `${items.length} articles`;
     }
 
     function setFeedStatus(msg) { DOM.output.innerHTML = `<div class="system-msg">${msg}</div>`; }
     function setRefreshing(isLoading) {
       DOM.refreshBtn.disabled = isLoading;
-      if(isLoading) DOM.spinIcon.classList.add('active');
-      else DOM.spinIcon.classList.remove('active');
+      DOM.refreshBtn.classList.toggle('spinning', isLoading);
     }
 
     function startCountdown() {
@@ -1010,14 +1031,12 @@ ${rawData.substring(0, 15000)}`;
       const validatedUrl = safeUrl(url);
       if (validatedUrl === '#') return;
 
-      // Log as Read!
-      markAsRead(validatedUrl);
-
       DOM.readerPanel.classList.add('open');
       DOM.readerBackdrop.classList.add('open');
       DOM.readerBackdrop.removeAttribute('aria-hidden');
       document.body.style.overflow = 'hidden';
 
+      // Reset AI Panel state
       DOM.aiToggle.style.display = 'none';
       closeAiPanel();
       DOM.aiChatArea.innerHTML = `<div class="ai-message system">Hi! Try a quick prompt below or ask me a specific question about this article.</div>`;
@@ -1041,9 +1060,6 @@ ${rawData.substring(0, 15000)}`;
       document.body.style.overflow = '';
       closeAiPanel();
       DOM.aiToggle.style.display = 'none';
-      
-      // Reload feed to visually apply "read" filter
-      loadFeed(false); 
     }
 
     function setReaderProgress(pct) {
@@ -1072,7 +1088,9 @@ ${rawData.substring(0, 15000)}`;
 
       if (!mainEl) return null;
       
+      // Save raw text for AI
       currentArticleText = mainEl.innerText; 
+      
       return sanitizeHtml(mainEl.innerHTML);
     }
 
@@ -1096,6 +1114,7 @@ ${rawData.substring(0, 15000)}`;
         setReaderProgress(30);
       }
 
+      // Tier 1: Local extraction
       if (rawHtml) {
          setReaderProgress(50);
          const cleanHtml = extractMainContent(rawHtml, url);
@@ -1106,24 +1125,25 @@ ${rawData.substring(0, 15000)}`;
          }
       }
 
+      // Tier 2: AI Extraction with Retries
       setReaderProgress(60);
       try {
          await fetchArticleViaApi(url, title, feedName, pubDate);
          return;
       } catch(e) {
          console.warn("Gemini Extraction failed", e);
-         if (e.message.includes('429')) {
+         if (e.message.includes('429') || e.message.includes('Rate limit')) {
              renderReaderError(url, "Google API Rate limit exceeded. Please wait a minute.");
              return;
          }
       }
 
+      // Tier 3: Blocked
       setReaderProgress(100);
       setTimeout(() => setReaderProgress(0), 500);
       renderReaderError(url);
     }
 
-    // EXACT V24 API LOGIC
     async function fetchArticleViaApi(url, title, feedName, pubDate) {
       const apiKey = getGeminiKey();
       if (!apiKey) throw new Error("GEMINI_KEY_MISSING");
@@ -1173,6 +1193,7 @@ ${rawHtml.substring(0, 30000)}`;
         `<div class="reader-article-meta">${pubDate ? `${timeSince(pubDate)} &nbsp;·&nbsp; ` : ''}${escapeHtml(feedName)}</div>` +
         `<div class="reader-body">${cleanHtml}</div>`;
         
+      // Show the Top-Bar AI button
       DOM.aiToggle.style.display = 'inline-block'; 
       setReaderProgress(100);
       setTimeout(() => setReaderProgress(0), 800);
@@ -1199,8 +1220,10 @@ ${rawHtml.substring(0, 30000)}`;
     const ALLOWED_ATTRS = { img: ['src', 'srcset', 'alt', 'loading'], a: ['href', 'target', 'rel'] };
 
     function sanitizeHtml(html) {
-      const wrapper = document.createElement('div'); wrapper.innerHTML = html;
-      sanitizeNode(wrapper); return wrapper.innerHTML;
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = html;
+      sanitizeNode(wrapper);
+      return wrapper.innerHTML;
     }
 
     function sanitizeNode(node) {
@@ -1211,7 +1234,8 @@ ${rawHtml.substring(0, 30000)}`;
         const tag = child.tagName.toLowerCase();
         if (!ALLOWED_TAGS.has(tag)) {
           while (child.firstChild) node.insertBefore(child.firstChild, child);
-          node.removeChild(child); continue;
+          node.removeChild(child);
+          continue;
         }
         const allowedForTag = ALLOWED_ATTRS[tag] || [];
         Array.from(child.attributes).forEach(attr => { if (!allowedForTag.includes(attr.name)) child.removeAttribute(attr.name); });
@@ -1222,14 +1246,18 @@ ${rawHtml.substring(0, 30000)}`;
     }
 
     /* ============================================================
-       9. AI IN-READER CHAT LOGIC (EXACT V24 API + SMART GUARDRAILS)
+       9. AI IN-READER CHAT LOGIC (Top-Bar Dropdown Panel)
     ============================================================ */
     function toggleAiPanel() {
       DOM.aiPanel.classList.toggle('open');
-      if(DOM.aiPanel.classList.contains('open')) DOM.aiInput.focus();
+      if(DOM.aiPanel.classList.contains('open')) {
+        DOM.aiInput.focus();
+      }
     }
     
-    function closeAiPanel() { DOM.aiPanel.classList.remove('open'); }
+    function closeAiPanel() {
+      DOM.aiPanel.classList.remove('open');
+    }
     
     function addChatMessage(role, text) {
       const div = document.createElement('div');
@@ -1241,7 +1269,10 @@ ${rawHtml.substring(0, 30000)}`;
 
     async function submitAiPrompt(userPrompt) {
       if (!userPrompt || userPrompt.trim() === '') return;
-      if (!currentArticleText) return addChatMessage('system', 'I cannot read this article. The publisher blocked access.');
+      if (!currentArticleText) {
+        addChatMessage('system', 'I cannot read this article. The publisher blocked access.');
+        return;
+      }
 
       addChatMessage('user', userPrompt);
       DOM.aiInput.value = '';
@@ -1249,18 +1280,22 @@ ${rawHtml.substring(0, 30000)}`;
       DOM.aiSubmit.textContent = '...';
 
       const loadingDiv = document.createElement('div');
-      loadingDiv.className = 'ai-message system'; loadingDiv.textContent = 'Thinking...';
-      DOM.aiChatArea.appendChild(loadingDiv); DOM.aiChatArea.scrollTop = DOM.aiChatArea.scrollHeight;
+      loadingDiv.className = 'ai-message system';
+      loadingDiv.textContent = 'Thinking...';
+      DOM.aiChatArea.appendChild(loadingDiv);
+      DOM.aiChatArea.scrollTop = DOM.aiChatArea.scrollHeight;
 
       try {
         const apiKey = getGeminiKey();
         if (!apiKey) throw new Error("API Key missing");
 
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
+        const fullPrompt = `You are an intelligent reading assistant inside a financial news app. 
+        Read the following article text and answer the user's request. 
         
-        // Phase 2: Loose guardrails to allow external financial knowledge
-        const fullPrompt = `You are an expert financial reading assistant. Use the provided article text as your primary context. 
-        However, if the user asks for broader market impacts, sector weightings, index movements (e.g. Nifty FMCG/MNC), or technical insights not explicitly mentioned in the text, you MUST use your general financial knowledge to answer them accurately. Keep answers concise, clear, and highly relevant to an Indian equities trader.
+        SMART GUARDRAILS: You may use your broader financial, economic, and market knowledge to answer questions—especially to explain the potential impact of the news on broad indices (e.g., Nifty 50, Nifty Bank) or sector trends. 
+        However, you must remain strictly factual. DO NOT hallucinate or provide speculative financial advice. Clearly distinguish between facts stated directly in the article and the general financial context you are providing.
+        Keep answers concise, clear, and easy to read.
         
         --- ARTICLE TEXT ---
         ${currentArticleText.substring(0, 30000)}
@@ -1274,6 +1309,11 @@ ${rawHtml.substring(0, 30000)}`;
           body: JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] }),
         });
 
+        if (response.status === 429) {
+            throw new Error("API rate limit exceeded. Please wait 60 seconds before asking another question.");
+        }
+        if (!response.ok) throw new Error(`API Error: ${response.status}`);
+        
         const data = await response.json();
         const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
         
@@ -1284,7 +1324,8 @@ ${rawHtml.substring(0, 30000)}`;
         DOM.aiChatArea.removeChild(loadingDiv);
         addChatMessage('system', `Error: ${err.message}`);
       } finally {
-        DOM.aiSubmit.disabled = false; DOM.aiSubmit.textContent = 'Ask';
+        DOM.aiSubmit.disabled = false;
+        DOM.aiSubmit.textContent = 'Ask';
       }
     }
 
@@ -1293,21 +1334,14 @@ ${rawHtml.substring(0, 30000)}`;
     ============================================================ */
     window.addEventListener('load', () => {
       DOM.headerDate.textContent = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
-      updateClearHistoryBtn();
 
-      // Core Feed Events
       DOM.dropdown.addEventListener('change', () => loadFeed(false));
-      DOM.refreshBtn.addEventListener('click', () => { 
-         if(DOM.customFeedInput.value) delete feedCache[DOM.customFeedInput.value];
-         else delete feedCache[DOM.dropdown.value]; 
-         loadFeed(true); 
-      });
-      DOM.clearHistoryBtn.addEventListener('click', clearReadHistory);
+      DOM.refreshBtn.addEventListener('click', () => { delete feedCache[DOM.dropdown.value]; loadFeed(true); });
       DOM.clearKeyBtn.addEventListener('click', clearGeminiKey);
 
-      // Reader Triggers
       DOM.output.addEventListener('click', (e) => {
-        const trigger = e.target.closest('.reader-trigger'); if (!trigger) return;
+        const trigger = e.target.closest('.reader-trigger');
+        if (!trigger) return;
         const url = trigger.getAttribute('data-url');
         if (url && url !== '#') openReader(url, trigger.getAttribute('data-title'), trigger.getAttribute('data-feed'), trigger.getAttribute('data-date'));
       });
@@ -1336,16 +1370,22 @@ ${rawHtml.substring(0, 30000)}`;
         setReaderProgress(denominator > 0 ? (scrollTop / denominator) * 100 : 0);
       });
 
-      // AI Panel Triggers
+      // Top-Bar AI Listeners
       DOM.aiToggle.addEventListener('click', toggleAiPanel);
       DOM.aiCloseBtn.addEventListener('click', closeAiPanel);
+      
       DOM.aiSubmit.addEventListener('click', () => submitAiPrompt(DOM.aiInput.value));
-      DOM.aiInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitAiPrompt(DOM.aiInput.value); });
-      DOM.aiPromptBtns.forEach(btn => { btn.addEventListener('click', () => { submitAiPrompt(btn.textContent); }); });
+      DOM.aiInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') submitAiPrompt(DOM.aiInput.value);
+      });
+      
+      DOM.aiPromptBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+          submitAiPrompt(btn.textContent);
+        });
+      });
 
-      // Start Engine
       loadFeed();
-      setTimeout(silentBackgroundCache, 2000); 
     });
   </script>
 </body>
