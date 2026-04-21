@@ -10,23 +10,24 @@
                  font-src    https://fonts.gstatic.com;
                  img-src     * data:;
                  connect-src *;">
-  <title>Pulse v26B</title>
+  <title>Gemini Pulse</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 
   <style>
 
     /* ════════════════════════════════════════════════════════════════════
        CSS §1 — DESIGN TOKENS & GLOBAL BASE STYLES
+       All colours are defined once here — never hardcoded elsewhere.
     ════════════════════════════════════════════════════════════════════ */
     :root {
-      --ink:            #1a1a18;
-      --paper:          #f5f0e8;
-      --accent:         #1a5c3a;
-      --rule:           #c8c0b0;
-      --muted:          #5a554c;
-      --meta-color:     #8c867a;
-      --error:          #c0392b;
-      --reader-font-sz: 17px;
+      --ink:            #1a1a18;   /* Primary text */
+      --paper:          #f5f0e8;   /* Page background */
+      --accent:         #1a5c3a;   /* Brand green */
+      --rule:           #c8c0b0;   /* Borders & dividers */
+      --muted:          #5a554c;   /* Secondary text */
+      --meta-color:     #8c867a;   /* Timestamps, labels */
+      --error:          #c0392b;   /* Error state */
+      --reader-font-sz: 17px;      /* Reader body font-size (JS-controlled) */
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -39,6 +40,10 @@
       line-height: 1.6;
     }
 
+
+    /* ════════════════════════════════════════════════════════════════════
+       CSS §2 — CONTROLS BAR
+    ════════════════════════════════════════════════════════════════════ */
     .controls-bar {
       position:    absolute;
       top:         16px;
@@ -49,6 +54,7 @@
       gap:         10px;
     }
 
+    /* RSS feed source dropdown */
     select {
       font-family:      'IBM Plex Mono', monospace;
       font-size:        11px;
@@ -63,7 +69,9 @@
       font-weight:      500;
       max-width:        200px;
     }
+    select:hover { border-color: var(--accent); }
 
+    /* Shared outline button style (Refresh + Reset Key) */
     .btn-outline {
       font-family:    'IBM Plex Mono', monospace;
       font-size:      11px;
@@ -75,16 +83,24 @@
       cursor:         pointer;
       text-transform: uppercase;
       font-weight:    500;
-      transition:     background 0.2s;
+      transition:     background 0.2s, color 0.2s;
+      white-space:    nowrap;
     }
     .btn-outline:hover    { background: var(--accent); color: var(--paper); }
     .btn-outline:disabled { opacity: 0.4; cursor: not-allowed; }
 
+    /* Muted variant for the "Reset Key" button */
     #clear-key-btn       { color: var(--muted); border-color: var(--rule); }
     #clear-key-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+    /* Spinning animation played on the Refresh button while loading */
     #refresh-btn.spinning { animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+
+    /* ════════════════════════════════════════════════════════════════════
+       CSS §3 — MASTHEAD
+    ════════════════════════════════════════════════════════════════════ */
     .masthead {
       border-bottom: 3px double var(--ink);
       padding:       30px 20px;
@@ -106,6 +122,10 @@
       margin-top:     8px;
     }
 
+
+    /* ════════════════════════════════════════════════════════════════════
+       CSS §4 — FEED STATUS BAR
+    ════════════════════════════════════════════════════════════════════ */
     .feed-status-bar {
       max-width:       800px;
       margin:          16px auto 0;
@@ -117,8 +137,13 @@
       font-size:       10px;
       color:           var(--meta-color);
       text-transform:  uppercase;
+      letter-spacing:  0.05em;
     }
 
+
+    /* ════════════════════════════════════════════════════════════════════
+       CSS §5 — FEED CONTAINER & ARTICLE CARDS
+    ════════════════════════════════════════════════════════════════════ */
     .container {
       max-width: 800px;
       margin:    0 auto;
@@ -132,12 +157,14 @@
       animation:      fadeIn 0.3s ease forwards;
       opacity:        0;
     }
+    .feed-item:last-child { border-bottom: none; }
 
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(6px); }
       to   { opacity: 1; transform: translateY(0); }
     }
 
+    /* Clickable article headline — triggers Reader Mode on click */
     .headline {
       font-family:     'Playfair Display', serif;
       font-size:       22px;
@@ -147,6 +174,7 @@
       display:         block;
       line-height:     1.3;
       margin-bottom:   10px;
+      word-break:      break-word;
       cursor:          pointer;
     }
     .headline:hover { color: var(--accent); text-decoration: underline; }
@@ -155,6 +183,7 @@
       font-size:     15px;
       color:         var(--muted);
       margin-bottom: 12px;
+      line-height:   1.6;
     }
 
     .meta {
@@ -162,8 +191,43 @@
       font-size:      10px;
       color:          var(--meta-color);
       text-transform: uppercase;
+      letter-spacing: 0.05em;
     }
 
+
+    /* ════════════════════════════════════════════════════════════════════
+       CSS §6 — SYSTEM / STATUS MESSAGES
+    ════════════════════════════════════════════════════════════════════ */
+    .system-msg {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size:   12px;
+      color:       var(--meta-color);
+      text-align:  center;
+      margin-top:  60px;
+      line-height: 2;
+    }
+    .system-msg.error { color: var(--error); }
+
+    /* Small pill shown next to the first article when loaded from cache */
+    .cached-badge {
+      display:        inline-block;
+      font-family:    'IBM Plex Mono', monospace;
+      font-size:      9px;
+      background:     var(--rule);
+      color:          var(--muted);
+      padding:        1px 5px;
+      border-radius:  2px;
+      text-transform: uppercase;
+     margin-left:    6px;
+      vertical-align: middle;
+    }
+
+
+    /* ════════════════════════════════════════════════════════════════════
+       CSS §7 — READER MODE PANEL
+    ════════════════════════════════════════════════════════════════════ */
+
+    /* Semi-transparent backdrop — click it to close the reader */
     #reader-backdrop {
       display:         none;
       position:        fixed;
@@ -174,6 +238,7 @@
     }
     #reader-backdrop.open { display: block; }
 
+    /* Main slide-in panel — translates in from the right */
     #reader-panel {
       position:       fixed;
       top: 0; right: 0; bottom: 0;
@@ -189,15 +254,18 @@
     }
     #reader-panel.open { transform: translateX(0); }
 
+    /* Thin reading progress bar pinned to the very top of the panel */
     #reader-progress {
       position:   absolute;
       top: 0; left: 0;
       height:     3px;
       width:      0%;
       background: var(--accent);
+      transition: width 0.2s;
       z-index:    5;
     }
 
+    /* Topbar: Back ← | source URL | A− A+ | ✨ Ask AI | ↗ Original */
     .reader-topbar {
       display:       flex;
       align-items:   center;
@@ -205,21 +273,31 @@
       padding:       14px 20px;
       border-bottom: 1px solid var(--rule);
       background:    var(--paper);
+      flex-shrink:   0;
+      position:      relative;
+      z-index:       20;
     }
 
+    /* ← Back button */
     .reader-back-btn {
       font-family:    'IBM Plex Mono', monospace;
       font-size:      11px;
+      font-weight:    500;
       text-transform: uppercase;
       background:     transparent;
       color:          var(--accent);
-      border:         1px solid var(--accent);
+     border:         1px solid var(--accent);
       padding:        5px 12px;
       border-radius:  4px;
       cursor:         pointer;
+      white-space:    nowrap;
+      transition:     background 0.2s, color 0.2s;
+      flex-shrink:    0;
     }
+    .reader-back-btn:hover { background: var(--accent); color: var(--paper); }
 
-    .reader-source-url {
+    /* Source hostname label */
+  0.reader-source-url {
       font-family:   'IBM Plex Mono', monospace;
       font-size:     10px;
       color:         var(--meta-color);
@@ -229,45 +307,68 @@
       flex:          1;
     }
 
+    /* A− / A+ font-size control pair */
+    .reader-font-ctrl { display: flex; gap: 4px; flex-shrink: 0; }
     .reader-font-ctrl button {
       font-family:     'IBM Plex Mono', monospace;
+      font-size:       13px;
       background:      transparent;
       border:          1px solid var(--rule);
       color:           var(--muted);
       width: 28px; height: 28px;
       border-radius:   4px;
       cursor:          pointer;
+      display:         flex;
+      align-items:     center;
+      justify-content: center;
+      transition:      border-color 0.2s;
     }
+    .reader-font-ctrl button:hover { border-color: var(--ink); color: var(--ink); }
 
+    /* ↗ Original — link to source site */
     .reader-open-btn {
       font-family:     'IBM Plex Mono', monospace;
       font-size:       10px;
+      font-weight:     500;
       text-transform:  uppercase;
       background:      transparent;
       color:           var(--muted);
       border:          1px solid var(--rule);
       padding:         5px 10px;
       border-radius:   4px;
+      cursor:          pointer;
+      white-space:     nowrap;
       text-decoration: none;
+      transition:      all 0.2s;
+      flex-shrink:     0;
     }
+    .reader-open-btn:hover { border-color: var(--ink); color: var(--ink); }
 
+    /* ✨ Ask AI — accented variant of reader-open-btn */
     .reader-ai-btn {
       color:        var(--accent);
       border-color: var(--accent);
       background:   rgba(26, 92, 58, 0.05);
       font-weight:  600;
     }
+    .reader-ai-btn:hover { background: var(--accent); color: var(--paper); }
 
+    /* Scrollable area that holds the rendered article body */
     .reader-scroll {
       overflow-y: auto;
       flex:       1;
       padding:    36px 40px 60px;
+      position:   relative;
+      z-index:    10;
     }
 
+    /* Article title and publication meta inside the reader */
     .reader-article-title {
       font-family:   'Playfair Display', serif;
       font-size:     clamp(22px, 3.5vw, 32px);
       font-weight:   700;
+      line-height:   1.25;
+      color:         var(--ink);
       margin-bottom: 16px;
     }
     .reader-article-meta {
@@ -275,16 +376,67 @@
       font-size:      11px;
       color:          var(--meta-color);
       text-transform: uppercase;
+      letter-spacing: 0.05em;
       margin-bottom:  28px;
       padding-bottom: 20px;
       border-bottom:  2px solid var(--rule);
     }
-    .reader-body { font-size: var(--reader-font-sz); line-height: 1.85; }
-    .reader-body p { margin-bottom: 1.4em; }
 
+    /* Long-form article body typography */
+    .reader-body {
+      font-size:      var(--reader-font-sz);
+      line-height:    1.85;
+      color:          var(--ink);
+      padding-bottom: 40px;
+    }
+    .reader-body p { margin-bottom: 1.4em; }
+    .reader-body h1, .reader-body h2, .reader-body h3, .reader-body h4 {
+      font-family: 'Playfair Display', serif;
+      margin:      1.6em 0 0.6em;
+      line-height: 1.25;
+    }
+    .reader-body h1 { font-size: 1.5em; }
+    .reader-body h2 { font-size: 1.3em; }
+    .reader-body h3 { font-size: 1.1em; }
+    .reader-body h4 { font-size: 1.0em; }
+    .reader-body img {
+      max-width:     100%;
+      height:        auto;
+      border-radius: 4px;
+      margin:        1.2em 0;
+      display:       block;
+    }
+    .reader-body blockquote {
+      border-left: 3px solid var(--accent);
+      padding:     4px 0 4px 16px;
+      margin:      1.4em 0;
+      color:       var(--muted);
+      font-style:  italic;
+    }
+    .reader-body a    { color: var(--accent); word-break: break-word; }
+    .reader-body ul, .reader-body ol { padding-left: 1.6em; margin-bottom: 1.2em; }
+    .reader-body li   { margin-bottom: 0.4em; }
+
+    /* Loading / error state shown inside the reader content area */
+    .reader-status {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size:   12px;
+      color:       var(--meta-color);
+      text-align:  center;
+      margin-top:  80px;
+      line-height: 2.5;
+    }
+    .reader-status.error { color: var(--error); }
+
+
+    /* ════════════════════════════════════════════════════════════════════
+       CSS §8 — AI CHAT PANEL
+    ════════════════════════════════════════════════════════════════════ */
+
+    /* Panel shell — hidden (opacity:0, pointer-events:none) by default */
     #ai-panel {
       position:       absolute;
-      top:            65px;
+      top:            65px;   /* Sits just below the reader topbar */
       right:          20px;
       width:          360px;
       max-width:      calc(100vw - 40px);
@@ -307,6 +459,7 @@
       transform:      translateY(0);
     }
 
+    /* Panel header: "✨ Gemini Assistant" title + × close button */
     .ai-header {
       display:         flex;
       justify-content: space-between;
@@ -317,38 +470,54 @@
       border-radius:   12px 12px 0 0;
       font-family:     'IBM Plex Mono', monospace;
       font-size:       11px;
+      font-weight:     500;
+      text-transform:  uppercase;
       color:           var(--accent);
     }
     .ai-close-btn {
       background:  transparent;
       border:      none;
       font-size:   20px;
+      line-height: 1;
       cursor:      pointer;
       color:       var(--muted);
     }
+    .ai-close-btn:hover { color: var(--ink); }
 
+    /* Scrollable chat bubble area */
     .ai-chat-area {
       padding:     16px;
       overflow-y:  auto;
       flex:        1;
       font-size:   14px;
+      line-height: 1.6;
     }
 
+    /* Individual chat bubbles */
     .ai-message {
       margin-bottom: 16px;
       padding:       12px 16px;
       border-radius: 8px;
       background:    var(--paper);
+      color:         var(--ink);
     }
+    /* User messages — left accent border */
     .ai-message.user   { background: rgba(26, 92, 58, 0.08); border-left: 3px solid var(--accent); }
-    .ai-message.system { color: var(--muted); font-style: italic; background: transparent; padding: 0; }
+    /* System / status messages — no background, italic */
+    .ai-message.system { color: var(--muted); font-style: italic; font-size: 13px; background: transparent; padding: 0; }
+    .ai-message strong { font-weight: 600; }
+    .ai-message ul     { margin-left: 20px; margin-top: 8px; }
+    .ai-message p      { margin-bottom: 8px; }
+    .ai-message p:last-child { margin-bottom: 0; }
 
+    /* Horizontally scrollable one-tap quick-prompt pills */
     .ai-quick-prompts {
       display:        flex;
       gap:            8px;
       padding:        0 16px 12px;
       overflow-x:     auto;
       white-space:    nowrap;
+      scrollbar-width: none;
     }
     .ai-quick-prompts::-webkit-scrollbar { display: none; }
     .ai-quick-prompts button {
@@ -357,9 +526,13 @@
       padding:       6px 12px;
       border-radius: 20px;
       font-size:     12px;
+      color:         var(--muted);
       cursor:        pointer;
+      transition:    all 0.2s;
     }
+    .ai-quick-prompts button:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 
+    /* Text input + "Ask" submit button row */
     .ai-input-area {
       display:       flex;
       padding:       12px 16px;
@@ -367,30 +540,45 @@
       border-radius: 0 0 12px 12px;
     }
     .ai-input-area input {
-      flex: 1;
-      border: 1px solid var(--rule);
+      flex:          1;
+      border:        1px solid var(--rule);
       border-radius: 4px;
-      padding: 10px;
-      font-size: 14px;
+      padding:       10px 14px;
+      font-family:   'IBM Plex Sans', sans-serif;
+      font-size:     14px;
+      outline:       none;
     }
+    .ai-input-area input:focus { border-color: var(--accent); }
     .ai-input-area button {
-      background: var(--accent);
-      color: var(--paper);
-      border: none;
-      padding: 0 16px;
-      margin-left: 8px;
+      background:    var(--accent);
+      color:         var(--paper);
+      border:        none;
       border-radius: 4px;
-      cursor: pointer;
+      padding:       0 16px;
+      margin-left:   8px;
+      cursor:        pointer;
+      font-weight:   500;
     }
+    .ai-input-area button:disabled { background: var(--rule); cursor: not-allowed; }
 
+
+    /* ════════════════════════════════════════════════════════════════════
+       CSS §9 — RESPONSIVE / MOBILE OVERRIDES
+    ════════════════════════════════════════════════════════════════════ */
     @media (max-width: 520px) {
+      /* Controls bar stacks to full-width on mobile */
       .controls-bar {
-        position: static;
-        padding: 12px 16px;
+        position:        static;
+        padding:         12px 16px;
         justify-content: flex-end;
-        border-bottom: 1px solid var(--rule);
+        border-bottom:   1px solid var(--rule);
+        flex-wrap:       wrap;
       }
-      .reader-source-url { display: none; }
+      select             { max-width: 140px; font-size: 10px; }
+      .masthead          { padding: 20px 16px; }
+      .reader-scroll     { padding: 20px 18px 0px; }
+      .reader-source-url { display: none; }  /* Too narrow to show on phone */
+      #ai-panel          { top: 65px; right: 10px; max-width: calc(100vw - 20px); max-height: 70vh; }
     }
 
   </style>
@@ -412,11 +600,13 @@
       <optgroup label="── Times of India ──">
         <option value="https://timesofindia.indiatimes.com/rssfeedstopstories.cms">TOI · Top Stories</option>
         <option value="https://timesofindia.indiatimes.com/rssfeeds/1898055.cms">TOI · Business</option>
+        <option value="https://timesofindia.indiatimes.com/rssfeeds/-2128672765.cms">TOI · Technology</option>
       </optgroup>
 
       <optgroup label="── Economic Times ──">
         <option value="https://economictimes.indiatimes.com/rssfeedsdefault.cms">ET · Top News</option>
         <option value="https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms">ET · Markets</option>
+        <option value="https://economictimes.indiatimes.com/economy/rssfeeds/20-20.cms">ET · Economy</option>
       </optgroup>
 
       <optgroup label="── Business Standard ──">
@@ -440,7 +630,7 @@
   </div>
   <div class="masthead">
     <div class="tagline" id="header-date">Financial Intelligence Terminal</div>
-    <div class="masthead-title">Pulse v26B</div>
+    <div class="masthead-title">Gemini Pulse</div>
     <div class="tagline">Standard RSS Protocol</div>
   </div>
   <div class="feed-status-bar">
@@ -502,199 +692,599 @@
     'use strict';
 
     /* ════════════════════════════════════════════════════════════════════
-       JS §1 — CONFIGURATION
+       JS §1 — APPLICATION CONFIGURATION
     ════════════════════════════════════════════════════════════════════ */
     const CONFIG = Object.freeze({
-      CACHE_TTL_MS:       5 * 60 * 1000,
-      FEED_TIMEOUT_MS:    15_000,
-      ARTICLE_TIMEOUT_MS: 12_000,
-      AUTO_REFRESH_S:     600,
-      MAX_DESC_CHARS:     500,
-      READER_FONT_MIN:    13,
-      READER_FONT_MAX:    24,
-      READER_FONT_DEF:    17,
-      GEMINI_MODEL:       'gemini-1.5-flash'
+      CACHE_TTL_MS:       5 * 60 * 1000,  // Feed cache TTL: 5 minutes
+      FEED_TIMEOUT_MS:    15_000,          // Max wait for RSS fetch (ms)
+      ARTICLE_TIMEOUT_MS: 12_000,          // Max wait for article fetch (ms)
+      AUTO_REFRESH_S:     600,             // Auto-refresh interval: 10 minutes
+      MAX_DESC_CHARS:     500,             // Max chars for article teaser text
+      READER_FONT_MIN:    13,              // Minimum reader font size (px)
+      READER_FONT_MAX:    24,              // Maximum reader font size (px)
+      READER_FONT_DEF:    17,              // Default reader font size (px)
+      GEMINI_MODEL:       'gemini-3.1-flash-lite-preview'  // Active Gemini model
     });
 
-    const feedCache = {};
-    let requestCounter = 0, debounceTimer = null, countdownTimer = null;
-    let readerFontSize = CONFIG.READER_FONT_DEF, currentArticleText = "";
-
-    const DOM = {
-      output: document.getElementById('rss-output'),
-      dropdown: document.getElementById('feed-dropdown'),
-      refreshBtn: document.getElementById('refresh-btn'),
-      clearKeyBtn: document.getElementById('clear-key-btn'),
-      itemCount: document.getElementById('item-count'),
-      nextRefresh: document.getElementById('next-refresh'),
-      headerDate: document.getElementById('header-date'),
-      readerPanel: document.getElementById('reader-panel'),
-      readerBackdrop: document.getElementById('reader-backdrop'),
-      readerContent: document.getElementById('reader-content'),
-      readerScroll: document.getElementById('reader-scroll'),
-      readerUrlLabel: document.getElementById('reader-url-label'),
-      readerExtLink: document.getElementById('reader-ext-link'),
-      readerProgress: document.getElementById('reader-progress'),
-      readerBack: document.getElementById('reader-back'),
-      fontUp: document.getElementById('font-up'),
-      fontDown: document.getElementById('font-down'),
-      aiToggle: document.getElementById('reader-ai-toggle'),
-      aiPanel: document.getElementById('ai-panel'),
-      aiCloseBtn: document.getElementById('ai-close-btn'),
-      aiChatArea: document.getElementById('ai-chat-area'),
-      aiInput: document.getElementById('ai-input'),
-      aiSubmit: document.getElementById('ai-submit'),
-      aiPromptBtns: document.querySelectorAll('.ai-prompt-btn')
-    };
 
     /* ════════════════════════════════════════════════════════════════════
-       JS §4 — UTILITY & HELPERS
+       JS §2 — STATE VARIABLES
     ════════════════════════════════════════════════════════════════════ */
+    const feedCache          = {};                    // In-memory feed cache (key: feed URL)
+    let   requestCounter     = 0;                     // Monotonic ID — used to cancel stale requests
+    let   debounceTimer      = null;                  // setTimeout handle for loadFeed() debounce
+    let   countdownTimer     = null;                  // setInterval handle for auto-refresh countdown
+    let   readerFontSize     = CONFIG.READER_FONT_DEF; // Current reader font size in px
+    let   currentArticleText = "";                    // Plain-text copy of the open article (AI context)
+
+
+    /* ════════════════════════════════════════════════════════════════════
+       JS §3 — DOM REFERENCES
+    ════════════════════════════════════════════════════════════════════ */
+    const DOM = {
+
+      // ── Feed UI ──────────────────────────────────────────────────────
+      output:         document.getElementById('rss-output'),
+      dropdown:       document.getElementById('feed-dropdown'),
+      refreshBtn:     document.getElementById('refresh-btn'),
+      clearKeyBtn:    document.getElementById('clear-key-btn'),
+      itemCount:      document.getElementById('item-count'),
+      nextRefresh:    document.getElementById('next-refresh'),
+      headerDate:     document.getElementById('header-date'),
+
+      // ── Reader Panel ─────────────────────────────────────────────────
+      readerPanel:    document.getElementById('reader-panel'),
+      readerBackdrop: document.getElementById('reader-backdrop'),
+      readerContent:  document.getElementById('reader-content'),
+      readerScroll:   document.getElementById('reader-scroll'),
+      readerUrlLabel: document.getElementById('reader-url-label'),
+      readerExtLink:  document.getElementById('reader-ext-link'),
+      readerProgress: document.getElementById('reader-progress'),
+   knock readerBack:     document.getElementById('reader-back'),
+      fontUp:         document.getElementById('font-up'),
+      fontDown:       document.getElementById('font-down'),
+
+      // ── AI Chat Panel ─────────────────────────────────────────────────
+      aiToggle:       document.getElementById('reader-ai-toggle'),
+      aiPanel:        document.getElementById('ai-panel'),
+      aiCloseBtn:     document.getElementById('ai-close-btn'),
+      aiChatArea:     document.getElementById('ai-chat-area'),
+      aiInput:        document.getElementById('ai-input'),
+      aiSubmit:       document.getElementById('ai-submit'),
+      aiPromptBtns:   document.querySelectorAll('.ai-prompt-btn')
+    };
+
+
+    /* ════════════════════════════════════════════════════════════════════
+       JS §4 — UTILITY & HELPER FUNCTIONS
+    ════════════════════════════════════════════════════════════════════ */
+
+    /**
+     * XHR-based GET fetch with a hard timeout.
+     */
     function xhrFetch(url, timeoutMs) {
       return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         let didTimeout = false;
-        const timer = setTimeout(() => { didTimeout = true; xhr.abort(); reject(new Error('TIMEOUT')); }, timeoutMs);
+        const timer = setTimeout(() => {
+          didTimeout = true;
+          xhr.abort();
+          reject(new Error('TIMEOUT'));
+        }, timeoutMs);
         xhr.open('GET', url, true);
-        xhr.onload = () => { clearTimeout(timer); if (!didTimeout) resolve(xhr.responseText); };
+        xhr.onload = () => {
+          clearTimeout(timer);
+          if (didTimeout) return;
+          if (xhr.status >= 200 && xhr.status < 300) resolve(xhr.responseText);
+          else reject(new Error('HTTP ' + xhr.status));
+        };
         xhr.onerror = () => { clearTimeout(timer); reject(new Error('Network error')); };
+        xhr.onabort = () => { if (!didTimeout) reject(new Error('Request aborted')); };
         xhr.send();
       });
     }
 
-    function escapeHtml(str) { return str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : ''; }
-    function safeUrl(url) { try { const u = new URL(url); return (u.protocol === 'http:' || u.protocol === 'https:') ? url : '#'; } catch { return '#'; } }
-    function timeSince(d) {
-      const s = Math.floor((Date.now() - new Date(d)) / 1000);
-      if (s < 60) return 'Just now';
-      if (s < 3600) return Math.floor(s/60)+'m ago';
-      if (s < 86400) return Math.floor(s/3600)+'h ago';
-      return Math.floor(s/86400)+'d ago';
-    }
+    function escapeHtml(str) {
+      if (str == null) return '';
+      return String(str)
+        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    }
+
+    function safeUrl(url) {
+      if (!url) return '#';
+      try {
+        const parsed = new URL(url);
+        return (parsed.protocol === 'http:' || parsed.protocol === 'https:') ? url : '#';
+      } catch { return '#'; }
+    }
+
+    function timeSince(dateString) {
+      if (!dateString) return 'Unknown time';
+      const date = new Date(dateString);
+      if (isNaN(date.getTime())) return 'Unknown time';
+      const seconds = Math.floor((Date.now() - date) / 1000);
+      if (seconds < 60)    return 'Just now';
+      const mins  = Math.floor(seconds / 60);
+      const hours = Math.floor(seconds / 3600);
+      const days  = Math.floor(seconds / 86400);
+      if (days  > 1)  return `${days} days ago`;
+      if (days === 1) return '1 day ago';
+      if (hours > 1)  return `${hours} hours ago`;
+      if (hours === 1)return '1 hour ago';
+      if (mins  > 1)  return `${mins} mins ago`;
+      return '1 min ago';
+    }
 
     function processRssText(html, maxLength) {
       if (!html) return '';
-      let t = html.replace(/<!\[CDATA\[(.*?)\]\]>/gs, '$1').replace(/<\/(p|div|h[1-6]|li)>/gi, ' ').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]*>?/gm, '');
-      const doc = new DOMParser().parseFromString(t, 'text/html');
-      t = (doc.documentElement.textContent || '').replace(/\s+/g, ' ').trim();
-      return t.length > maxLength ? t.substring(0, maxLength).substring(0, t.lastIndexOf(' ')) + '…' : t;
+      let text = html.replace(/<!\[CDATA\[(.*?)\]\]>/gs, '$1');
+      text = text.replace(/<\/(p|div|h[1-6]|li)>/gi, ' ');
+      text = text.replace(/<br\s*\/?>/gi, ' ');
+      text = text.replace(/<[^>]*>?/gm, '');
+      const doc = new DOMParser().parseFromString(text, 'text/html');
+      text = doc.documentElement.textContent || '';
+      text = text.replace(/\s+/g, ' ').trim();
+      if (text.length > maxLength) {
+        text = text.substring(0, maxLength);
+        text = text.substring(0, Math.min(text.length, text.lastIndexOf(' '))) + '…';
+      }
+      return text;
     }
 
-    async function fetchFeed(url) {
-      const fn = '_gp_'+Math.random().toString(36).slice(2,9);
-      const res = await new Promise((resolve) => {
-        const s = document.createElement('script');
-        window[fn] = (d) => { document.head.removeChild(s); delete window[fn]; resolve(d); };
-        s.src = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}&callback=${fn}`;
-        document.head.appendChild(s);
+    function parseMarkdown(md) {
+      if (!md) return '';
+      let html = md.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      html = html.replace(/\*(.*?)\*/g,  '<em>$1</em>');
+      html = html.replace(/^- (.*)$/gm, '<ul><li>$1</li></ul>');
+      html = html.replace(/<\/ul>\n<ul>/g, '\n');
+      html = html.replace(/\n\n/g, '</p><p>');
+      return `<p>${html}</p>`;
+    }
+
+
+    /* ════════════════════════════════════════════════════════════════════
+       JS §5 — RSS FEEDS, PROXIES & FETCHING
+    ════════════════════════════════════════════════════════════════════ */
+
+    function jsonpFetch(scriptUrl, fnName, timeoutMs) {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        let settled  = false;
+        const timer  = setTimeout(() => {
+          if (settled) return;
+          settled = true; cleanup(); reject(new Error('TIMEOUT'));
+        }, timeoutMs);
+        function cleanup() {
+          clearTimeout(timer); delete window[fnName];
+          if (script.parentNode) script.parentNode.removeChild(script);
+        }
+        window[fnName] = (data) => {
+          if (settled) return;
+          settled = true; cleanup(); resolve(data);
+        };
+        script.src    = scriptUrl;
+        script.async  = true;
+        script.onerror = () => {
+          if (settled) return;
+          settled = true; cleanup(); reject(new Error('Script blocked'));
+        };
+        document.head.appendChild(script);
       });
-      if (res.status !== 'ok') throw new Error(res.message); return res.items;
     }
 
-    function loadFeed(force = false) {
-      const url = DOM.dropdown.value, name = DOM.dropdown.options[DOM.dropdown.selectedIndex].text;
-      if (!force && feedCache[url] && (Date.now()-feedCache[url].ts < CONFIG.CACHE_TTL_MS)) { renderFeedItems(feedCache[url].items, name, true); return; }
-      DOM.output.innerHTML = '<div class="system-msg">📡 Fetching standard RSS feed…</div>';
-      DOM.refreshBtn.disabled = true; DOM.refreshBtn.classList.add('spinning');
-      fetchFeed(url).then(items => { feedCache[url] = { ts: Date.now(), items }; renderFeedItems(items, name, false); startCountdown(); })
-      .catch(e => DOM.output.innerHTML = `<div class="system-msg error">❌ ${e.message}</div>`)
-      .finally(() => { DOM.refreshBtn.disabled = false; DOM.refreshBtn.classList.remove('spinning'); });
+    async function fetchViaJsonp(feedUrl) {
+      const fnName = '_gp_' + Math.random().toString(36).slice(2, 9);
+      const data = await jsonpFetch(
+        `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}&callback=${fnName}`,
+        fnName,
+        CONFIG.FEED_TIMEOUT_MS
+      );
+      if (!data || data.status !== 'ok') throw new Error(data?.message || 'rss2json: non-ok');
+      return data.items;
+    }
+
+    async function fetchFeed(feedUrl, onStatus) {
+      try {
+        return await fetchViaJsonp(feedUrl);
+      } catch (err) {
+        throw new Error('Standard proxy (rss2json) failed: ' + err.message);
+      }
+    }
+
+
+    /* ════════════════════════════════════════════════════════════════════
+       JS §6 — FEED RENDERING & DISPLAY
+    ════════════════════════════════════════════════════════════════════ */
+
+    function loadFeed(forceRefresh = false) {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(async () => {
+        const feedUrl    = DOM.dropdown.value;
+        const feedName   = DOM.dropdown.options[DOM.dropdown.selectedIndex].text;
+        const cached     = feedCache[feedUrl];
+        const isCacheHit = cached && (Date.now() - cached.timestamp < CONFIG.CACHE_TTL_MS);
+        const thisId     = ++requestCounter;
+
+        if (!forceRefresh && isCacheHit) {
+          renderFeedItems(cached.items, cached.feedName, true);
+          startCountdown();
+          return;
+        }
+
+        setFeedStatus('📡 Fetching standard RSS feed…');
+        DOM.itemCount.textContent = '';
+        setRefreshing(true);
+
+        try {
+          const items = await fetchFeed(feedUrl, (msg) => {
+            if (thisId === requestCounter) setFeedStatus(msg);
+          });
+          if (thisId !== requestCounter) return;
+
+          if (!items || !items.length) { setFeedStatus('📭 No articles found.'); return; }
+
+          feedCache[feedUrl] = { timestamp: Date.now(), items, feedName };
+          renderFeedItems(items, feedName, false);
+          startCountdown();
+
+        } catch (err) {
+          if (thisId !== requestCounter) return;
+          DOM.output.innerHTML =
+            `<div class="system-msg error">❌ Feed unavailable.<br>` +
+            `<small style="font-size:10px;opacity:.7;line-height:2;white-space:pre-line">${escapeHtml(err.message)}</small></div>`;
+        } finally {
+          if (thisId === requestCounter) setRefreshing(false);
+        }
+      }, 200);
     }
 
     function renderFeedItems(items, feedName, fromCache) {
-      DOM.output.innerHTML = items.map((it, i) => `
-        <div class="feed-item" style="animation-delay:${i * 40}ms">
-          <span class="headline reader-trigger" data-url="${safeUrl(it.link)}" data-title="${escapeHtml(it.title)}" data-feed="${escapeHtml(feedName)}" data-date="${it.pubDate}">${escapeHtml(it.title)}</span>
-          <p class="description">${processRssText(it.description, CONFIG.MAX_DESC_CHARS)}</p>
-          <div class="meta">${timeSince(it.pubDate)} — ${escapeHtml(feedName)} ${fromCache && i===0 ? '<span class="cached-badge">Cached</span>' : ''}</div>
-        </div>`).join('');
+      const cacheBadge = fromCache ? `<span class="cached-badge">Cached</span>` : '';
+      DOM.output.innerHTML = items.map((item, idx) => {
+        let desc = processRssText(item.description, CONFIG.MAX_DESC_CHARS);
+        return (
+          `<div class="feed-item" style="animation-delay:${idx * 40}ms">` +
+            `<span class="headline reader-trigger" ` +
+                  `data-url="${escapeHtml(safeUrl(item.link))}" ` +
+                  `data-title="${escapeHtml(item.title || 'Untitled')}" ` +
+                  `data-feed="${escapeHtml(feedName)}" ` +
+                  `data-date="${escapeHtml(item.pubDate || '')}" ` +
+                  `role="button" tabindex="0">` +
+              `${escapeHtml(item.title || 'Untitled')}` +
+            `</span>` +
+            (desc ? `<p class="description">${escapeHtml(desc)}</p>` : '') +
+            `<div class="meta">${timeSince(item.pubDate)} &mdash; ${escapeHtml(feedName)}${idx === 0 ? cacheBadge : ''}</div>` +
+          `</div>`
+        );
+      }).join('');
       DOM.itemCount.textContent = `${items.length} articles`;
     }
 
-    function startCountdown() {
-      clearInterval(countdownTimer); let s = CONFIG.AUTO_REFRESH_S;
-      countdownTimer = setInterval(() => { s--; DOM.nextRefresh.textContent = `Auto-refresh in ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; if(s<=0) loadFeed(true); }, 1000);
+    function setFeedStatus(msg) {
+      DOM.output.innerHTML = `<div class="system-msg">${msg}</div>`;
     }
+
+    function setRefreshing(isLoading) {
+      DOM.refreshBtn.disabled = isLoading;
+      DOM.refreshBtn.classList.toggle('spinning', isLoading);
+   }
+
+    function startCountdown() {
+      clearInterval(countdownTimer);
+      let secondsLeft = CONFIG.AUTO_REFRESH_S;
+      countdownTimer = setInterval(() => {
+        secondsLeft--;
+        DOM.nextRefresh.textContent =
+          `Auto-refresh in ${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, '0')}`;
+        if (secondsLeft <= 0) { clearInterval(countdownTimer); loadFeed(true); }
+      }, 1000);
+    }
+
+
+    /* ════════════════════════════════════════════════════════════════════
+       JS §7 — READER MODE ENGINE
+    ════════════════════════════════════════════════════════════════════ */
+
+    function openReader(url, title, feedName, pubDate) {
+      const validatedUrl = safeUrl(url);
+      if (validatedUrl === '#') return;
+
+      DOM.readerPanel.classList.add('open');
+      DOM.readerBackdrop.classList.add('open');
+      DOM.readerBackdrop.removeAttribute('aria-hidden');
+      document.body.style.overflow = 'hidden';
+
+      DOM.aiToggle.style.display = 'none';
+      closeAiPanel();
+      DOM.aiChatArea.innerHTML = `<div class="ai-message system">Hi! I've read this article. Try a quick prompt below or ask me a specific question.</div>`;
+      currentArticleText = "";
+
+      try { DOM.readerUrlLabel.textContent = new URL(validatedUrl).hostname; }
+      catch { DOM.readerUrlLabel.textContent = validatedUrl; }
+      DOM.readerExtLink.href       = validatedUrl;
+      DOM.readerScroll.scrollTop   = 0;
+      setReaderProgress(0);
+      DOM.readerContent.innerHTML  = `<div class="reader-status">📰 Fetching article...</div>`;
+
+      fetchArticle(validatedUrl, title, feedName, pubDate);
+    }
+
+    function closeReader() {
+      DOM.readerPanel.classList.remove('open');
+      DOM.readerBackdrop.classList.remove('open');
+      DOM.readerBackdrop.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      closeAiPanel();
+      DOM.aiToggle.style.display = 'none';
+    }
+
+    function setReaderProgress(pct) {
+      const clamped = Math.min(100, Math.max(0, pct));
+      DOM.readerProgress.style.width = clamped + '%';
+      DOM.readerProgress.setAttribute('aria-valuenow', Math.round(clamped));
+    }
+
+    function extractMainContent(html, baseUrl) {
+      const parser = new DOMParser();
+      const doc    = parser.parseFromString(html, 'text/html');
+
+      const base = doc.createElement('base');
+      base.href  = baseUrl;
+      doc.head.appendChild(base);
+
+      const junk = [
+        'script', 'style', 'nav', 'footer', 'aside', 'iframe', 'noscript',
+        '.ad', '.advertisement', '.social-share', '.related-stories', '#comments', '.header'
+      ];
+      junk.forEach(sel => { try { doc.querySelectorAll(sel).forEach(el => el.remove()); } catch(e){} });
+
+      const selectors = [
+        'article', '.article-body', '.story-details', '.story-content',
+        '#article-content', '.content-area', '.article-txt', 'main',
+        '.entry-content', '.page-content'
+      ];
+      let mainEl = null;
+      for (const sel of selectors) {
+        const el = doc.querySelector(sel);
+        if (el && el.textContent.trim().length > 300) { mainEl = el; break; }
+      }
+      if (!mainEl) return null;
+
+      currentArticleText = mainEl.innerText;
+      return sanitizeHtml(mainEl.innerHTML);
+    }
+
+    async function fetchArticle(url, title, feedName, pubDate) {
+      setReaderProgress(15);
+      const proxies = [
+        `https://corsproxy.io/?${encodeURIComponent(url)}`,
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
+      ];
+
+      let rawHtml = null;
+      for (const proxy of proxies) {
+        try {
+          const res = await xhrFetch(proxy, CONFIG.ARTICLE_TIMEOUT_MS);
+          if (res && res.length > 2000 && !res.includes("Just a moment...") && !res.toLowerCase().includes("enable javascript")) {
+            rawHtml = res; break;
+          }
+        } catch (e) { console.warn("Proxy failed", proxy); }
+        setReaderProgress(30);
+      }
+
+      if (rawHtml) {
+        setReaderProgress(50);
+        const cleanHtml = extractMainContent(rawHtml, url);
+        if (cleanHtml && cleanHtml.length > 200) {
+          setReaderProgress(100);
+          renderArticle(cleanHtml, title, feedName, pubDate);
+          return;
+        }
+      }
+
+      setReaderProgress(60);
+      try {
+        await fetchArticleViaApi(url, title, feedName, pubDate);
+        return;
+      } catch (e) {
+        console.warn("Gemini Extraction failed", e);
+        renderReaderError(url);
+      }
+
+      setReaderProgress(100);
+      setTimeout(() => setReaderProgress(0), 500);
+      renderReaderError(url);
+    }
+
+    function renderArticle(cleanHtml, title, feedName, pubDate) {
+      DOM.readerContent.innerHTML =
+        `<h1 class="reader-article-title">${escapeHtml(title)}</h1>` +
+        `<div class="reader-article-meta">${pubDate ? `${timeSince(pubDate)} &nbsp;·&nbsp; ` : ''}${escapeHtml(feedName)}</div>` +
+        `<div class="reader-body">${cleanHtml}</div>`;
+
+      DOM.aiToggle.style.display = 'inline-block';
+      setReaderProgress(100);
+      setTimeout(() => setReaderProgress(0), 800);
+    }
+
+    function renderReaderError(url) {
+      DOM.readerContent.innerHTML =
+        `<div class="reader-status error" style="margin-top:40px;border:1px solid var(--rule);padding:30px;border-radius:8px;background:var(--paper);">
+           <h3 style="color:var(--ink);font-family:'Playfair Display',serif;font-size:24px;margin-bottom:10px;">Article Unavailable</h3>
+           <p style="color:var(--muted);line-height:1.5;font-size:14px;margin-bottom:25px;text-transform:none;letter-spacing:normal;">
+             This news site blocks external readers. Please continue reading directly on their website.
+           </p>
+           <div style="display:flex;justify-content:center;">
+             <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"
+                style="background:var(--ink);color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;text-transform:uppercase;padding:10px 20px;border-radius:4px;text-decoration:none;">
+                ↗ Read Original Article
+             </a>
+           </div>
+        </div>`;
+    }
+
+    const ALLOWED_TAGS = new Set([
+      'p', 'br', 'strong', 'b', 'em', 'i', 'u', 'h1', 'h2', 'h3', 'h4', 'ul', 'ol', 'li', 'blockquote', 'figure', 'figcaption', 'img', 'a', 'span', 'div', 'section'
+    ]);
+    const ALLOWED_ATTRS = { img: ['src', 'srcset', 'alt', 'loading'], a: ['href', 'target', 'rel'] };
 
     function sanitizeHtml(html) {
-      const div = document.createElement('div'); div.innerHTML = html;
-      const tags = new Set(['p','br','strong','b','em','i','u','h2','h3','ul','ol','li','blockquote','img','a']);
-      const walk = (n) => {
-        Array.from(n.childNodes).forEach(c => {
-          if (c.nodeType === 3) return;
-          if (c.nodeType !== 1 || !tags.has(c.tagName.toLowerCase())) { while(c.firstChild) n.insertBefore(c.firstChild, c); n.removeChild(c); }
-          else { if (c.tagName.toLowerCase()==='a') { c.setAttribute('target','_blank'); c.setAttribute('rel','noopener'); } walk(c); }
-        });
-      };
-      walk(div); return div.innerHTML;
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = html;
+      sanitizeNode(wrapper);
+      return wrapper.innerHTML;
     }
 
-    async function fetchArticle(url, title, feed, date) {
-      DOM.readerContent.innerHTML = '<div class="reader-status">📰 Accessing source...</div>';
-      currentArticleText = ""; let html = null;
-      const proxies = [`https://corsproxy.io/?${encodeURIComponent(url)}`, `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}` ];
-      for (const p of proxies) { try { const r = await xhrFetch(p, CONFIG.ARTICLE_TIMEOUT_MS); if (r && r.length > 800) { html = r; break; } } catch(e) {} }
-      if (html) {
-        const doc = new DOMParser().parseFromString(html, 'text/html');
-        let body = doc.querySelector('article') || doc.querySelector('main') || doc.querySelector('.article-body');
-        if (body && body.innerText.length > 400) { currentArticleText = body.innerText; renderArticle(body.innerHTML, title, feed, date); return; }
+    function sanitizeNode(node) {
+      const children = Array.from(node.childNodes);
+      for (const child of children) {
+        if (child.nodeType === Node.COMMENT_NODE) { node.removeChild(child); continue; }
+        if (child.nodeType !== Node.ELEMENT_NODE) continue;
+        const tag = child.tagName.toLowerCase();
+        if (!ALLOWED_TAGS.has(tag)) {
+          while (child.firstChild) node.insertBefore(child.firstChild, child);
+          node.removeChild(child); continue;
+        }
+        const allowedForTag = ALLOWED_ATTRS[tag] || [];
+        Array.from(child.attributes).forEach(attr => { if (!allowedForTag.includes(attr.name)) child.removeAttribute(attr.name); });
+        if (tag === 'a') { child.setAttribute('target', '_blank'); child.setAttribute('rel', 'noopener noreferrer'); }
+        if (tag === 'img') child.setAttribute('loading', 'lazy');
+        sanitizeNode(child);
       }
-      await extractWithAI(html, title, feed, date);
     }
 
-    async function extractWithAI(rawHtml, title, feed, date) {
-      const key = localStorage.getItem('gemini_api_key'); if (!key) return;
+
+    /* ════════════════════════════════════════════════════════════════════
+       JS §8 — ★ AI ENGINE ★
+    ════════════════════════════════════════════════════════════════════ */
+
+    function getGeminiKey() {
+      let key = localStorage.getItem('gemini_api_key');
+      if (!key) {
+        key = prompt("🔒 Enter Gemini API Key:");
+        if (key && key.trim() !== "") localStorage.setItem('gemini_api_key', key.trim());
+        else return null;
+      }
+      return key;
+    }
+
+    function clearGeminiKey() {
+      localStorage.removeItem('gemini_api_key');
+      alert("Key removed.");
+    }
+
+    async function fetchWithRetry(url, options, maxRetries = 3) {
+      let attempt = 0;
+      while (attempt < maxRetries) {
+        const response = await fetch(url, options);
+        if (response.status === 429) {
+          attempt++;
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        } else {
+          if (!response.ok) throw new Error(`API Error: ${response.status}`);
+          return response;
+        }
+      }
+    }
+
+    async function fetchArticleViaApi(url, title, feedName, pubDate) {
+      const apiKey = getGeminiKey(); if (!apiKey) throw new Error("KEY_MISSING");
+      let rawHtml = '';
       try {
-        const context = rawHtml ? rawHtml.substring(0, 18000) : "Blocked source.";
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${key}`, {
-          method: 'POST', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ contents: [{ parts: [{ text: `Extract article titled "${title}" as clean HTML paragraphs only. No ads. SOURCE:\n${context}` }] }] })
-        });
-        const d = await res.json(); renderArticle(d.candidates[0].content.parts[0].text, title, feed, date);
-      } catch (e) { DOM.readerContent.innerHTML = '<div class="reader-status error">Source locked.</div>'; }
+        const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
+        rawHtml = await res.text();
+      } catch (e) { throw new Error("Network error"); }
+
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
+      const prompt = `Extract full article body from raw HTML. Title: "${title}". Return ONLY clean HTML. No ads/nav. HTML:\n${rawHtml.substring(0, 20000)}`;
+
+      const response = await fetchWithRetry(endpoint, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+      });
+
+      const data = await response.json();
+      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const cleanHtml = cleanAiResponse(rawText);
+      const tempDiv = document.createElement("div");
+      tempDiv.innerHTML = cleanHtml;
+      currentArticleText = tempDiv.innerText;
+      renderArticle(cleanHtml, title, feedName, pubDate);
     }
 
-    function renderArticle(html, title, feed, date) {
-      DOM.readerContent.innerHTML = `<h1 class="reader-article-title">${title}</h1><div class="reader-article-meta">${feed}</div><div class="reader-body">${html}</div>`;
-      DOM.aiToggle.style.display = 'inline-block';
+    function cleanAiResponse(text) {
+      let t = text.trim();
+      if (t.startsWith('```')) {
+        const firstNewline = t.indexOf('\n');
+        if (firstNewline !== -1) t = t.substring(firstNewline + 1);
+      }
+      if (t.endsWith('```')) t = t.substring(0, t.length - 3);
+      return t.trim();
     }
 
-    async function submitAiPrompt(q) {
-      if (!q) return; const key = localStorage.getItem('gemini_api_key'); if (!key) return;
-      const chat = DOM.aiChatArea; const userDiv = document.createElement('div'); userDiv.className = 'ai-message user'; userDiv.textContent = q;
-      chat.appendChild(userDiv); DOM.aiInput.value = ""; chat.scrollTop = chat.scrollHeight;
-      const loadDiv = document.createElement('div'); loadDiv.className = 'ai-message system'; loadDiv.textContent = "Analyzing...";
-      chat.appendChild(loadDiv); 
-      DOM.aiSubmit.disabled = true;
+    function toggleAiPanel() {
+      DOM.aiPanel.classList.toggle('open');
+      if (DOM.aiPanel.classList.contains('open')) DOM.aiInput.focus();
+    }
+
+    function closeAiPanel() { DOM.aiPanel.classList.remove('open'); }
+
+    function addChatMessage(role, text) {
+      const div = document.createElement('div');
+      div.className = `ai-message ${role}`;
+      div.innerHTML = role === 'system' ? escapeHtml(text) : parseMarkdown(text);
+      DOM.aiChatArea.appendChild(div);
+      DOM.aiChatArea.scrollTop = DOM.aiChatArea.scrollHeight;
+    }
+
+    async function submitAiPrompt(userPrompt) {
+      if (!userPrompt || userPrompt.trim() === '') return;
+      if (!currentArticleText) { addChatMessage('system', 'Blocked access.'); return; }
+      addChatMessage('user', userPrompt);
+      DOM.aiInput.value = ''; DOM.aiSubmit.disabled = true;
+      const loadingDiv = document.createElement('div');
+      loadingDiv.className = 'ai-message system'; loadingDiv.textContent = 'Thinking...';
+      DOM.aiChatArea.appendChild(loadingDiv);
+
       try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${key}`, {
-          method: 'POST', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ contents: [{ parts: [{ text: `Article context: ${currentArticleText}. User question: ${q}` }] }] })
+        const apiKey = getGeminiKey();
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
+        const fullPrompt = `Article: ${currentArticleText.substring(0, 20000)}. User: ${userPrompt}`;
+        const response = await fetchWithRetry(endpoint, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] }),
         });
-        const d = await res.json(); chat.removeChild(loadDiv);
-        const aiDiv = document.createElement('div'); aiDiv.className = 'ai-message'; aiDiv.textContent = d.candidates[0].content.parts[0].text;
-        chat.appendChild(aiDiv);
-      } catch (e) { loadDiv.textContent = "Error: " + e.message; }
-      finally { DOM.aiSubmit.disabled = false; chat.scrollTop = chat.scrollHeight; }
+        const data = await response.json();
+        DOM.aiChatArea.removeChild(loadingDiv);
+        addChatMessage('assistant', cleanAiResponse(data.candidates?.[0]?.content?.parts?.[0]?.text || 'No response.'));
+      } catch (err) {
+        DOM.aiChatArea.removeChild(loadingDiv);
+        addChatMessage('system', `Error: ${err.message}`);
+      } finally { DOM.aiSubmit.disabled = false; }
     }
 
     window.addEventListener('load', () => {
       DOM.headerDate.textContent = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
-      DOM.dropdown.addEventListener('change', () => loadFeed());
-      DOM.refreshBtn.addEventListener('click', () => loadFeed(true));
-      DOM.clearKeyBtn.addEventListener('click', () => { localStorage.removeItem('gemini_api_key'); location.reload(); });
-      DOM.output.addEventListener('click', e => {
-        const t = e.target.closest('.reader-trigger');
-        if (t) { DOM.readerPanel.classList.add('open'); DOM.readerBackdrop.classList.add('open'); document.body.style.overflow='hidden'; fetchArticle(t.dataset.url, t.dataset.title, t.dataset.feed, t.dataset.date); }
+      DOM.dropdown.addEventListener('change', () => loadFeed(false));
+      DOM.refreshBtn.addEventListener('click', () => { delete feedCache[DOM.dropdown.value]; loadFeed(true); });
+      DOM.clearKeyBtn.addEventListener('click', clearGeminiKey);
+      DOM.output.addEventListener('click', (e) => {
+        const trigger = e.target.closest('.reader-trigger');
+        if (trigger) openReader(trigger.getAttribute('data-url'), trigger.getAttribute('data-title'), trigger.getAttribute('data-feed'), trigger.getAttribute('data-date'));
       });
-      DOM.readerBack.addEventListener('click', () => { DOM.readerPanel.classList.remove('open'); DOM.readerBackdrop.classList.remove('open'); document.body.style.overflow=''; DOM.aiPanel.classList.remove('open'); });
-      DOM.aiToggle.addEventListener('click', () => DOM.aiPanel.classList.toggle('open'));
-      DOM.aiCloseBtn.addEventListener('click', () => DOM.aiPanel.classList.remove('open'));
+      DOM.readerBack.addEventListener('click', closeReader);
+      DOM.readerBackdrop.addEventListener('click', closeReader);
+      DOM.fontUp.addEventListener('click', () => { readerFontSize++; document.documentElement.style.setProperty('--reader-font-sz', `${readerFontSize}px`); });
+      DOM.fontDown.addEventListener('click', () => { readerFontSize--; document.documentElement.style.setProperty('--reader-font-sz', `${readerFontSize}px`); });
+      DOM.aiToggle.addEventListener('click', toggleAiPanel);
+      DOM.aiCloseBtn.addEventListener('click', closeAiPanel);
       DOM.aiSubmit.addEventListener('click', () => submitAiPrompt(DOM.aiInput.value));
-      DOM.aiPromptBtns.forEach(b => b.addEventListener('click', () => submitAiPrompt(b.textContent)));
-      if (!localStorage.getItem('gemini_api_key')) { const k = prompt("Gemini Key:"); if(k) localStorage.setItem('gemini_api_key', k); }
+      DOM.aiPromptBtns.forEach(btn => btn.addEventListener('click', () => submitAiPrompt(btn.textContent)));
       loadFeed();
     });
+
   </script>
 </body>
 </html>
