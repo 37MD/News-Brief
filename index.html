@@ -1,13 +1,4 @@
-
 <!DOCTYPE html>
-<!--
-  ╔══════════════════════════════════════════════════════════════════╗
-  ║  GEMINI PULSE — Indian News Aggregator with Reader Mode          ║
-  ║  Version  : 6.2 (Top-Bar AI & 404 API Fix)                       ║
-  ║  Features : Top-bar AI Chat, Auto-Retry Rate Limit Engine,       ║
-  ║             Gemini 2.5 Flash Preview, Mozilla Readability.       ║
-  ╚══════════════════════════════════════════════════════════════════╝
--->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -566,9 +557,6 @@
 
 <body>
 
-  <!-- ==============================================================
-       CONTROLS BAR
-  =============================================================== -->
   <div class="controls-bar">
     <select id="feed-dropdown" aria-label="Select news feed">
       <optgroup label="── Digital & National ──">
@@ -605,35 +593,23 @@
     <button class="btn-outline" id="clear-key-btn" title="Clear Gemini Key">🔑 Reset Key</button>
   </div>
 
-  <!-- ==============================================================
-       MASTHEAD
-  =============================================================== -->
   <div class="masthead">
     <div class="tagline" id="header-date">Financial Intelligence Terminal</div>
     <div class="masthead-title">Gemini Pulse</div>
     <div class="tagline">Live Feed</div>
   </div>
 
-  <!-- ==============================================================
-       FEED STATUS BAR
-  =============================================================== -->
   <div class="feed-status-bar">
     <span id="item-count"></span>
     <span id="next-refresh"></span>
   </div>
 
-  <!-- ==============================================================
-       FEED OUTPUT
-  =============================================================== -->
   <div class="container">
     <div id="rss-output" aria-live="polite" aria-atomic="false">
       <div class="system-msg">Initialising secure terminal…</div>
     </div>
   </div>
 
-  <!-- ==============================================================
-       READER MODE
-  =============================================================== -->
   <div id="reader-backdrop" aria-hidden="true"></div>
   <div id="reader-panel" role="dialog" aria-modal="true" aria-label="Article reader">
     <div id="reader-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
@@ -646,18 +622,15 @@
         <button id="font-up"   title="Larger text">A+</button>
       </div>
       
-      <!-- MOVED AI BUTTON TO TOP BAR -->
       <button class="reader-open-btn reader-ai-btn" id="reader-ai-toggle" style="display:none;">✨ Ask AI</button>
       
       <a class="reader-open-btn" id="reader-ext-link" href="#" target="_blank" rel="noopener noreferrer">↗ Original</a>
     </div>
 
-    <!-- MAIN ARTICLE SCROLL AREA -->
     <div class="reader-scroll" id="reader-scroll">
       <div id="reader-content"></div>
     </div>
 
-    <!-- FLOATING AI CHAT PANEL -->
     <div id="ai-panel">
       <div class="ai-header">
         <span>✨ Gemini Assistant</span>
@@ -680,9 +653,6 @@
 
   </div>
 
-  <!-- ==============================================================
-       JAVASCRIPT LOGIC
-  =============================================================== -->
   <script>
     'use strict';
 
@@ -698,8 +668,8 @@
       READER_FONT_MIN:   13,
       READER_FONT_MAX:   24,
       READER_FONT_DEF:   17,
-      // 404 Fix: Restored the proper required model for the environment
-      GEMINI_MODEL:      'gemini-2.5-flash-preview-09-2025' 
+      // Fixed 404 Error: Switched back to the stable & globally available 1.5 flash model
+      GEMINI_MODEL:      'gemini-1.5-flash-latest' 
     });
 
     /* ============================================================
@@ -802,8 +772,9 @@
         if (response.status === 429) {
           attempt++;
           if (attempt >= maxRetries) throw new Error("Rate limit exceeded (429) after multiple retries. Please wait a minute.");
-          // Wait 2s, then 4s, etc.
           await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        } else if (response.status === 404) {
+          throw new Error(`Model not found (404). The API key does not recognize the model: ${CONFIG.GEMINI_MODEL}`);
         } else {
           if (!response.ok) throw new Error(`API Error: ${response.status}`);
           return response;
@@ -1335,11 +1306,6 @@ ${rawHtml.substring(0, 30000)}`;
           body: JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] }),
         });
 
-        if (response.status === 429) {
-            throw new Error("API rate limit exceeded. Please wait 60 seconds before asking another question.");
-        }
-        if (!response.ok) throw new Error(`API Error: ${response.status}`);
-        
         const data = await response.json();
         const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
         
@@ -1416,6 +1382,3 @@ ${rawHtml.substring(0, 30000)}`;
   </script>
 </body>
 </html>
-
-
-
