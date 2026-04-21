@@ -528,7 +528,7 @@
     .ai-input-area button:disabled { background: var(--rule); cursor: not-allowed; }
 
     /* ================================================================
-       SETTINGS MODAL (API Key Configuration)
+       SETTINGS MODAL (API Key & Model Selection)
     ================================================================ */
     #settings-modal-wrapper {
       display: none;
@@ -569,7 +569,8 @@
       margin-bottom: 8px;
     }
     .settings-group input[type="password"],
-    .settings-group input[type="text"] {
+    .settings-group input[type="text"],
+    .settings-group select {
       width: 100%;
       padding: 10px 12px;
       border: 1px solid var(--rule);
@@ -578,7 +579,7 @@
       font-size: 14px;
       background: #fff;
     }
-    .settings-group input:focus {
+    .settings-group input:focus, .settings-group select:focus {
       outline: none;
       border-color: var(--accent);
     }
@@ -652,6 +653,14 @@
         <input type="password" id="api-key-input" placeholder="Paste your API key here">
       </div>
       
+      <div class="settings-group">
+        <label for="model-select">Preferred AI Model</label>
+        <select id="model-select" style="max-width: 100%;">
+          <option value="gemini-1.5-flash">Gemini 1.5 Flash (Stable / Fast)</option>
+          <option value="gemini-3.1-flash-lite-preview">Gemini 3.1 Flash Lite (Preview)</option>
+        </select>
+      </div>
+
       <div id="settings-error"></div>
 
       <div class="settings-actions">
@@ -770,8 +779,7 @@
       MAX_DESC_CHARS:    350,
       READER_FONT_MIN:   13,
       READER_FONT_MAX:   24,
-      READER_FONT_DEF:   17,
-      GEMINI_MODEL:      'gemini-1.5-flash' // STRICTLY using the requested model
+      READER_FONT_DEF:   17
     });
 
     const feedCache      = {};
@@ -806,6 +814,7 @@
       // Settings Refs
       settingsModal:   document.getElementById('settings-modal-wrapper'),
       apiKeyInput:     document.getElementById('api-key-input'),
+      modelSelect:     document.getElementById('model-select'),
       saveSettingsBtn: document.getElementById('save-settings-btn'),
       closeSettingsBtn:document.getElementById('close-settings-btn'),
       settingsError:   document.getElementById('settings-error'),
@@ -825,13 +834,15 @@
     ============================================================ */
     function getStoredConfig() {
       return {
-        key: localStorage.getItem('gemini_api_key') || ''
+        key: localStorage.getItem('gemini_api_key') || '',
+        model: localStorage.getItem('gemini_model') || 'gemini-1.5-flash'
       };
     }
 
     function openSettings() {
       const conf = getStoredConfig();
       DOM.apiKeyInput.value = conf.key;
+      DOM.modelSelect.value = conf.model;
       DOM.settingsError.style.display = 'none';
       DOM.settingsModal.classList.add('open');
     }
@@ -842,6 +853,7 @@
 
     async function verifyAndSaveSettings() {
       const key = DOM.apiKeyInput.value.trim();
+      const model = DOM.modelSelect.value;
 
       if (!key) {
         showSettingsError("API Key cannot be empty.");
@@ -857,15 +869,15 @@
       DOM.settingsError.style.display = 'none';
 
       try {
-        const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${key}`;
+        const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
         const response = await fetch(testUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: "Say OK" }] }] })
+          body: JSON.stringify({ contents: [{ parts: [{ text: "Say the word 'OK'" }] }] })
         });
 
         if (response.status === 404) {
-          throw new Error(`Model not found (404) for ${CONFIG.GEMINI_MODEL}. Check key permissions.`);
+          throw new Error(`Model not found (404). Your key lacks access to ${model}. Please select 1.5 Flash.`);
         }
         if (response.status === 400 || response.status === 403) {
           throw new Error(`API Key invalid or permission denied (${response.status}).`);
@@ -876,8 +888,9 @@
 
         // Success!
         localStorage.setItem('gemini_api_key', key);
+        localStorage.setItem('gemini_model', model);
         closeSettings();
-        loadFeed(true);
+        loadFeed(true); // reload feed with new key
 
       } catch (err) {
         showSettingsError(err.message);
@@ -902,7 +915,7 @@
     }
 
     /* ============================================================
-       4. UTILITY & API ENGINE (Strict 1.5-Flash Logic)
+       4. UTILITY & API ENGINE
     ============================================================ */
     function xhrFetch(url, timeoutMs) {
       return new Promise((resolve, reject) => {
@@ -935,7 +948,7 @@
           if (attempt >= maxRetries) throw new Error("Rate limit exceeded (429). Please wait a minute.");
           await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
         } else if (response.status === 404) {
-          throw new Error(`Model not found (404). Your key lacks access to ${CONFIG.GEMINI_MODEL}.`);
+          throw new Error("Model not found (404). Please open Settings and select a different model.");
         } else if (response.status === 400 || response.status === 403) {
           throw new Error(`API Error (${response.status}). Please check your API Key in Settings.`);
         } else {
@@ -1025,7 +1038,7 @@
 
       if(!rawData) throw new Error("Failed to retrieve source XML.");
 
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${conf.key}`;
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${conf.model}:generateContent?key=${conf.key}`;
       const prompt = `Parse this raw RSS/Atom XML feed into a JSON array of the latest articles.
 Source name: ${feedName}
 
@@ -1258,7 +1271,9 @@ ${rawData.substring(0, 15000)}`;
 
       if (!mainEl) return null;
       
+      // Save raw text for AI
       currentArticleText = mainEl.innerText; 
+      
       return sanitizeHtml(mainEl.innerHTML);
     }
 
@@ -1325,7 +1340,7 @@ ${rawData.substring(0, 15000)}`;
         rawHtml = await res.text();
       } catch (e) { throw new Error("Could not retrieve page source"); }
 
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${conf.key}`;
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${conf.model}:generateContent?key=${conf.key}`;
       const prompt = `Act as a precise article extractor. Extract the full article body from the following raw HTML.
 Article Title: "${title}"
 
@@ -1416,7 +1431,7 @@ ${rawHtml.substring(0, 30000)}`;
     }
 
     /* ============================================================
-       9. AI IN-READER CHAT LOGIC
+       9. AI IN-READER CHAT LOGIC (Top-Bar Dropdown Panel)
     ============================================================ */
     function toggleAiPanel() {
       DOM.aiPanel.classList.toggle('open');
@@ -1459,7 +1474,7 @@ ${rawHtml.substring(0, 30000)}`;
         const conf = getStoredConfig();
         if (!conf.key) throw new Error("API Key missing");
 
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${conf.key}`;
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${conf.model}:generateContent?key=${conf.key}`;
         const fullPrompt = `You are an intelligent reading assistant inside a news app. 
         Read the following article text and answer the user's request. Keep answers concise, clear, and easy to read.
         
