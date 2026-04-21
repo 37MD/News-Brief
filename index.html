@@ -668,8 +668,8 @@
       READER_FONT_MIN:   13,
       READER_FONT_MAX:   24,
       READER_FONT_DEF:   17,
-      // Fixed 404 Error: Switched back to the stable & globally available 1.5 flash model
-      GEMINI_MODEL:      'gemini-1.5-flash-latest' 
+      // The absolute standard, stable model for Gemini API
+      GEMINI_MODEL:      'gemini-1.5-flash' 
     });
 
     /* ============================================================
@@ -774,7 +774,7 @@
           if (attempt >= maxRetries) throw new Error("Rate limit exceeded (429) after multiple retries. Please wait a minute.");
           await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
         } else if (response.status === 404) {
-          throw new Error(`Model not found (404). The API key does not recognize the model: ${CONFIG.GEMINI_MODEL}`);
+          throw new Error(`Model not found (404). Please ensure you have a valid API Key and the model name is correct.`);
         } else {
           if (!response.ok) throw new Error(`API Error: ${response.status}`);
           return response;
@@ -1306,6 +1306,11 @@ ${rawHtml.substring(0, 30000)}`;
           body: JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] }),
         });
 
+        if (response.status === 429) {
+            throw new Error("API rate limit exceeded. Please wait 60 seconds before asking another question.");
+        }
+        if (!response.ok) throw new Error(`API Error: ${response.status}`);
+        
         const data = await response.json();
         const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
         
