@@ -1,47 +1,8 @@
 <!DOCTYPE html>
-<!--
-  ╔══════════════════════════════════════════════════════════════════════════════╗
-  ║  GEMINI PULSE — Indian News Aggregator with AI-Powered Reader Mode          ║
-  ║  Version    : 6.2  |  Refactored Build — GeminiPlus_v25                    ║
-  ║                                                                              ║
-  ║  FEATURES   : Top-Bar AI Chat · Gemini 2.5 Flash CAPI Feed Parsing          ║
-  ║               Auto-Retry Rate-Limit Engine · Multi-Source RSS Feeds         ║
-  ║               Browser API Key Vault · HTML Sanitizer / Guardrails           ║
-  ║                                                                              ║
-  ║  ┌─ CODE MAP ──────────────────────────────────────────────────────────┐    ║
-  ║  │                                                                      │    ║
-  ║  │  CSS  §1 Design Tokens & Global Base  §6 Status Messages            │    ║
-  ║  │       §2 Controls Bar                 §7 Reader Mode Panel          │    ║
-  ║  │       §3 Masthead                     §8 AI Chat Panel (Gemini)     │    ║
-  ║  │       §4 Feed Status Bar              §9 Responsive / Mobile        │    ║
-  ║  │       §5 Feed Cards & Articles                                      │    ║
-  ║  │                                                                      │    ║
-  ║  │  HTML §A Controls Bar (RSS Feeds)     §D Feed Output Container      │    ║
-  ║  │       §B Masthead                     §E Reader Mode + AI Panel     │    ║
-  ║  │       §C Feed Status Bar                                            │    ║
-  ║  │                                                                      │    ║
-  ║  │  JS   §1 Config                       §6 Feed Rendering             │    ║
-  ║  │       §2 State Variables              §7 Reader Mode Engine         │    ║
-  ║  │       §3 DOM References              §8 ★ AI ENGINE ★               │    ║
-  ║  │       §4 Utility Helpers                  §8a API Key Vault         │    ║
-  ║  │       §5 RSS Feeds, Proxies                §8b Rate-Limit Guardrail │    ║
-  ║  │             & Fetching                     §8c AI Feed Parser       │    ║
-  ║  │                                            §8d AI Article Extractor │    ║
-  ║  │                                            §8e Response Sanitizer   │    ║
-  ║  │                                            §8f AI Chat UI           │    ║
-  ║  │       §9 Init & Event Listeners                                     │    ║
-  ║  └──────────────────────────────────────────────────────────────────────┘   ║
-  ╚══════════════════════════════════════════════════════════════════════════════╝
--->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <!--
-    Content Security Policy:
-    - script-src: only inline JS + rss2json JSONP loader
-    - connect-src: wildcard to allow Gemini API + all CORS proxies
-  -->
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self';
                  script-src  'unsafe-inline' https://api.rss2json.com;
@@ -640,24 +601,10 @@
 
 <body>
 
-  <!-- ══════════════════════════════════════════════════════════════════
-       HTML §A — CONTROLS BAR
-       Top-right toolbar: RSS feed source selector + action buttons.
-
-       ★ ALL RSS FEED SOURCES ARE DEFINED IN THIS DROPDOWN ★
-       To add a new feed  → add an <option> inside the relevant <optgroup>
-       To add a category  → add a new <optgroup label="── Name ──">
-  ══════════════════════════════════════════════════════════════════ -->
   <div class="controls-bar">
 
     <select id="feed-dropdown" aria-label="Select news feed">
 
-      <!-- ─────────────────────────────────────────────────────────────
-           RSS FEED SOURCES
-           Grouped by publication. Each option value is the RSS feed URL.
-      ──────────────────────────────────────────────────────────────── -->
-
-      <!-- Group 1 ── Digital & National Publications ─────────────── -->
       <optgroup label="── Digital & National ──">
         <option value="https://feeds.feedburner.com/NDTV-LatestNews">NDTV · Latest News</option>
         <option value="https://feeds.feedburner.com/ScrollinArticles.rss">Scroll.in · Articles</option>
@@ -665,109 +612,57 @@
         <option value="https://theprint.in/feed/">The Print · Top News</option>
       </optgroup>
 
-      <!-- Group 2 ── Times of India ──────────────────────────────── -->
       <optgroup label="── Times of India ──">
         <option value="https://timesofindia.indiatimes.com/rssfeedstopstories.cms">TOI · Top Stories</option>
         <option value="https://timesofindia.indiatimes.com/rssfeeds/1898055.cms">TOI · Business</option>
         <option value="https://timesofindia.indiatimes.com/rssfeeds/-2128672765.cms">TOI · Technology</option>
       </optgroup>
 
-      <!-- Group 3 ── Economic Times ─────────────────────────────── -->
       <optgroup label="── Economic Times ──">
         <option value="https://economictimes.indiatimes.com/rssfeedsdefault.cms">ET · Top News</option>
         <option value="https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms">ET · Markets</option>
         <option value="https://economictimes.indiatimes.com/economy/rssfeeds/20-20.cms">ET · Economy</option>
       </optgroup>
 
-      <!-- Group 4 ── Business Standard ──────────────────────────── -->
       <optgroup label="── Business Standard ──">
         <option value="https://www.business-standard.com/rss/markets-106.rss">BS · Markets</option>
         <option value="https://www.business-standard.com/rss/economy-policy-102.rss">BS · Economy & Policy</option>
       </optgroup>
 
-      <!-- Group 5 ── The Hindu ───────────────────────────────────── -->
       <optgroup label="── The Hindu ──">
         <option value="https://www.thehindu.com/feeder/default.rss">Hindu · Top News</option>
         <option value="https://www.thehindu.com/business/feeder/default.rss">Hindu · Business</option>
       </optgroup>
 
-      <!-- Group 6 ── Mint (Livemint) ────────────────────────────── -->
       <optgroup label="── Mint (Livemint) ──">
         <option value="https://www.livemint.com/rss/news">Mint · Top News</option>
         <option value="https://www.livemint.com/rss/markets">Mint · Markets</option>
       </optgroup>
 
     </select>
-    <!-- END: RSS Feed Sources -->
-
     <button class="btn-outline" id="refresh-btn" title="Refresh feed">⟳ Refresh</button>
     <button class="btn-outline" id="clear-key-btn" title="Clear Gemini Key">🔑 Reset Key</button>
   </div>
-  <!-- END: HTML §A Controls Bar -->
-
-
-  <!-- ══════════════════════════════════════════════════════════════════
-       HTML §B — MASTHEAD
-       Newspaper-style title block. Date is injected by JS on load.
-  ══════════════════════════════════════════════════════════════════ -->
   <div class="masthead">
     <div class="tagline" id="header-date">Financial Intelligence Terminal</div>
     <div class="masthead-title">Gemini Pulse</div>
     <div class="tagline">Live Feed</div>
   </div>
-  <!-- END: HTML §B Masthead -->
-
-
-  <!-- ══════════════════════════════════════════════════════════════════
-       HTML §C — FEED STATUS BAR
-       Left: article count  |  Right: auto-refresh countdown timer
-  ══════════════════════════════════════════════════════════════════ -->
   <div class="feed-status-bar">
     <span id="item-count"></span>
     <span id="next-refresh"></span>
   </div>
-  <!-- END: HTML §C Feed Status Bar -->
-
-
-  <!-- ══════════════════════════════════════════════════════════════════
-       HTML §D — FEED OUTPUT CONTAINER
-       Article cards are dynamically injected into #rss-output by JS.
-       The "Initialising…" message is replaced on first load.
-  ══════════════════════════════════════════════════════════════════ -->
   <div class="container">
     <div id="rss-output" aria-live="polite" aria-atomic="false">
       <div class="system-msg">Initialising secure terminal…</div>
     </div>
   </div>
-  <!-- END: HTML §D Feed Output -->
-
-
-  <!-- ══════════════════════════════════════════════════════════════════
-       HTML §E — READER MODE (Slide-in Panel)
-       ┌───────────────────────────────────────────────┐
-       │  §E1  Reader Shell                            │
-       │       ├─ Backdrop (click to dismiss)          │
-       │       ├─ Progress bar (reading %)             │
-       │       ├─ Topbar (← Back | URL | A− A+ | AI)  │
-       │       └─ Scroll area (article HTML)           │
-       │                                               │
-       │  §E2  AI Chat Panel (dropdown inside reader)  │
-       │       ├─ Chat bubble history                  │
-       │       ├─ Quick-prompt pills                   │
-       │       └─ Free-text input + Ask button         │
-       └───────────────────────────────────────────────┘
-  ══════════════════════════════════════════════════════════════════ -->
-
-  <!-- §E1: Backdrop overlay — click to close the reader -->
   <div id="reader-backdrop" aria-hidden="true"></div>
 
-  <!-- §E1: Reader slide-in panel -->
   <div id="reader-panel" role="dialog" aria-modal="true" aria-label="Article reader">
 
-    <!-- Thin progress bar pinned to the top; fills as user reads -->
     <div id="reader-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
 
-    <!-- Topbar toolbar inside the reader -->
     <div class="reader-topbar">
       <button class="reader-back-btn" id="reader-back" aria-label="Close reader">← Back</button>
       <span class="reader-source-url" id="reader-url-label"></span>
@@ -775,35 +670,25 @@
         <button id="font-down" title="Smaller text">A−</button>
         <button id="font-up"   title="Larger text">A+</button>
       </div>
-      <!-- AI button: hidden until an article is successfully loaded -->
       <button class="reader-open-btn reader-ai-btn" id="reader-ai-toggle" style="display:none;">✨ Ask AI</button>
       <a class="reader-open-btn" id="reader-ext-link" href="#" target="_blank" rel="noopener noreferrer">↗ Original</a>
     </div>
 
-    <!-- Article content area (HTML injected by JS after fetch) -->
     <div class="reader-scroll" id="reader-scroll">
       <div id="reader-content"></div>
     </div>
 
-    <!-- ─────────────────────────────────────────────────────────────
-         §E2: AI CHAT PANEL
-         Floating dropdown panel anchored to the reader topbar.
-         Opens/closes via the "✨ Ask AI" button.
-    ──────────────────────────────────────────────────────────────── -->
     <div id="ai-panel">
 
-      <!-- Panel header: title + close button -->
       <div class="ai-header">
         <span>✨ Gemini Assistant</span>
         <button class="ai-close-btn" id="ai-close-btn">×</button>
       </div>
 
-      <!-- Chat message history (bubbles injected by JS) -->
       <div class="ai-chat-area" id="ai-chat-area">
         <div class="ai-message system">Hi! I've read this article. Try a quick prompt below or ask me a specific question.</div>
       </div>
 
-      <!-- One-tap quick-prompt pills -->
       <div class="ai-quick-prompts">
         <button class="ai-prompt-btn">Summarize</button>
         <button class="ai-prompt-btn">Explain Jargon</button>
@@ -811,22 +696,13 @@
         <button class="ai-prompt-btn">Why does this matter?</button>
       </div>
 
-      <!-- Free-text input row -->
       <div class="ai-input-area">
         <input type="text" id="ai-input" placeholder="Ask Gemini..." autocomplete="off">
         <button id="ai-submit">Ask</button>
       </div>
 
     </div>
-    <!-- END: §E2 AI Chat Panel -->
-
-  </div>
-  <!-- END: HTML §E Reader Mode -->
-
-
-  <!-- ══════════════════════════════════════════════════════════════════
-       HTML §F — JAVASCRIPT APPLICATION LOGIC
-  ══════════════════════════════════════════════════════════════════ -->
+    </div>
   <script>
     'use strict';
 
@@ -844,7 +720,7 @@
       READER_FONT_MIN:    13,              // Minimum reader font size (px)
       READER_FONT_MAX:    24,              // Maximum reader font size (px)
       READER_FONT_DEF:    17,              // Default reader font size (px)
-      GEMINI_MODEL:       'gemini-2.5-flash-preview-09-2025'  // Active Gemini model
+      GEMINI_MODEL:       'gemini-3.1-flash-lite-preview'  // Updated working model
     });
 
 
@@ -1035,9 +911,9 @@
     /**
      * CORS Proxy URL builders.
      * Three third-party proxies are available, used as fallback options:
-     *   rss2json   — JSON wrapper (supports JSONP callback)
-     *   allOrigins — Raw pass-through proxy
-     *   corsproxy  — Raw pass-through proxy (alternative)
+     * rss2json   — JSON wrapper (supports JSONP callback)
+     * allOrigins — Raw pass-through proxy
+     * corsproxy  — Raw pass-through proxy (alternative)
      */
     const proxyUrl = {
       rss2json:   (feed, cb) => `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed)}${cb ? '&callback='+cb : ''}`,
@@ -1102,8 +978,8 @@
     /**
      * Main RSS feed fetch orchestrator — two-tier fallback strategy:
      *
-     *   Tier 0 — Gemini CAPI (AI-powered robust XML → JSON)   [§8c]
-     *   Tier 1 — rss2json JSONP (standard no-key fallback)
+     * Tier 0 — Gemini CAPI (AI-powered robust XML → JSON)   [§8c]
+     * Tier 1 — rss2json JSONP (standard no-key fallback)
      *
      * Tier 0 is preferred because it handles malformed/exotic XML.
      * Tier 1 is the safety net if AI is unavailable or rate-limited.
@@ -1369,9 +1245,9 @@
     /**
      * Multi-tier article fetch pipeline:
      *
-     *   Tier 1 — CORS proxies + local CSS-selector extraction
-     *   Tier 2 — Gemini AI extraction (if Tier 1 fails or content too thin)
-     *   Tier 3 — Fully blocked → render error page with link to original
+     * Tier 1 — CORS proxies + local CSS-selector extraction
+     * Tier 2 — Gemini AI extraction (if Tier 1 fails or content too thin)
+     * Tier 3 — Fully blocked → render error page with link to original
      *
      * @param {string} url
      * @param {string} title
@@ -1585,9 +1461,9 @@
      * (Rate Limit Exceeded) responses from the Gemini API.
      *
      * Retry schedule (exponential backoff):
-     *   Attempt 1 → wait 2 seconds
-     *   Attempt 2 → wait 4 seconds
-     *   Attempt 3 → throw — too many retries
+     * Attempt 1 → wait 2 seconds
+     * Attempt 2 → wait 4 seconds
+     * Attempt 3 → throw — too many retries
      *
      * @param  {string} url
      * @param  {object} options     - Standard fetch() options (method, headers, body)
@@ -1679,8 +1555,8 @@
      *
      * Used as fallback when local CSS-selector extraction returns thin content.
      * Contains two built-in guardrails:
-     *   • PAYWALL sentinel — throws if Gemini detects a paywall
-     *   • Minimum length check — rejects suspiciously short extractions
+     * • PAYWALL sentinel — throws if Gemini detects a paywall
+     * • Minimum length check — rejects suspiciously short extractions
      *
      * @param {string} url
      * @param {string} title
