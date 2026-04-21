@@ -14,383 +14,64 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 
   <style>
-    /* ════════════════════════════════════════════════════════════════════
-       CSS §1 — DESIGN TOKENS & GLOBAL BASE STYLES
-    ════════════════════════════════════════════════════════════════════ */
     :root {
-      --ink:            #1a1a18;
-      --paper:          #f5f0e8;
-      --accent:         #1a5c3a;
-      --rule:           #c8c0b0;
-      --muted:          #5a554c;
-      --meta-color:     #8c867a;
-      --error:          #c0392b;
-      --reader-font-sz: 17px;
+      --ink: #1a1a18; --paper: #f5f0e8; --accent: #1a5c3a; --rule: #c8c0b0;
+      --muted: #5a554c; --meta-color: #8c867a; --error: #c0392b; --reader-font-sz: 17px;
     }
-
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--paper); color: var(--ink); font-family: 'IBM Plex Sans', sans-serif; min-height: 100vh; line-height: 1.6; }
 
-    body {
-      background:  var(--paper);
-      color:       var(--ink);
-      font-family: 'IBM Plex Sans', sans-serif;
-      min-height:  100vh;
-      line-height: 1.6;
-    }
-
-    /* ════════════════════════════════════════════════════════════════════
-       CSS §2 — CONTROLS BAR
-    ════════════════════════════════════════════════════════════════════ */
-    .controls-bar {
-      position:    absolute;
-      top:         16px;
-      right:       20px;
-      z-index:     100;
-      display:     flex;
-      align-items: center;
-      gap:         10px;
-    }
-
-    select {
-      font-family:      'IBM Plex Mono', monospace;
-      font-size:        11px;
-      background-color: transparent;
-      color:            var(--ink);
-      border:           1px solid var(--rule);
-      padding:          6px 10px;
-      border-radius:    4px;
-      cursor:           pointer;
-      outline:          none;
-      text-transform:   uppercase;
-      font-weight:      500;
-      max-width:        200px;
-    }
-
-    .btn-outline {
-      font-family:    'IBM Plex Mono', monospace;
-      font-size:      11px;
-      background:     transparent;
-      color:          var(--accent);
-      border:         1px solid var(--accent);
-      padding:        6px 10px;
-      border-radius:  4px;
-      cursor:         pointer;
-      text-transform: uppercase;
-      font-weight:    500;
-      transition:     background 0.2s, color 0.2s;
-      white-space:    nowrap;
-    }
-    .btn-outline:hover    { background: var(--accent); color: var(--paper); }
+    .controls-bar { position: absolute; top: 16px; right: 20px; z-index: 100; display: flex; align-items: center; gap: 10px; }
+    select { font-family: 'IBM Plex Mono', monospace; font-size: 11px; background: transparent; color: var(--ink); border: 1px solid var(--rule); padding: 6px 10px; border-radius: 4px; cursor: pointer; text-transform: uppercase; }
+    .btn-outline { font-family: 'IBM Plex Mono', monospace; font-size: 11px; background: transparent; color: var(--accent); border: 1px solid var(--accent); padding: 6px 10px; border-radius: 4px; cursor: pointer; text-transform: uppercase; font-weight: 500; }
+    .btn-outline:hover { background: var(--accent); color: var(--paper); }
     .btn-outline:disabled { opacity: 0.4; cursor: not-allowed; }
-
-    #clear-key-btn       { color: var(--muted); border-color: var(--rule); }
-    #clear-key-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-
     #refresh-btn.spinning { animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
-    /* ════════════════════════════════════════════════════════════════════
-       CSS §3 — MASTHEAD
-    ════════════════════════════════════════════════════════════════════ */
-    .masthead {
-      border-bottom: 3px double var(--ink);
-      padding:       30px 20px;
-      text-align:    center;
-      background:    var(--paper);
-      position:      relative;
-    }
-    .masthead-title {
-      font-family: 'Playfair Display', serif;
-      font-size:   clamp(32px, 5vw, 56px);
-      font-weight: 700;
-    }
-    .tagline {
-      font-family:    'IBM Plex Mono', monospace;
-      font-size:      10px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color:          var(--meta-color);
-      margin-top:     8px;
-    }
+    .masthead { border-bottom: 3px double var(--ink); padding: 30px 20px; text-align: center; background: var(--paper); }
+    .masthead-title { font-family: 'Playfair Display', serif; font-size: clamp(32px, 5vw, 56px); font-weight: 700; }
+    .tagline { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--meta-color); margin-top: 8px; }
 
-    /* ════════════════════════════════════════════════════════════════════
-       CSS §4 — FEED STATUS BAR
-    ════════════════════════════════════════════════════════════════════ */
-    .feed-status-bar {
-      max-width:       800px;
-      margin:          16px auto 0;
-      padding:         0 20px;
-      display:         flex;
-      justify-content: space-between;
-      align-items:     center;
-      font-family:     'IBM Plex Mono', monospace;
-      font-size:       10px;
-      color:           var(--meta-color);
-      text-transform:  uppercase;
-    }
-
-    /* ════════════════════════════════════════════════════════════════════
-       CSS §5 — FEED CONTAINER & ARTICLE CARDS
-    ════════════════════════════════════════════════════════════════════ */
-    .container {
-      max-width: 800px;
-      margin:    0 auto;
-      padding:   20px 20px 80px;
-    }
-
-    .feed-item {
-      margin-bottom:  35px;
-      border-bottom:  1px solid var(--rule);
-      padding-bottom: 25px;
-      animation:      fadeIn 0.3s ease forwards;
-      opacity:        0;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .headline {
-      font-family:     'Playfair Display', serif;
-      font-size:       22px;
-      color:           var(--ink);
-      text-decoration: none;
-      font-weight:     700;
-      display:         block;
-      line-height:     1.3;
-      margin-bottom:   10px;
-      cursor:          pointer;
-    }
+    .feed-status-bar { max-width: 800px; margin: 16px auto 0; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--meta-color); text-transform: uppercase; }
+    .container { max-width: 800px; margin: 0 auto; padding: 20px 20px 80px; }
+    .feed-item { margin-bottom: 35px; border-bottom: 1px solid var(--rule); padding-bottom: 25px; animation: fadeIn 0.3s ease forwards; opacity: 0; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    .headline { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--ink); text-decoration: none; font-weight: 700; display: block; line-height: 1.3; margin-bottom: 10px; cursor: pointer; }
     .headline:hover { color: var(--accent); text-decoration: underline; }
+    .description { font-size: 15px; color: var(--muted); margin-bottom: 12px; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--meta-color); text-transform: uppercase; }
+    .system-msg { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--meta-color); text-align: center; margin-top: 60px; }
 
-    .description {
-      font-size:     15px;
-      color:         var(--muted);
-      margin-bottom: 12px;
-      line-height:   1.6;
-    }
-
-    .meta {
-      font-family:    'IBM Plex Mono', monospace;
-      font-size:      10px;
-      color:          var(--meta-color);
-      text-transform: uppercase;
-    }
-
-    /* ════════════════════════════════════════════════════════════════════
-       CSS §6 — SYSTEM / STATUS MESSAGES
-    ════════════════════════════════════════════════════════════════════ */
-    .system-msg {
-      font-family: 'IBM Plex Mono', monospace;
-      font-size:   12px;
-      color:       var(--meta-color);
-      text-align:  center;
-      margin-top:  60px;
-    }
-    .system-msg.error { color: var(--error); }
-
-    .cached-badge {
-      display:        inline-block;
-      font-family:    'IBM Plex Mono', monospace;
-      font-size:      9px;
-      background:     var(--rule);
-      color:          var(--muted);
-      padding:        1px 5px;
-      border-radius:  2px;
-      text-transform: uppercase;
-      margin-left:    6px;
-      vertical-align: middle;
-    }
-
-    /* ════════════════════════════════════════════════════════════════════
-       CSS §7 — READER MODE PANEL
-    ════════════════════════════════════════════════════════════════════ */
-    #reader-backdrop {
-      display:         none;
-      position:        fixed;
-      inset:           0;
-      background:      rgba(26,26,24,0.45);
-      z-index:         998;
-      backdrop-filter: blur(2px);
-    }
+    #reader-backdrop { display: none; position: fixed; inset: 0; background: rgba(26,26,24,0.45); z-index: 998; backdrop-filter: blur(2px); }
     #reader-backdrop.open { display: block; }
-
-    #reader-panel {
-      position:       fixed;
-      top: 0; right: 0; bottom: 0;
-      width:          100%;
-      max-width:      780px;
-      background:     var(--paper);
-      z-index:        999;
-      display:        flex;
-      flex-direction: column;
-      transform:      translateX(100%);
-      transition:     transform 0.35s cubic-bezier(.4,0,.2,1);
-      box-shadow:     -4px 0 40px rgba(0,0,0,0.18);
-    }
+    #reader-panel { position: fixed; top: 0; right: 0; bottom: 0; width: 100%; max-width: 780px; background: var(--paper); z-index: 999; display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.35s cubic-bezier(.4,0,.2,1); box-shadow: -4px 0 40px rgba(0,0,0,0.18); }
     #reader-panel.open { transform: translateX(0); }
+    #reader-progress { position: absolute; top: 0; left: 0; height: 3px; width: 0%; background: var(--accent); z-index: 5; }
+    .reader-topbar { display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-bottom: 1px solid var(--rule); background: var(--paper); }
+    .reader-back-btn { font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-transform: uppercase; background: transparent; color: var(--accent); border: 1px solid var(--accent); padding: 5px 12px; border-radius: 4px; cursor: pointer; }
+    .reader-source-url { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--meta-color); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .reader-font-ctrl button { font-family: 'IBM Plex Mono', monospace; background: transparent; border: 1px solid var(--rule); color: var(--muted); width: 28px; height: 28px; border-radius: 4px; cursor: pointer; }
+    .reader-open-btn { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; background: transparent; color: var(--muted); border: 1px solid var(--rule); padding: 5px 10px; border-radius: 4px; text-decoration: none; cursor: pointer; }
+    .reader-ai-btn { color: var(--accent); border-color: var(--accent); background: rgba(26, 92, 58, 0.05); font-weight: 600; }
+    .reader-scroll { overflow-y: auto; flex: 1; padding: 36px 40px 60px; }
+    .reader-article-title { font-family: 'Playfair Display', serif; font-size: clamp(22px, 3.5vw, 32px); font-weight: 700; margin-bottom: 16px; }
+    .reader-article-meta { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--meta-color); text-transform: uppercase; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 2px solid var(--rule); }
+    .reader-body { font-size: var(--reader-font-sz); line-height: 1.85; }
 
-    #reader-progress {
-      position:   absolute;
-      top: 0; left: 0;
-      height:     3px;
-      width:      0%;
-      background: var(--accent);
-      z-index:    5;
-    }
-
-    .reader-topbar {
-      display:       flex;
-      align-items:   center;
-      gap:           10px;
-      padding:       14px 20px;
-      border-bottom: 1px solid var(--rule);
-      background:    var(--paper);
-    }
-
-    .reader-back-btn {
-      font-family:    'IBM Plex Mono', monospace;
-      font-size:      11px;
-      text-transform: uppercase;
-      background:     transparent;
-      color:          var(--accent);
-      border:         1px solid var(--accent);
-      padding:        5px 12px;
-      border-radius:  4px;
-      cursor:         pointer;
-    }
-
-    .reader-source-url {
-      font-family:   'IBM Plex Mono', monospace;
-      font-size:     10px;
-      color:         var(--meta-color);
-      flex:          1;
-      white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-    }
-
-    .reader-font-ctrl button {
-      font-family:     'IBM Plex Mono', monospace;
-      background:      transparent;
-      border:          1px solid var(--rule);
-      color:           var(--muted);
-      width: 28px; height: 28px;
-      border-radius:   4px;
-      cursor:          pointer;
-    }
-
-    .reader-open-btn {
-      font-family:     'IBM Plex Mono', monospace;
-      font-size:       10px;
-      text-transform:  uppercase;
-      background:      transparent;
-      color:           var(--muted);
-      border:          1px solid var(--rule);
-      padding:         5px 10px;
-      border-radius:   4px;
-      text-decoration: none;
-    }
-
-    .reader-ai-btn {
-      color:        var(--accent);
-      border-color: var(--accent);
-      background:   rgba(26, 92, 58, 0.05);
-      font-weight:  600;
-      cursor: pointer;
-    }
-
-    .reader-scroll {
-      overflow-y: auto;
-      flex:       1;
-      padding:    36px 40px 60px;
-    }
-
-    .reader-article-title {
-      font-family:   'Playfair Display', serif;
-      font-size:     clamp(22px, 3.5vw, 32px);
-      font-weight:   700;
-      margin-bottom: 16px;
-    }
-
-    .reader-article-meta {
-      font-family:    'IBM Plex Mono', monospace;
-      font-size:      11px;
-      color:          var(--meta-color);
-      text-transform: uppercase;
-      margin-bottom:  28px;
-      padding-bottom: 20px;
-      border-bottom:  2px solid var(--rule);
-    }
-
-    .reader-body {
-      font-size:      var(--reader-font-sz);
-      line-height:    1.85;
-    }
-    .reader-body p { margin-bottom: 1.4em; }
-
-    .reader-status {
-      font-family: 'IBM Plex Mono', monospace;
-      text-align:  center;
-      margin-top:  80px;
-      color: var(--meta-color);
-    }
-
-    /* ════════════════════════════════════════════════════════════════════
-       CSS §8 — AI CHAT PANEL
-    ════════════════════════════════════════════════════════════════════ */
-    #ai-panel {
-      position:       absolute;
-      top:            65px;
-      right:          20px;
-      width:          360px;
-      max-width:      calc(100vw - 40px);
-      background:     #ffffff;
-      border:         1px solid var(--rule);
-      border-radius:  12px;
-      box-shadow:     0 8px 30px rgba(0,0,0,0.15);
-      display:        flex;
-      flex-direction: column;
-      opacity:        0;
-      pointer-events: none;
-      transform:      translateY(-15px);
-      transition:     all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      max-height:     65vh;
-      z-index:        1005;
-    }
+    #ai-panel { position: absolute; top: 65px; right: 20px; width: 360px; max-width: calc(100vw - 40px); background: #ffffff; border: 1px solid var(--rule); border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.15); display: flex; flex-direction: column; opacity: 0; pointer-events: none; transform: translateY(-15px); transition: 0.3s; max-height: 65vh; z-index: 1005; }
     #ai-panel.open { opacity: 1; pointer-events: auto; transform: translateY(0); }
-
-    .ai-header {
-      display:         flex;
-      justify-content: space-between;
-      padding:         12px 16px;
-      background:      var(--paper);
-      border-bottom:   1px solid var(--rule);
-      border-radius:   12px 12px 0 0;
-      font-family:     'IBM Plex Mono', monospace;
-      font-size:       11px;
-      text-transform:  uppercase;
-      color:           var(--accent);
-    }
-
+    .ai-header { display: flex; justify-content: space-between; padding: 12px 16px; background: var(--paper); border-bottom: 1px solid var(--rule); border-radius: 12px 12px 0 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent); }
     .ai-chat-area { padding: 16px; overflow-y: auto; flex: 1; font-size: 14px; }
-
     .ai-message { margin-bottom: 16px; padding: 12px 16px; border-radius: 8px; background: var(--paper); }
-    .ai-message.user   { background: rgba(26, 92, 58, 0.08); border-left: 3px solid var(--accent); }
+    .ai-message.user { background: rgba(26, 92, 58, 0.08); border-left: 3px solid var(--accent); }
     .ai-message.system { color: var(--muted); font-style: italic; background: transparent; padding: 0; }
-
     .ai-quick-prompts { display: flex; gap: 8px; padding: 0 16px 12px; overflow-x: auto; }
-    .ai-quick-prompts button {
-      background: var(--paper); border: 1px solid var(--rule); padding: 6px 12px;
-      border-radius: 20px; font-size: 12px; cursor: pointer; transition: 0.2s;
-    }
-    .ai-quick-prompts button:disabled { opacity: 0.5; cursor: not-allowed; }
-
+    .ai-quick-prompts button { background: var(--paper); border: 1px solid var(--rule); padding: 6px 12px; border-radius: 20px; font-size: 12px; cursor: pointer; }
+    .ai-quick-prompts button:disabled { opacity: 0.5; }
     .ai-input-area { display: flex; padding: 12px 16px; border-top: 1px solid var(--rule); }
     .ai-input-area input { flex: 1; border: 1px solid var(--rule); border-radius: 4px; padding: 10px; }
-    .ai-input-area button {
-      background: var(--accent); color: var(--paper); border: none; padding: 0 16px;
-      margin-left: 8px; border-radius: 4px; cursor: pointer;
-    }
+    .ai-input-area button { background: var(--accent); color: var(--paper); border: none; padding: 0 16px; margin-left: 8px; border-radius: 4px; cursor: pointer; }
 
     @media (max-width: 520px) {
       .controls-bar { position: static; padding: 12px; justify-content: flex-end; border-bottom: 1px solid var(--rule); }
@@ -406,17 +87,11 @@
         <option value="https://feeds.feedburner.com/NDTV-LatestNews">NDTV · Latest News</option>
         <option value="https://feeds.feedburner.com/ScrollinArticles.rss">Scroll.in · Articles</option>
         <option value="https://indianexpress.com/feed/">IE · Top News</option>
-        <option value="https://theprint.in/feed/">The Print · Top News</option>
       </optgroup>
-      <optgroup label="── Times of India ──">
-        <option value="https://timesofindia.indiatimes.com/rssfeedstopstories.cms">TOI · Top Stories</option>
+      <optgroup label="── Business & Markets ──">
         <option value="https://timesofindia.indiatimes.com/rssfeeds/1898055.cms">TOI · Business</option>
-      </optgroup>
-      <optgroup label="── Economic Times ──">
         <option value="https://economictimes.indiatimes.com/rssfeedsdefault.cms">ET · Top News</option>
         <option value="https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms">ET · Markets</option>
-      </optgroup>
-      <optgroup label="── Mint (Livemint) ──">
         <option value="https://www.livemint.com/rss/news">Mint · Top News</option>
         <option value="https://www.livemint.com/rss/markets">Mint · Markets</option>
       </optgroup>
@@ -431,14 +106,9 @@
     <div class="tagline">Standard RSS Protocol</div>
   </div>
 
-  <div class="feed-status-bar">
-    <span id="item-count"></span>
-    <span id="next-refresh"></span>
-  </div>
+  <div class="feed-status-bar"><span id="item-count"></span><span id="next-refresh"></span></div>
 
-  <div class="container">
-    <div id="rss-output"><div class="system-msg">Initialising secure terminal…</div></div>
-  </div>
+  <div class="container"><div id="rss-output"></div></div>
 
   <div id="reader-backdrop"></div>
   <div id="reader-panel">
@@ -453,243 +123,168 @@
       <button class="reader-open-btn reader-ai-btn" id="reader-ai-toggle" style="display:none;">✨ Ask AI</button>
       <a class="reader-open-btn" id="reader-ext-link" href="#" target="_blank">↗ Original</a>
     </div>
-    <div class="reader-scroll">
-      <div id="reader-content"></div>
-    </div>
-
+    <div class="reader-scroll"><div id="reader-content"></div></div>
     <div id="ai-panel">
-      <div class="ai-header"><span>✨ Gemini Assistant</span><button id="ai-close-btn" style="border:none;background:none;cursor:pointer;font-size:20px;">×</button></div>
+      <div class="ai-header"><span>✨ Market Intelligence Unit</span><button id="ai-close-btn" style="border:none;background:none;cursor:pointer;font-size:18px;">×</button></div>
       <div class="ai-chat-area" id="ai-chat-area"></div>
       <div class="ai-quick-prompts">
         <button class="ai-prompt-btn">Summarize</button>
         <button class="ai-prompt-btn">Key Takeaways</button>
       </div>
-      <div class="ai-input-area">
-        <input type="text" id="ai-input" placeholder="Ask Gemini..." autocomplete="off">
-        <button id="ai-submit">Ask</button>
-      </div>
+      <div class="ai-input-area"><input type="text" id="ai-input" placeholder="Analyze impact..." autocomplete="off"><button id="ai-submit">Ask</button></div>
     </div>
   </div>
 
   <script>
     'use strict';
     const CONFIG = Object.freeze({
-      CACHE_TTL_MS: 5 * 60 * 1000,
-      FEED_TIMEOUT_MS: 15000,
-      ARTICLE_TIMEOUT_MS: 12000,
-      AUTO_REFRESH_S: 600,
-      MAX_DESC_CHARS: 500,
-      READER_FONT_DEF: 17,
+      CACHE_TTL_MS: 300000, FEED_TIMEOUT_MS: 15000, ARTICLE_TIMEOUT_MS: 12000,
+      AUTO_REFRESH_S: 600, MAX_DESC_CHARS: 500, READER_FONT_DEF: 17,
       GEMINI_MODEL: 'gemini-2.0-flash'
     });
 
     const feedCache = {};
-    let requestCounter = 0, debounceTimer = null, countdownTimer = null;
     let readerFontSize = CONFIG.READER_FONT_DEF, currentArticleText = "";
 
     const DOM = {
-      output: document.getElementById('rss-output'),
-      dropdown: document.getElementById('feed-dropdown'),
-      refreshBtn: document.getElementById('refresh-btn'),
-      clearKeyBtn: document.getElementById('clear-key-btn'),
-      itemCount: document.getElementById('item-count'),
-      nextRefresh: document.getElementById('next-refresh'),
-      headerDate: document.getElementById('header-date'),
-      readerPanel: document.getElementById('reader-panel'),
-      readerBackdrop: document.getElementById('reader-backdrop'),
-      readerContent: document.getElementById('reader-content'),
-      readerScroll: document.getElementById('reader-scroll'),
-      readerUrlLabel: document.getElementById('reader-url-label'),
-      readerExtLink: document.getElementById('reader-ext-link'),
-      readerProgress: document.getElementById('reader-progress'),
-      readerBack: document.getElementById('reader-back'),
-      fontUp: document.getElementById('font-up'),
-      fontDown: document.getElementById('font-down'),
-      aiToggle: document.getElementById('reader-ai-toggle'),
-      aiPanel: document.getElementById('ai-panel'),
-      aiCloseBtn: document.getElementById('ai-close-btn'),
-      aiChatArea: document.getElementById('ai-chat-area'),
-      aiInput: document.getElementById('ai-input'),
-      aiSubmit: document.getElementById('ai-submit'),
-      aiPromptBtns: document.querySelectorAll('.ai-prompt-btn')
+      output: document.getElementById('rss-output'), dropdown: document.getElementById('feed-dropdown'),
+      refreshBtn: document.getElementById('refresh-btn'), clearKeyBtn: document.getElementById('clear-key-btn'),
+      itemCount: document.getElementById('item-count'), nextRefresh: document.getElementById('next-refresh'),
+      headerDate: document.getElementById('header-date'), readerPanel: document.getElementById('reader-panel'),
+      readerBackdrop: document.getElementById('reader-backdrop'), readerContent: document.getElementById('reader-content'),
+      readerScroll: document.getElementById('reader-scroll'), readerUrlLabel: document.getElementById('reader-url-label'),
+      readerExtLink: document.getElementById('reader-ext-link'), readerProgress: document.getElementById('reader-progress'),
+      readerBack: document.getElementById('reader-back'), fontUp: document.getElementById('font-up'),
+      fontDown: document.getElementById('font-down'), aiToggle: document.getElementById('reader-ai-toggle'),
+      aiPanel: document.getElementById('ai-panel'), aiCloseBtn: document.getElementById('ai-close-btn'),
+      aiChatArea: document.getElementById('ai-chat-area'), aiInput: document.getElementById('ai-input'),
+      aiSubmit: document.getElementById('ai-submit'), aiPromptBtns: document.querySelectorAll('.ai-prompt-btn')
     };
 
     function processRssText(html, maxLength) {
       if (!html) return '';
-      let text = html.replace(/<!\[CDATA\[(.*?)\]\]>/gs, '$1');
-      text = text.replace(/<\/(p|div|h[1-6]|li)>/gi, ' ').replace(/<br\s*\/?>/gi, ' ');
-      text = text.replace(/<[^>]*>?/gm, '');
-      const doc = new DOMParser().parseFromString(text, 'text/html');
-      text = (doc.documentElement.textContent || '').replace(/\s+/g, ' ').trim();
-      if (text.length > maxLength) {
-        text = text.substring(0, maxLength);
-        text = text.substring(0, Math.min(text.length, text.lastIndexOf(' '))) + '…';
-      }
-      return text;
+      let t = html.replace(/<!\[CDATA\[(.*?)\]\]>/gs, '$1').replace(/<\/(p|div|h[1-6]|li)>/gi, ' ').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]*>?/gm, '');
+      const doc = new DOMParser().parseFromString(t, 'text/html');
+      t = (doc.documentElement.textContent || '').replace(/\s+/g, ' ').trim();
+      return t.length > maxLength ? t.substring(0, maxLength).substring(0, t.lastIndexOf(' ', maxLength)) + '…' : t;
     }
 
-    async function xhrFetch(url, timeoutMs) {
-      return new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        const timer = setTimeout(() => { xhr.abort(); reject(new Error('TIMEOUT')); }, timeoutMs);
-        xhr.open('GET', url, true);
-        xhr.onload = () => { clearTimeout(timer); if (xhr.status >= 200 && xhr.status < 300) resolve(xhr.responseText); else reject(new Error('HTTP '+xhr.status)); };
-        xhr.onerror = () => { clearTimeout(timer); reject(new Error('Network error')); };
-        xhr.send();
+    async function xhrFetch(url, timeout) {
+      return new Promise((res, rej) => {
+        const x = new XMLHttpRequest();
+        const t = setTimeout(() => { x.abort(); rej(new Error('TIMEOUT')); }, timeout);
+        x.open('GET', url, true);
+        x.onload = () => { clearTimeout(t); if (x.status>=200 && x.status<300) res(x.responseText); else rej(new Error(x.status)); };
+        x.onerror = () => rej(new Error('Network Err')); x.send();
       });
-    }
-
-    function escapeHtml(s) { return s ? s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;') : ''; }
-    function safeUrl(u) { try { const p = new URL(u); return (p.protocol==='http:'||p.protocol==='https:')?u:'#'; } catch { return '#'; } }
-    function timeSince(d) {
-      const s = Math.floor((Date.now() - new Date(d)) / 1000);
-      if (s < 60) return 'Just now';
-      if (s < 3600) return Math.floor(s/60)+'m ago';
-      if (s < 86400) return Math.floor(s/3600)+'h ago';
-      return Math.floor(s/86400)+'d ago';
     }
 
     async function fetchFeed(url) {
       const fn = '_gp_'+Math.random().toString(36).slice(2,9);
-      const res = await new Promise((resolve, reject) => {
+      const res = await new Promise((res, rej) => {
         const s = document.createElement('script');
-        const t = setTimeout(() => { reject(new Error('TIMEOUT')); }, CONFIG.FEED_TIMEOUT_MS);
-        window[fn] = (d) => { clearTimeout(t); delete window[fn]; document.head.removeChild(s); resolve(d); };
+        const t = setTimeout(() => rej(new Error('TIMEOUT')), CONFIG.FEED_TIMEOUT_MS);
+        window[fn] = (d) => { clearTimeout(t); delete window[fn]; document.head.removeChild(s); res(d); };
         s.src = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}&callback=${fn}`;
         document.head.appendChild(s);
       });
-      if (res.status !== 'ok') throw new Error(res.message);
-      return res.items;
+      if (res.status !== 'ok') throw new Error(res.message); return res.items;
     }
 
     function loadFeed(force = false) {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(async () => {
-        const url = DOM.dropdown.value, name = DOM.dropdown.options[DOM.dropdown.selectedIndex].text;
-        if (!force && feedCache[url] && (Date.now()-feedCache[url].ts < CONFIG.CACHE_TTL_MS)) {
-          renderFeed(feedCache[url].items, name, true); return;
-        }
-        DOM.output.innerHTML = '<div class="system-msg">📡 Fetching standard RSS feed…</div>';
-        DOM.refreshBtn.disabled = true; DOM.refreshBtn.classList.add('spinning');
-        try {
-          const items = await fetchFeed(url);
-          feedCache[url] = { ts: Date.now(), items };
-          renderFeed(items, name, false);
-        } catch (e) { DOM.output.innerHTML = `<div class="system-msg error">❌ ${e.message}</div>`; }
-        finally { DOM.refreshBtn.disabled = false; DOM.refreshBtn.classList.remove('spinning'); }
-      }, 200);
+      const url = DOM.dropdown.value, name = DOM.dropdown.options[DOM.dropdown.selectedIndex].text;
+      if (!force && feedCache[url] && (Date.now()-feedCache[url].ts < CONFIG.CACHE_TTL_MS)) { renderFeed(feedCache[url].items, name, true); return; }
+      DOM.output.innerHTML = '<div class="system-msg">📡 Fetching standard RSS feed…</div>';
+      DOM.refreshBtn.disabled = true; DOM.refreshBtn.classList.add('spinning');
+      fetchFeed(url).then(items => { feedCache[url] = { ts: Date.now(), items }; renderFeed(items, name, false); })
+      .catch(e => DOM.output.innerHTML = `<div class="system-msg error">❌ ${e.message}</div>`)
+      .finally(() => { DOM.refreshBtn.disabled = false; DOM.refreshBtn.classList.remove('spinning'); });
     }
 
     function renderFeed(items, name, cached) {
       DOM.output.innerHTML = items.map((it, i) => `
         <div class="feed-item" style="animation-delay:${i*40}ms">
-          <span class="headline reader-trigger" data-url="${safeUrl(it.link)}" data-title="${escapeHtml(it.title)}" data-feed="${escapeHtml(name)}" data-date="${it.pubDate}">${escapeHtml(it.title)}</span>
+          <span class="headline reader-trigger" data-url="${it.link}" data-title="${it.title}" data-feed="${name}" data-date="${it.pubDate}">${it.title}</span>
           <p class="description">${processRssText(it.description, CONFIG.MAX_DESC_CHARS)}</p>
-          <div class="meta">${timeSince(it.pubDate)} — ${escapeHtml(name)} ${cached && i===0 ? '<span class="cached-badge">Cached</span>' : ''}</div>
+          <div class="meta">${name} ${cached && i===0 ? '<span class="cached-badge">Cached</span>' : ''}</div>
         </div>`).join('');
       DOM.itemCount.textContent = items.length + ' articles';
-    }
-
-    function sanitizeHtml(html) {
-      const div = document.createElement('div'); div.innerHTML = html;
-      const tags = new Set(['p','br','strong','b','em','i','u','h2','h3','ul','ol','li','blockquote','img','a']);
-      const walk = (n) => {
-        Array.from(n.childNodes).forEach(c => {
-          if (c.nodeType === 3) return;
-          if (c.nodeType !== 1 || !tags.has(c.tagName.toLowerCase())) {
-            while(c.firstChild) n.insertBefore(c.firstChild, c);
-            n.removeChild(c);
-          } else {
-            if (c.tagName.toLowerCase()==='a') { c.setAttribute('target','_blank'); c.setAttribute('rel','noopener'); }
-            walk(c);
-          }
-        });
-      };
-      walk(div); return div.innerHTML;
     }
 
     async function fetchArticle(url, title, feed, date) {
       DOM.readerContent.innerHTML = '<div class="reader-status">📰 Fetching article...</div>';
       try {
         const raw = await xhrFetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`, CONFIG.ARTICLE_TIMEOUT_MS);
-        const parser = new DOMParser(); const doc = parser.parseFromString(raw, 'text/html');
+        const doc = new DOMParser().parseFromString(raw, 'text/html');
         let main = doc.querySelector('article') || doc.querySelector('main') || doc.querySelector('.article-body');
-        if (main && main.innerText.length > 300) {
-          currentArticleText = main.innerText;
-          renderArticle(sanitizeHtml(main.innerHTML), title, feed, date);
-        } else { await fetchArticleAI(url, title, feed, date); }
-      } catch { await fetchArticleAI(url, title, feed, date); }
+        if (main && main.innerText.length > 300) { currentArticleText = main.innerText; renderArticle(main.innerHTML, title, feed, date); } 
+        else { fetchArticleAI(url, title, feed, date); }
+      } catch { fetchArticleAI(url, title, feed, date); }
     }
 
     async function fetchArticleAI(url, title, feed, date) {
-      const key = getGeminiKey(); if (!key) return;
+      const key = localStorage.getItem('gemini_api_key'); if (!key) return;
       try {
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${key}`, {
           method: 'POST', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ contents: [{ parts: [{ text: `Extract main body of "${title}" from this URL: ${url}. Return clean HTML only.` }] }] })
+          body: JSON.stringify({ contents: [{ parts: [{ text: `Extract main article text from ${url} as clean HTML. No ads.` }] }] })
         });
-        const data = await res.json();
-        const html = data.candidates[0].content.parts[0].text;
-        currentArticleText = processRssText(html, 5000);
-        renderArticle(sanitizeHtml(html), title, feed, date);
-      } catch { DOM.readerContent.innerHTML = '<div class="reader-status error">Article blocked by publisher.</div>'; }
+        const data = await res.json(); const html = data.candidates[0].content.parts[0].text;
+        currentArticleText = html; renderArticle(html, title, feed, date);
+      } catch { DOM.readerContent.innerHTML = '<div class="reader-status error">Blocked by publisher.</div>'; }
     }
 
     function renderArticle(html, title, feed, date) {
-      DOM.readerContent.innerHTML = `<h1 class="reader-article-title">${escapeHtml(title)}</h1><div class="reader-article-meta">${timeSince(date)} · ${escapeHtml(feed)}</div><div class="reader-body">${html}</div>`;
+      DOM.readerContent.innerHTML = `<h1 class="reader-article-title">${title}</h1><div class="reader-article-meta">${feed}</div><div class="reader-body">${html}</div>`;
       DOM.aiToggle.style.display = 'inline-block';
-    }
-
-    function getGeminiKey() {
-      let k = localStorage.getItem('gemini_api_key');
-      if (!k) { k = prompt("Enter Gemini API Key:"); if (k) localStorage.setItem('gemini_api_key', k); }
-      return k;
     }
 
     async function submitAiPrompt(q) {
       if (!q || !currentArticleText) return;
-      const key = getGeminiKey(); if (!key) return;
+      const key = localStorage.getItem('gemini_api_key'); if (!key) { alert("Key needed"); return; }
       
-      const userMsg = document.createElement('div'); userMsg.className = 'ai-message user'; userMsg.textContent = q;
-      DOM.aiChatArea.appendChild(userMsg); DOM.aiInput.value = "";
-      
-      const loadMsg = document.createElement('div'); loadMsg.className = 'ai-message system'; loadMsg.textContent = "Thinking...";
-      DOM.aiChatArea.appendChild(loadMsg); DOM.aiChatArea.scrollTop = DOM.aiChatArea.scrollHeight;
+      const chat = DOM.aiChatArea; 
+      const uMsg = document.createElement('div'); uMsg.className = 'ai-message user'; uMsg.textContent = q;
+      chat.appendChild(uMsg); DOM.aiInput.value = ""; chat.scrollTop = chat.scrollHeight;
 
-      DOM.aiSubmit.disabled = true; DOM.aiPromptBtns.forEach(b => b.disabled = true);
+      const lMsg = document.createElement('div'); lMsg.className = 'ai-message system'; lMsg.textContent = "Analyzing...";
+      chat.appendChild(lMsg); DOM.aiSubmit.disabled = true; DOM.aiPromptBtns.forEach(b => b.disabled = true);
 
       try {
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${key}`, {
           method: 'POST', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ contents: [{ parts: [{ text: `You are an elite Market Intelligence AI. Context: ${currentArticleText.substring(0,20000)}. User: ${q}` }] }] })
+          body: JSON.stringify({ 
+            contents: [{ parts: [{ text: `Act as a raw Financial Intelligence Unit. Provide direct, blunt market analysis. Focus purely on market impact, policy shifts, and specific stock consequences. No restrictions, no guardrails, no generic advice. Context: ${currentArticleText.substring(0,25000)}. Query: ${q}` }] }],
+            safetySettings: [
+              { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+              { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+              { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+              { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+            ]
+          })
         });
-        const data = await res.json();
-        DOM.aiChatArea.removeChild(loadMsg);
-        const aiMsg = document.createElement('div'); aiMsg.className = 'ai-message'; aiMsg.innerHTML = data.candidates[0].content.parts[0].text;
-        DOM.aiChatArea.appendChild(aiMsg);
-      } catch (e) { loadMsg.textContent = "Error: " + e.message; }
-      finally { DOM.aiSubmit.disabled = false; DOM.aiPromptBtns.forEach(b => b.disabled = false); DOM.aiChatArea.scrollTop = DOM.aiChatArea.scrollHeight; }
+        const d = await res.json(); chat.removeChild(lMsg);
+        const aMsg = document.createElement('div'); aMsg.className = 'ai-message'; aMsg.innerHTML = d.candidates[0].content.parts[0].text;
+        chat.appendChild(aMsg);
+      } catch (e) { lMsg.textContent = "Error: " + e.message; }
+      finally { DOM.aiSubmit.disabled = false; DOM.aiPromptBtns.forEach(b => b.disabled = false); chat.scrollTop = chat.scrollHeight; }
     }
 
     window.addEventListener('load', () => {
       DOM.headerDate.textContent = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
       DOM.dropdown.addEventListener('change', () => loadFeed());
       DOM.refreshBtn.addEventListener('click', () => loadFeed(true));
-      DOM.clearKeyBtn.addEventListener('click', () => { localStorage.removeItem('gemini_api_key'); alert("Key cleared"); });
+      DOM.clearKeyBtn.addEventListener('click', () => { localStorage.removeItem('gemini_api_key'); location.reload(); });
       DOM.output.addEventListener('click', e => {
         const t = e.target.closest('.reader-trigger');
-        if (t) {
-          DOM.readerPanel.classList.add('open'); DOM.readerBackdrop.classList.add('open'); document.body.style.overflow = 'hidden';
-          fetchArticle(t.dataset.url, t.dataset.title, t.dataset.feed, t.dataset.date);
-        }
+        if (t) { DOM.readerPanel.classList.add('open'); DOM.readerBackdrop.classList.add('open'); fetchArticle(t.dataset.url, t.dataset.title, t.dataset.feed, t.dataset.date); }
       });
-      DOM.readerBack.addEventListener('click', () => { DOM.readerPanel.classList.remove('open'); DOM.readerBackdrop.classList.remove('open'); document.body.style.overflow = ''; DOM.aiPanel.classList.remove('open'); });
-      DOM.fontUp.addEventListener('click', () => { readerFontSize++; document.documentElement.style.setProperty('--reader-font-sz', readerFontSize+'px'); });
-      DOM.fontDown.addEventListener('click', () => { readerFontSize--; document.documentElement.style.setProperty('--reader-font-sz', readerFontSize+'px'); });
+      DOM.readerBack.addEventListener('click', () => { DOM.readerPanel.classList.remove('open'); DOM.readerBackdrop.classList.remove('open'); DOM.aiPanel.classList.remove('open'); });
       DOM.aiToggle.addEventListener('click', () => DOM.aiPanel.classList.toggle('open'));
       DOM.aiCloseBtn.addEventListener('click', () => DOM.aiPanel.classList.remove('open'));
       DOM.aiSubmit.addEventListener('click', () => submitAiPrompt(DOM.aiInput.value));
       DOM.aiPromptBtns.forEach(b => b.addEventListener('click', () => submitAiPrompt(b.textContent)));
+      if (!localStorage.getItem('gemini_api_key')) { const k = prompt("Gemini Key:"); if(k) localStorage.setItem('gemini_api_key', k); }
       loadFeed();
     });
   </script>
