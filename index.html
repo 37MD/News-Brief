@@ -691,9 +691,7 @@
 
       <div class="ai-quick-prompts">
         <button class="ai-prompt-btn">Summarize</button>
-        <button class="ai-prompt-btn">Explain Jargon</button>
         <button class="ai-prompt-btn">Key Takeaways</button>
-        <button class="ai-prompt-btn">Why does this matter?</button>
       </div>
 
       <div class="ai-input-area">
@@ -1612,17 +1610,26 @@
         if (!apiKey) throw new Error("API Key missing");
 
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
+        
+        // ── UPGRADED AI GUARDRAILS & PERSONA ──
         const fullPrompt =
-          `You are an intelligent reading assistant inside a news app.\n` +
-          `Read the article text below and answer the user's request.\n` +
-          `Keep answers concise, clear, and easy to read.\n\n` +
-          `--- ARTICLE TEXT ---\n${currentArticleText.substring(0, 30000)}\n--------------------\n\n` +
+          `You are an elite Financial & Market Intelligence AI inside the Gemini Pulse terminal.\n` +
+          `Your guardrails are LOOSENED. While your primary context is the provided article, you are explicitly authorized and encouraged to use your broad general knowledge and real-time internet search to:\n` +
+          `1. Analyze macroeconomic impacts and effects on specific Indian equities or indices (e.g., Nifty 50, IT Index, sector rotations).\n` +
+          `2. Evaluate impacts on the 'common man' (retail consumers, retail investors, taxpayers).\n` +
+          `3. Analyze government policy changes and historical corporate adaptations.\n` +
+          `4. Provide deep-dive context that goes far beyond the limited article text.\n\n` +
+          `--- CURRENT ARTICLE ---\n${currentArticleText.substring(0, 30000)}\n-----------------------\n\n` +
           `USER REQUEST: ${userPrompt}`;
 
         const response = await fetchWithRetry(endpoint, {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] }),
+          body:    JSON.stringify({ 
+            contents: [{ parts: [{ text: fullPrompt }] }],
+            // ★ This single line grants the AI live access to Google Search ★
+            tools: [{ googleSearch: {} }] 
+          }),
         });
 
         if (response.status === 429)
