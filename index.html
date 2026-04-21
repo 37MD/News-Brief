@@ -1,11 +1,11 @@
-
+```html
 <!DOCTYPE html>
 <!--
   ╔══════════════════════════════════════════════════════════════════╗
   ║  GEMINI PULSE — Indian News Aggregator with Reader Mode          ║
-  ║  Version  : 6.1 (Top-Right Floating AI & 404 Fix)                ║
-  ║  Features : Floating AI Pill, Auto-Retry 429 API Engine,         ║
-  ║             Gemini 1.5 Flash (Stable), Mozilla Readability.      ║
+  ║  Version  : 6.2 (Top-Bar AI & 404 API Fix)                       ║
+  ║  Features : Top-bar AI Chat, Auto-Retry Rate Limit Engine,       ║
+  ║             Gemini 2.5 Flash Preview, Mozilla Readability.       ║
   ╚══════════════════════════════════════════════════════════════════╝
 -->
 <html lang="en">
@@ -324,10 +324,22 @@
       cursor:         pointer;
       white-space:    nowrap;
       text-decoration: none;
-      transition:     border-color 0.2s, color 0.2s;
+      transition:     all 0.2s;
       flex-shrink:    0;
     }
     .reader-open-btn:hover { border-color: var(--ink); color: var(--ink); }
+
+    /* Highlighted AI Button in Top Bar */
+    .reader-ai-btn {
+      color: var(--accent);
+      border-color: var(--accent);
+      background: rgba(26, 92, 58, 0.05);
+      font-weight: 600;
+    }
+    .reader-ai-btn:hover {
+      background: var(--accent);
+      color: var(--paper);
+    }
 
     .reader-scroll {
       overflow-y: auto;
@@ -402,37 +414,11 @@
     .reader-status.error { color: var(--error); }
 
     /* ================================================================
-       TOP-RIGHT FLOATING AI ASSISTANT (Stars Button)
+       AI CHAT PANEL (Drops down from top right)
     ================================================================ */
-    .floating-ai-btn {
-      position: absolute;
-      top: 80px; /* Below the topbar */
-      right: 20px;
-      width: 46px;
-      height: 46px;
-      border-radius: 50%; /* Circle shape */
-      background: var(--paper);
-      color: var(--accent);
-      font-size: 22px;
-      display: none; /* Hidden until article loads */
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-      border: 1px solid var(--rule);
-      z-index: 1010;
-      transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
-    }
-    .floating-ai-btn:hover {
-      transform: scale(1.05);
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
-      background: #ffffff;
-    }
-
-    /* Chat Panel Pop-up */
     #ai-panel {
       position: absolute;
-      top: 140px; /* Just below the floating button */
+      top: 65px; /* Just below the topbar */
       right: 20px;
       width: 360px;
       max-width: calc(100vw - 40px);
@@ -444,9 +430,9 @@
       flex-direction: column;
       opacity: 0;
       pointer-events: none;
-      transform: translateY(-20px);
+      transform: translateY(-15px);
       transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      max-height: 60vh;
+      max-height: 65vh;
       z-index: 1005;
     }
     #ai-panel.open {
@@ -573,8 +559,7 @@
       .masthead       { padding: 20px 16px; }
       .reader-scroll  { padding: 20px 18px 0px; }
       .reader-source-url { display: none; }
-      #ai-panel { top: 130px; right: 10px; max-width: calc(100vw - 20px); max-height: 60vh;}
-      .floating-ai-btn { top: 70px; right: 10px; width: 44px; height: 44px; font-size: 20px;}
+      #ai-panel { top: 65px; right: 10px; max-width: calc(100vw - 20px); max-height: 70vh;}
     }
   </style>
 </head>
@@ -660,6 +645,10 @@
         <button id="font-down" title="Smaller text">A−</button>
         <button id="font-up"   title="Larger text">A+</button>
       </div>
+      
+      <!-- MOVED AI BUTTON TO TOP BAR -->
+      <button class="reader-open-btn reader-ai-btn" id="reader-ai-toggle" style="display:none;">✨ Ask AI</button>
+      
       <a class="reader-open-btn" id="reader-ext-link" href="#" target="_blank" rel="noopener noreferrer">↗ Original</a>
     </div>
 
@@ -667,9 +656,6 @@
     <div class="reader-scroll" id="reader-scroll">
       <div id="reader-content"></div>
     </div>
-
-    <!-- TOP-RIGHT FLOATING AI BUTTON (Stars) -->
-    <button class="floating-ai-btn" id="floating-ai-btn" title="Ask Gemini">✨</button>
 
     <!-- FLOATING AI CHAT PANEL -->
     <div id="ai-panel">
@@ -712,8 +698,8 @@
       READER_FONT_MIN:   13,
       READER_FONT_MAX:   24,
       READER_FONT_DEF:   17,
-      // Fix for 404: Used the globally available robust standard model
-      GEMINI_MODEL:      'gemini-1.5-flash' 
+      // 404 Fix: Restored the proper required model for the environment
+      GEMINI_MODEL:      'gemini-2.5-flash-preview-09-2025' 
     });
 
     /* ============================================================
@@ -748,8 +734,8 @@
       fontDown:        document.getElementById('font-down'),
       headerDate:      document.getElementById('header-date'),
       
-      // Floating AI Refs
-      floatingBtn:     document.getElementById('floating-ai-btn'),
+      // Top-Bar AI Refs
+      aiToggle:        document.getElementById('reader-ai-toggle'),
       aiPanel:         document.getElementById('ai-panel'),
       aiCloseBtn:      document.getElementById('ai-close-btn'),
       aiChatArea:      document.getElementById('ai-chat-area'),
@@ -1081,7 +1067,7 @@ ${rawData.substring(0, 15000)}`;
       document.body.style.overflow = 'hidden';
 
       // Reset AI Panel state
-      DOM.floatingBtn.style.display = 'none';
+      DOM.aiToggle.style.display = 'none';
       closeAiPanel();
       DOM.aiChatArea.innerHTML = `<div class="ai-message system">Hi! Try a quick prompt below or ask me a specific question about this article.</div>`;
       currentArticleText = "";
@@ -1103,7 +1089,7 @@ ${rawData.substring(0, 15000)}`;
       DOM.readerBackdrop.setAttribute('aria-hidden', 'true');
       document.body.style.overflow = '';
       closeAiPanel();
-      DOM.floatingBtn.style.display = 'none';
+      DOM.aiToggle.style.display = 'none';
     }
 
     function setReaderProgress(pct) {
@@ -1237,8 +1223,8 @@ ${rawHtml.substring(0, 30000)}`;
         `<div class="reader-article-meta">${pubDate ? `${timeSince(pubDate)} &nbsp;·&nbsp; ` : ''}${escapeHtml(feedName)}</div>` +
         `<div class="reader-body">${cleanHtml}</div>`;
         
-      // Show the floating AI button (Stars)
-      DOM.floatingBtn.style.display = 'flex'; 
+      // Show the Top-Bar AI button
+      DOM.aiToggle.style.display = 'inline-block'; 
       setReaderProgress(100);
       setTimeout(() => setReaderProgress(0), 800);
     }
@@ -1290,23 +1276,17 @@ ${rawHtml.substring(0, 30000)}`;
     }
 
     /* ============================================================
-       9. AI IN-READER CHAT LOGIC (Floating Panel)
+       9. AI IN-READER CHAT LOGIC (Top-Bar Dropdown Panel)
     ============================================================ */
     function toggleAiPanel() {
       DOM.aiPanel.classList.toggle('open');
       if(DOM.aiPanel.classList.contains('open')) {
         DOM.aiInput.focus();
-        DOM.floatingBtn.style.transform = 'scale(0)'; 
-        DOM.floatingBtn.style.opacity = '0';
       }
     }
     
     function closeAiPanel() {
       DOM.aiPanel.classList.remove('open');
-      if (currentArticleText) {
-         DOM.floatingBtn.style.transform = 'scale(1)';
-         DOM.floatingBtn.style.opacity = '1';
-      }
     }
     
     function addChatMessage(role, text) {
@@ -1416,8 +1396,8 @@ ${rawHtml.substring(0, 30000)}`;
         setReaderProgress(denominator > 0 ? (scrollTop / denominator) * 100 : 0);
       });
 
-      // Floating AI Listeners
-      DOM.floatingBtn.addEventListener('click', toggleAiPanel);
+      // Top-Bar AI Listeners
+      DOM.aiToggle.addEventListener('click', toggleAiPanel);
       DOM.aiCloseBtn.addEventListener('click', closeAiPanel);
       
       DOM.aiSubmit.addEventListener('click', () => submitAiPrompt(DOM.aiInput.value));
@@ -1436,4 +1416,6 @@ ${rawHtml.substring(0, 30000)}`;
   </script>
 </body>
 </html>
+
+
 
