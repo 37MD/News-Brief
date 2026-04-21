@@ -3,9 +3,9 @@
 <!--
   ╔══════════════════════════════════════════════════════════════════╗
   ║  GEMINI PULSE — Indian News Aggregator with Reader Mode          ║
-  ║  Version  : 5.1 (Floating AI Assistant & 429 Protection)         ║
-  ║  Features : Floating AI Chat, 429 Rate Limit Handling, Single    ║
-  ║             File Architecture, Smart Proxy Routing.              ║
+  ║  Version  : 6.0 (Final - Floating UI + Rate Limit Protection)    ║
+  ║  Features : Floating AI Pill, Auto-Retry 429 API Engine,         ║
+  ║             Gemini 2.5 Flash Preview, Mozilla Readability.       ║
   ╚══════════════════════════════════════════════════════════════════╝
 -->
 <html lang="en">
@@ -47,7 +47,7 @@
     }
 
     /* ================================================================
-       CONTROLS BAR (Top Right)
+       CONTROLS BAR
     ================================================================ */
     .controls-bar {
       position:    absolute;
@@ -92,21 +92,14 @@
     .btn-outline:hover    { background: var(--accent); color: var(--paper); }
     .btn-outline:disabled { opacity: 0.4; cursor: not-allowed; }
     
-    #clear-key-btn {
-      color: var(--muted);
-      border-color: var(--rule);
-    }
-    #clear-key-btn:hover {
-      background: var(--ink);
-      color: var(--paper);
-      border-color: var(--ink);
-    }
+    #clear-key-btn { color: var(--muted); border-color: var(--rule); }
+    #clear-key-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
 
     #refresh-btn.spinning { animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ================================================================
-       MASTHEAD (Title)
+       MASTHEAD
     ================================================================ */
     .masthead {
       border-bottom: 3px double var(--ink);
@@ -225,7 +218,7 @@
     }
 
     /* ================================================================
-       READER MODE PANEL (Pop-up Article Viewer)
+       READER MODE PANEL
     ================================================================ */
     #reader-backdrop {
       display:         none;
@@ -270,6 +263,8 @@
       border-bottom: 1px solid var(--rule);
       background:   var(--paper);
       flex-shrink:  0;
+      position:     relative;
+      z-index:      20;
     }
 
     .reader-back-btn {
@@ -338,6 +333,8 @@
       overflow-y: auto;
       flex:       1;
       padding:    36px 40px 60px;
+      position:   relative;
+      z-index:    10;
     }
 
     .reader-article-title {
@@ -364,7 +361,7 @@
       font-size:   var(--reader-font-sz);
       line-height: 1.85;
       color:       var(--ink);
-      padding-bottom: 40px; 
+      padding-bottom: 100px; /* Space for bottom FAB */
     }
     .reader-body p { margin-bottom: 1.4em; }
     .reader-body h1, .reader-body h2, .reader-body h3, .reader-body h4 {
@@ -405,35 +402,42 @@
     .reader-status.error { color: var(--error); }
 
     /* ================================================================
-       FLOATING AI ASSISTANT PANEL
+       FIXED BOTTOM-RIGHT AI ASSISTANT (Copyright Corner)
     ================================================================ */
     .floating-ai-btn {
       position: absolute;
       bottom: 24px;
       right: 24px;
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
+      height: 48px;
+      padding: 0 20px;
+      border-radius: 30px; /* Pill shape */
       background: var(--accent);
       color: var(--paper);
-      font-size: 24px;
-      display: none; /* Shown only when article loads */
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      display: none; /* Hidden until article loads */
       align-items: center;
-      justify-content: center;
+      gap: 8px;
       cursor: pointer;
-      box-shadow: 0 4px 12px rgba(26, 92, 58, 0.4);
+      box-shadow: 0 4px 16px rgba(26, 92, 58, 0.4);
       border: none;
       z-index: 1010;
-      transition: transform 0.2s, box-shadow 0.2s;
+      transition: transform 0.2s, box-shadow 0.2s, background 0.2s;
     }
     .floating-ai-btn:hover {
-      transform: scale(1.05);
-      box-shadow: 0 6px 16px rgba(26, 92, 58, 0.5);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(26, 92, 58, 0.5);
+      background: #124028;
     }
+    .floating-ai-btn span.icon { font-size: 18px; }
 
+    /* Chat Panel Pop-up */
     #ai-panel {
       position: absolute;
-      bottom: 90px;
+      bottom: 84px; /* Just above the floating button */
       right: 24px;
       width: 360px;
       max-width: calc(100vw - 48px);
@@ -447,7 +451,7 @@
       pointer-events: none;
       transform: translateY(20px);
       transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      max-height: 60vh;
+      max-height: 65vh;
       z-index: 1005;
     }
     #ai-panel.open {
@@ -560,7 +564,7 @@
     .ai-input-area button:disabled { background: var(--rule); cursor: not-allowed; }
 
     /* ================================================================
-       RESPONSIVE (Mobile specific rules)
+       RESPONSIVE
     ================================================================ */
     @media (max-width: 520px) {
       .controls-bar {
@@ -574,8 +578,8 @@
       .masthead       { padding: 20px 16px; }
       .reader-scroll  { padding: 20px 18px 0px; }
       .reader-source-url { display: none; }
-      #ai-panel { bottom: 80px; right: 16px; max-width: calc(100vw - 32px); }
-      .floating-ai-btn { bottom: 16px; right: 16px; width: 50px; height: 50px; font-size: 20px; }
+      #ai-panel { bottom: 76px; right: 16px; max-width: calc(100vw - 32px); max-height: 70vh;}
+      .floating-ai-btn { bottom: 16px; right: 16px; height: 44px; padding: 0 16px; font-size: 12px;}
     }
   </style>
 </head>
@@ -669,8 +673,10 @@
       <div id="reader-content"></div>
     </div>
 
-    <!-- FLOATING AI BUTTON -->
-    <button class="floating-ai-btn" id="floating-ai-btn" title="Ask Gemini">✨</button>
+    <!-- FIXED FLOATING AI BUTTON (Bottom Right Pill) -->
+    <button class="floating-ai-btn" id="floating-ai-btn" title="Ask Gemini">
+      <span class="icon">✨</span> Ask AI
+    </button>
 
     <!-- FLOATING AI CHAT PANEL -->
     <div id="ai-panel">
@@ -713,6 +719,8 @@
       READER_FONT_MIN:   13,
       READER_FONT_MAX:   24,
       READER_FONT_DEF:   17,
+      // Use the preview model to avoid strict general rate limits
+      GEMINI_MODEL:      'gemini-2.5-flash-preview-09-2025' 
     });
 
     /* ============================================================
@@ -783,7 +791,7 @@
     }
 
     /* ============================================================
-       5. UTILITY & HELPERS
+       5. UTILITY & API ENGINE (With Exponential Backoff Retry)
     ============================================================ */
     function xhrFetch(url, timeoutMs) {
       return new Promise((resolve, reject) => {
@@ -807,11 +815,26 @@
       });
     }
 
+    // Advanced fetch engine that automatically retries if Google throws a 429 (Rate Limit) error
+    async function fetchWithRetry(url, options, maxRetries = 3) {
+      let attempt = 0;
+      while (attempt < maxRetries) {
+        const response = await fetch(url, options);
+        if (response.status === 429) {
+          attempt++;
+          if (attempt >= maxRetries) throw new Error("Rate limit exceeded (429) after multiple retries. Please wait a minute.");
+          // Wait 2s, then 4s, etc.
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        } else {
+          if (!response.ok) throw new Error(`API Error: ${response.status}`);
+          return response;
+        }
+      }
+    }
+
     function escapeHtml(str) {
       if (str == null) return '';
-      return String(str)
-        .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
     }
 
     function safeUrl(url) {
@@ -841,9 +864,7 @@
 
     function stripHtml(html) {
       if (!html) return '';
-      return html.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ')
-        .replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>')
-        .replace(/&quot;/g, '"').trim();
+      return html.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').trim();
     }
 
     function cleanAiResponse(text) {
@@ -894,7 +915,7 @@
 
       if(!rawData) throw new Error("Failed to retrieve source XML.");
 
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
       const prompt = `Parse this raw RSS/Atom XML feed into a JSON array of the latest articles.
 Source name: ${feedName}
 
@@ -909,17 +930,12 @@ Return ONLY the JSON array. Maximum 15 items. Do not include formatting wrappers
 Raw XML data (truncated):
 ${rawData.substring(0, 15000)}`;
 
-      const response = await fetch(endpoint, {
+      // Utilize the retry engine to bypass 429s
+      const response = await fetchWithRetry(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
       });
-
-      // --- CATCH ERROR 429 ---
-      if (response.status === 429) {
-          throw new Error("Rate limit exceeded (Error 429). Google allows a limited number of requests per minute on free tiers. Please wait 60 seconds.");
-      }
-      if (!response.ok) throw new Error(`Gemini API Error: ${response.status}`);
 
       const data = await response.json();
       const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
@@ -973,9 +989,8 @@ ${rawData.substring(0, 15000)}`;
         errors.push(`T0-Gemini: ${err.message}`);
         console.warn('[Proxy T0 Gemini]', err.message);
         
-        // Show specific 429 message instead of jumping straight to JSONP silently
         if (err.message.includes('429')) {
-             onStatus('📡 AI rate limited (429). Falling back to basic proxy…');
+             onStatus('📡 AI heavily rate limited. Falling back to basic proxy…');
         } else {
              onStatus('📡 AI unavailable. Retrying via standard proxy…');
         }
@@ -1150,7 +1165,7 @@ ${rawData.substring(0, 15000)}`;
         setReaderProgress(30);
       }
 
-      // Tier 1: Local extraction (No AI API usage, saves Rate Limit!)
+      // Tier 1: Local extraction
       if (rawHtml) {
          setReaderProgress(50);
          const cleanHtml = extractMainContent(rawHtml, url);
@@ -1161,15 +1176,15 @@ ${rawData.substring(0, 15000)}`;
          }
       }
 
-      // Tier 2: AI Extraction
+      // Tier 2: AI Extraction with Retries
       setReaderProgress(60);
       try {
          await fetchArticleViaApi(url, title, feedName, pubDate);
          return;
       } catch(e) {
          console.warn("Gemini Extraction failed", e);
-         if (e.message.includes('429')) {
-             renderReaderError(url, "Rate limit exceeded. Please wait a minute.");
+         if (e.message.includes('429') || e.message.includes('Rate limit')) {
+             renderReaderError(url, "Google API Rate limit exceeded. Please wait a minute.");
              return;
          }
       }
@@ -1190,7 +1205,7 @@ ${rawData.substring(0, 15000)}`;
         rawHtml = await res.text();
       } catch (e) { throw new Error("Could not retrieve page source"); }
 
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
       const prompt = `Act as a precise article extractor. Extract the full article body from the following raw HTML.
 Article Title: "${title}"
 
@@ -1202,16 +1217,12 @@ Do not wrap your response in formatting markers.
 RAW HTML (truncated):
 ${rawHtml.substring(0, 30000)}`;
 
-      const response = await fetch(endpoint, {
+      const response = await fetchWithRetry(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
       });
 
-      // --- CATCH ERROR 429 ---
-      if (response.status === 429) throw new Error("429 Too Many Requests");
-      if (!response.ok) throw new Error(`Gemini API Error: ${response.status}`);
-      
       const data = await response.json();
       const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
       const cleanHtml = cleanAiResponse(rawText);
@@ -1233,7 +1244,7 @@ ${rawHtml.substring(0, 30000)}`;
         `<div class="reader-article-meta">${pubDate ? `${timeSince(pubDate)} &nbsp;·&nbsp; ` : ''}${escapeHtml(feedName)}</div>` +
         `<div class="reader-body">${cleanHtml}</div>`;
         
-      // Show the floating AI button
+      // Show the floating AI button (Pill)
       DOM.floatingBtn.style.display = 'flex'; 
       setReaderProgress(100);
       setTimeout(() => setReaderProgress(0), 800);
@@ -1292,15 +1303,16 @@ ${rawHtml.substring(0, 30000)}`;
       DOM.aiPanel.classList.toggle('open');
       if(DOM.aiPanel.classList.contains('open')) {
         DOM.aiInput.focus();
-        // Hide FAB when panel open
-        DOM.floatingBtn.style.transform = 'scale(0)';
+        DOM.floatingBtn.style.transform = 'translateY(100px)'; // Push pill down out of view
+        DOM.floatingBtn.style.opacity = '0';
       }
     }
+    
     function closeAiPanel() {
       DOM.aiPanel.classList.remove('open');
-      // Show FAB when panel closed
       if (currentArticleText) {
-         DOM.floatingBtn.style.transform = 'scale(1)';
+         DOM.floatingBtn.style.transform = 'translateY(0)';
+         DOM.floatingBtn.style.opacity = '1';
       }
     }
     
@@ -1334,7 +1346,7 @@ ${rawHtml.substring(0, 30000)}`;
         const apiKey = getGeminiKey();
         if (!apiKey) throw new Error("API Key missing");
 
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
         const fullPrompt = `You are an intelligent reading assistant inside a news app. 
         Read the following article text and answer the user's request. Keep answers concise, clear, and easy to read.
         
@@ -1344,18 +1356,12 @@ ${rawHtml.substring(0, 30000)}`;
 
         USER REQUEST: ${userPrompt}`;
 
-        const response = await fetch(endpoint, {
+        const response = await fetchWithRetry(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] }),
         });
 
-        // --- CATCH ERROR 429 IN CHAT ---
-        if (response.status === 429) {
-            throw new Error("API rate limit exceeded. Please wait 60 seconds before asking another question.");
-        }
-        if (!response.ok) throw new Error(`API Error: ${response.status}`);
-        
         const data = await response.json();
         const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
         
