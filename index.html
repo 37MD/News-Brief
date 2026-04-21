@@ -397,6 +397,15 @@
       color:          var(--ink);
       padding-bottom: 40px;
     }
+    .reader-body p:empty,
+    .reader-body div:empty,
+    .reader-body section:empty,
+    .reader-body li:empty,
+    .reader-body blockquote:empty { display: none; }
+
+    /* Suppress orphaned whitespace-only paragraphs */
+    .reader-body p:has(> br:only-child) { display: none; }
+
     .reader-body p { margin-bottom: 1.4em; }
     .reader-body h1, .reader-body h2, .reader-body h3, .reader-body h4 {
       font-family: 'Playfair Display', serif;
@@ -1254,12 +1263,56 @@
       base.href  = baseUrl;
       doc.head.appendChild(base);
 
-      // Remove known noise elements (ads, nav, comments, etc.)
+      // Remove known noise elements (ads, nav, comments, social, related, etc.)
       const junk = [
-        'script', 'style', 'nav', 'footer', 'aside', 'iframe', 'noscript',
-        '.ad', '.advertisement', '.social-share', '.related-stories', '#comments', '.header'
+        'script', 'style', 'nav', 'footer', 'aside', 'iframe', 'noscript', 'form',
+        'header', 'button', 'input', 'select', 'textarea',
+        // Ads & promotions
+        '.ad', '.ads', '.ad-unit', '.ad-slot', '.ad-container', '.advertisement',
+        '.advert', '.dfp-ad', '.google-ad', '[id*="google_ads"]', '[id*="dfp"]',
+        '[class*="ad-"]', '[class*="-ad"]', '[class*="advert"]', '[class*="sponsor"]',
+        '[class*="promo"]', '[class*="promotion"]',
+        // Social / sharing widgets
+        '.social-share', '.share', '.sharing', '.share-buttons', '.social-buttons',
+        '.social-links', '.social-icons', '[class*="social"]', '[class*="share"]',
+        // Related / recommended articles
+        '.related-stories', '.related-articles', '.related', '.recommended',
+        '[class*="related"]', '[class*="recommended"]', '[class*="more-stories"]',
+        // Comments
+        '#comments', '.comments', '[class*="comment"]',
+        // Newsletter / subscription banners
+        '[class*="newsletter"]', '[class*="subscribe"]', '[class*="signup"]',
+        '[class*="paywall"]', '[class*="subscription"]',
+        // Breadcrumbs, tags, labels
+        '.breadcrumb', '.tags', '.tag-list', '.article-tags', '[class*="breadcrumb"]',
+        // Author bios / byline extras
+        '.author-bio', '.author-box', '[class*="author-bio"]',
+        // Sticky bars, toasts, overlays
+        '[class*="sticky"]', '[class*="toast"]', '[class*="popup"]', '[class*="modal"]',
+        '[class*="overlay"]', '[class*="banner"]',
+        // Embeds & widgets
+        'object', 'embed', '[class*="widget"]', '[class*="embed"]',
+        // Images & media (remove to prevent layout gaps from blocked images)
+        'figure', 'picture', '.article-image', '[class*="article-img"]',
+        '[class*="hero-img"]', '[class*="lead-img"]', '[class*="featured-img"]',
+        // Pull quotes / decorative callouts
+        '[class*="pull-quote"]', '[class*="callout"]',
       ];
       junk.forEach(sel => { try { doc.querySelectorAll(sel).forEach(el => el.remove()); } catch(e){} });
+
+      // ── Post-removal cleanup: purge empty block shells left behind ───
+      // Iterates until no more empties are found (handles nested empties)
+      const BLOCK_TAGS = new Set(['div','p','section','span','ul','ol','li','blockquote','header','h1','h2','h3','h4','h5','h6']);
+      let hadEmpties = true;
+      while (hadEmpties) {
+        hadEmpties = false;
+        doc.querySelectorAll(Array.from(BLOCK_TAGS).join(',')).forEach(el => {
+          if (el.textContent.trim() === '' && !el.querySelector('img')) {
+            el.remove();
+            hadEmpties = true;
+          }
+        });
+      }
 
       // Try article container selectors in priority order (most specific first)
       const selectors = [
@@ -1415,6 +1468,24 @@
       const wrapper     = document.createElement('div');
       wrapper.innerHTML = html;
       sanitizeNode(wrapper);
+
+      // ── Post-sanitize cleanup ────────────────────────────────────────
+      // 1. Remove block elements that became empty after sanitization
+      const blockSels = 'div,p,section,span,ul,ol,li,blockquote,h1,h2,h3,h4';
+      let hadEmpties = true;
+      while (hadEmpties) {
+        hadEmpties = false;
+        wrapper.querySelectorAll(blockSels).forEach(el => {
+          if (el.textContent.trim() === '' && !el.querySelector('img')) {
+            el.remove(); hadEmpties = true;
+          }
+        });
+      }
+      // 2. Collapse runs of 3+ <br> tags into a single paragraph break
+      wrapper.innerHTML = wrapper.innerHTML
+        .replace(/(<br\s*\/?>\s*){3,}/gi, '</p><p>')
+        .replace(/<p>\s*<\/p>/g, '');
+
       return wrapper.innerHTML;
     }
 
