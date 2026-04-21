@@ -373,6 +373,7 @@
       border-bottom:  2px solid var(--rule);
     }
 
+    /* Article Text Formatting */
     .reader-body {
       font-size:   var(--reader-font-sz);
       line-height: 1.85;
@@ -403,9 +404,9 @@
       color:       var(--muted);
       font-style:  italic;
     }
-    .reader-body a    { color: var(--accent); word-break: break-word; }
+    .reader-body a { color: var(--accent); word-break: break-word; }
     .reader-body ul, .reader-body ol { padding-left: 1.6em; margin-bottom: 1.2em; }
-    .reader-body li   { margin-bottom: 0.4em; }
+    .reader-body li { margin-bottom: 0.4em; }
 
     .reader-status {
       font-family: 'IBM Plex Mono', monospace;
@@ -418,7 +419,7 @@
     .reader-status.error { color: var(--error); }
 
     /* ================================================================
-       [6] AI CHAT PANEL
+       [7] AI CHAT ASSISTANT (Dropdown UI)
     ================================================================ */
     #ai-panel {
       position: absolute;
@@ -439,7 +440,11 @@
       max-height: 65vh;
       z-index: 1005;
     }
-    #ai-panel.open { opacity: 1; pointer-events: auto; transform: translateY(0); }
+    #ai-panel.open {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0);
+    }
     
     .ai-header {
       display: flex; justify-content: space-between; align-items: center;
@@ -455,6 +460,7 @@
     .ai-message.user { background: rgba(26, 92, 58, 0.08); border-left: 3px solid var(--accent); }
     .ai-message.system { color: var(--muted); font-style: italic; font-size: 13px; background: transparent; padding: 0; }
     
+    /* Markdown parsing elements in chat */
     .ai-message strong { font-weight: 600; }
     .ai-message ul { margin-left: 20px; margin-top: 8px; }
     .ai-message p { margin-bottom: 8px; }
@@ -475,7 +481,7 @@
     .ai-input-area button:disabled { background: var(--rule); cursor: not-allowed; }
 
     /* ================================================================
-       [7] SETTINGS MODAL UI
+       [8] SETTINGS MODAL UI
     ================================================================ */
     #settings-modal-wrapper {
       display: none; position: fixed; inset: 0; background: rgba(26,26,24,0.6);
@@ -498,7 +504,7 @@
     #settings-error { color: var(--error); font-size: 13px; margin-top: 10px; display: none; }
 
     /* ================================================================
-       [8] RESPONSIVE BREAKPOINTS
+       [9] RESPONSIVE BREAKPOINTS
     ================================================================ */
     @media (max-width: 650px) {
       .controls-bar { position: static; padding: 12px 16px; justify-content: flex-start; border-bottom: 1px solid var(--rule); flex-wrap: wrap; }
@@ -605,6 +611,7 @@
       </div>
       
       <button class="reader-open-btn reader-ai-btn" id="reader-ai-toggle" style="display:none;">✨ Ask AI</button>
+      
       <a class="reader-open-btn" id="reader-ext-link" href="#" target="_blank" rel="noopener noreferrer">↗ Original</a>
     </div>
 
@@ -649,7 +656,8 @@
       READER_FONT_MIN:    13,
       READER_FONT_MAX:    24,
       READER_FONT_DEF:    17,
-      GEMINI_MODEL:       'gemini-1.5-flash' // Hardcoded to stable model
+      // FIRMLY LOCKED TO THE MODEL THAT WORKS FOR YOUR KEY
+      GEMINI_MODEL:       'gemini-3.1-flash-lite-preview' 
     });
 
     const feedCache      = {};
@@ -734,7 +742,7 @@
           body: JSON.stringify({ contents: [{ parts: [{ text: "Say OK" }] }] })
         });
 
-        if (response.status === 404) throw new Error(`Model not found (404). Check API key permissions.`);
+        if (response.status === 404) throw new Error(`Model not found (404). Your key lacks access to ${CONFIG.GEMINI_MODEL}.`);
         if (response.status === 400 || response.status === 403) throw new Error(`API Key invalid or denied (${response.status}).`);
         if (!response.ok) throw new Error(`Connection failed (${response.status}).`);
 
@@ -815,7 +823,7 @@
           if (attempt >= maxRetries) throw new Error("Rate limit exceeded (429). Please wait a minute.");
           await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
         } else if (response.status === 404) {
-          throw new Error("Model not found (404). Check API permissions.");
+          throw new Error(`Model not found (404). Ensure key permissions for ${CONFIG.GEMINI_MODEL}`);
         } else if (response.status === 400 || response.status === 403) {
           throw new Error(`API Error (${response.status}). Please check Settings.`);
         } else {
@@ -942,6 +950,7 @@ ${rawData.substring(0, 15000)}`;
       try { return await fetchViaGeminiApi(feedUrl, feedName); } 
       catch (err) {
         if (err.message === "API_KEY_MISSING") throw err;
+        
         errors.push(`T0-Gemini: ${err.message}`);
         console.warn('[Proxy T0 Gemini]', err.message);
         
@@ -1387,30 +1396,4 @@ ${rawHtml.substring(0, 30000)}`;
         document.documentElement.style.setProperty('--reader-font-sz', `${readerFontSize}px`);
       });
       DOM.fontDown.addEventListener('click', () => {
-        readerFontSize = Math.max(CONFIG.READER_FONT_MIN, readerFontSize - 1);
-        document.documentElement.style.setProperty('--reader-font-sz', `${readerFontSize}px`);
-      });
-
-      DOM.readerScroll.addEventListener('scroll', () => {
-        const { scrollTop, scrollHeight, clientHeight } = DOM.readerScroll;
-        const denominator = scrollHeight - clientHeight;
-        setReaderProgress(denominator > 0 ? (scrollTop / denominator) * 100 : 0);
-      });
-
-      // AI Panel Triggers
-      DOM.aiToggle.addEventListener('click', toggleAiPanel);
-      DOM.aiCloseBtn.addEventListener('click', closeAiPanel);
-      DOM.aiSubmit.addEventListener('click', () => submitAiPrompt(DOM.aiInput.value));
-      DOM.aiInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitAiPrompt(DOM.aiInput.value); });
-      DOM.aiPromptBtns.forEach(btn => { btn.addEventListener('click', () => { submitAiPrompt(btn.textContent); }); });
-
-      // Start Engine
-      checkKeyAndRun(() => {
-        loadFeed();
-        // Fire silent background cacher 2 seconds after initial load
-        setTimeout(silentBackgroundCache, 2000); 
-      });
-    });
-  </script>
-</body>
-</html>
+        readerFontSize = Math.max(
