@@ -1,4 +1,13 @@
+
 <!DOCTYPE html>
+<!--
+  ╔══════════════════════════════════════════════════════════════════╗
+  ║  GEMINI PULSE — Indian News Aggregator with Reader Mode          ║
+  ║  Version  : 6.2 (Top-Bar AI & 404 API Fix)                       ║
+  ║  Features : Top-bar AI Chat, Auto-Retry Rate Limit Engine,       ║
+  ║             Gemini 2.5 Flash Preview, Mozilla Readability.       ║
+  ╚══════════════════════════════════════════════════════════════════╝
+-->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -557,6 +566,9 @@
 
 <body>
 
+  <!-- ==============================================================
+       CONTROLS BAR
+  =============================================================== -->
   <div class="controls-bar">
     <select id="feed-dropdown" aria-label="Select news feed">
       <optgroup label="── Digital & National ──">
@@ -593,23 +605,35 @@
     <button class="btn-outline" id="clear-key-btn" title="Clear Gemini Key">🔑 Reset Key</button>
   </div>
 
+  <!-- ==============================================================
+       MASTHEAD
+  =============================================================== -->
   <div class="masthead">
     <div class="tagline" id="header-date">Financial Intelligence Terminal</div>
     <div class="masthead-title">Gemini Pulse</div>
     <div class="tagline">Live Feed</div>
   </div>
 
+  <!-- ==============================================================
+       FEED STATUS BAR
+  =============================================================== -->
   <div class="feed-status-bar">
     <span id="item-count"></span>
     <span id="next-refresh"></span>
   </div>
 
+  <!-- ==============================================================
+       FEED OUTPUT
+  =============================================================== -->
   <div class="container">
     <div id="rss-output" aria-live="polite" aria-atomic="false">
       <div class="system-msg">Initialising secure terminal…</div>
     </div>
   </div>
 
+  <!-- ==============================================================
+       READER MODE
+  =============================================================== -->
   <div id="reader-backdrop" aria-hidden="true"></div>
   <div id="reader-panel" role="dialog" aria-modal="true" aria-label="Article reader">
     <div id="reader-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
@@ -622,15 +646,18 @@
         <button id="font-up"   title="Larger text">A+</button>
       </div>
       
+      <!-- MOVED AI BUTTON TO TOP BAR -->
       <button class="reader-open-btn reader-ai-btn" id="reader-ai-toggle" style="display:none;">✨ Ask AI</button>
       
       <a class="reader-open-btn" id="reader-ext-link" href="#" target="_blank" rel="noopener noreferrer">↗ Original</a>
     </div>
 
+    <!-- MAIN ARTICLE SCROLL AREA -->
     <div class="reader-scroll" id="reader-scroll">
       <div id="reader-content"></div>
     </div>
 
+    <!-- FLOATING AI CHAT PANEL -->
     <div id="ai-panel">
       <div class="ai-header">
         <span>✨ Gemini Assistant</span>
@@ -653,6 +680,9 @@
 
   </div>
 
+  <!-- ==============================================================
+       JAVASCRIPT LOGIC
+  =============================================================== -->
   <script>
     'use strict';
 
@@ -1290,12 +1320,8 @@ ${rawHtml.substring(0, 30000)}`;
         if (!apiKey) throw new Error("API Key missing");
 
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
-        const fullPrompt = `You are an intelligent reading assistant inside a financial news app. 
-        Read the following article text and answer the user's request. 
-        
-        SMART GUARDRAILS: You may use your broader financial, economic, and market knowledge to answer questions—especially to explain the potential impact of the news on broad indices (e.g., Nifty 50, Nifty Bank) or sector trends. 
-        However, you must remain strictly factual. DO NOT hallucinate or provide speculative financial advice. Clearly distinguish between facts stated directly in the article and the general financial context you are providing.
-        Keep answers concise, clear, and easy to read.
+        const fullPrompt = `You are an intelligent reading assistant inside a news app. 
+        Read the following article text and answer the user's request. Keep answers concise, clear, and easy to read.
         
         --- ARTICLE TEXT ---
         ${currentArticleText.substring(0, 30000)}
@@ -1390,3 +1416,4 @@ ${rawHtml.substring(0, 30000)}`;
   </script>
 </body>
 </html>
+
