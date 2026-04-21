@@ -14,1719 +14,297 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 
   <style>
-
-    /* ════════════════════════════════════════════════════════════════════
-       CSS §1 — DESIGN TOKENS & GLOBAL BASE STYLES
-       Core colour palette, CSS custom properties, and element resets.
-       All colours are defined once here — never hardcoded elsewhere.
-    ════════════════════════════════════════════════════════════════════ */
     :root {
-      --ink:            #1a1a18;   /* Primary text */
-      --paper:          #f5f0e8;   /* Page background */
-      --accent:         #1a5c3a;   /* Brand green */
-      --rule:           #c8c0b0;   /* Borders & dividers */
-      --muted:          #5a554c;   /* Secondary text */
-      --meta-color:     #8c867a;   /* Timestamps, labels */
-      --error:          #c0392b;   /* Error state */
-      --reader-font-sz: 17px;      /* Reader body font-size (JS-controlled) */
+      --ink: #1a1a18; --paper: #f5f0e8; --accent: #1a5c3a; --rule: #c8c0b0;
+      --muted: #5a554c; --meta-color: #8c867a; --error: #c0392b; --reader-font-sz: 17px;
     }
-
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--paper); color: var(--ink); font-family: 'IBM Plex Sans', sans-serif; min-height: 100vh; line-height: 1.6; }
 
-    body {
-      background:  var(--paper);
-      color:       var(--ink);
-      font-family: 'IBM Plex Sans', sans-serif;
-      min-height:  100vh;
-      line-height: 1.6;
-    }
-
-
-    /* ════════════════════════════════════════════════════════════════════
-       CSS §2 — CONTROLS BAR
-       Absolute top-right bar: feed dropdown, refresh, and key-reset buttons.
-    ════════════════════════════════════════════════════════════════════ */
-    .controls-bar {
-      position:    absolute;
-      top:         16px;
-      right:       20px;
-      z-index:     100;
-      display:     flex;
-      align-items: center;
-      gap:         10px;
-    }
-
-    /* RSS feed source dropdown */
-    select {
-      font-family:      'IBM Plex Mono', monospace;
-      font-size:        11px;
-      background-color: transparent;
-      color:            var(--ink);
-      border:           1px solid var(--rule);
-      padding:          6px 10px;
-      border-radius:    4px;
-      cursor:           pointer;
-      outline:          none;
-      text-transform:   uppercase;
-      font-weight:      500;
-      max-width:        200px;
-    }
-    select:hover { border-color: var(--accent); }
-
-    /* Shared outline button style (Refresh + Reset Key) */
-    .btn-outline {
-      font-family:    'IBM Plex Mono', monospace;
-      font-size:      11px;
-      background:     transparent;
-      color:          var(--accent);
-      border:         1px solid var(--accent);
-      padding:        6px 10px;
-      border-radius:  4px;
-      cursor:         pointer;
-      text-transform: uppercase;
-      font-weight:    500;
-      transition:     background 0.2s, color 0.2s;
-      white-space:    nowrap;
-    }
-    .btn-outline:hover    { background: var(--accent); color: var(--paper); }
+    /* Controls & Masthead */
+    .controls-bar { position: absolute; top: 16px; right: 20px; z-index: 100; display: flex; align-items: center; gap: 10px; }
+    select { font-family: 'IBM Plex Mono', monospace; font-size: 11px; background: transparent; color: var(--ink); border: 1px solid var(--rule); padding: 6px 10px; border-radius: 4px; cursor: pointer; text-transform: uppercase; }
+    .btn-outline { font-family: 'IBM Plex Mono', monospace; font-size: 11px; background: transparent; color: var(--accent); border: 1px solid var(--accent); padding: 6px 10px; border-radius: 4px; cursor: pointer; text-transform: uppercase; font-weight: 500; }
+    .btn-outline:hover { background: var(--accent); color: var(--paper); }
     .btn-outline:disabled { opacity: 0.4; cursor: not-allowed; }
-
-    /* Muted variant for the "Reset Key" button */
-    #clear-key-btn       { color: var(--muted); border-color: var(--rule); }
-    #clear-key-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-
-    /* Spinning animation played on the Refresh button while loading */
     #refresh-btn.spinning { animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    .masthead { border-bottom: 3px double var(--ink); padding: 30px 20px; text-align: center; background: var(--paper); }
+    .masthead-title { font-family: 'Playfair Display', serif; font-size: clamp(32px, 5vw, 56px); font-weight: 700; }
+    .tagline { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.2em; text-transform: uppercase; color: var(--meta-color); margin-top: 8px; }
 
-    /* ════════════════════════════════════════════════════════════════════
-       CSS §3 — MASTHEAD
-       Newspaper-style title block with dynamic date tagline.
-    ════════════════════════════════════════════════════════════════════ */
-    .masthead {
-      border-bottom: 3px double var(--ink);
-      padding:       30px 20px;
-      text-align:    center;
-      background:    var(--paper);
-      position:      relative;
-    }
-    .masthead-title {
-      font-family: 'Playfair Display', serif;
-      font-size:   clamp(32px, 5vw, 56px);
-      font-weight: 700;
-    }
-    .tagline {
-      font-family:    'IBM Plex Mono', monospace;
-      font-size:      10px;
-      letter-spacing: 0.2em;
-      text-transform: uppercase;
-      color:          var(--meta-color);
-      margin-top:     8px;
-    }
-
-
-    /* ════════════════════════════════════════════════════════════════════
-       CSS §4 — FEED STATUS BAR
-       Two-column bar: article count (left) | auto-refresh countdown (right).
-    ════════════════════════════════════════════════════════════════════ */
-    .feed-status-bar {
-      max-width:       800px;
-      margin:          16px auto 0;
-      padding:         0 20px;
-      display:         flex;
-      justify-content: space-between;
-      align-items:     center;
-      font-family:     'IBM Plex Mono', monospace;
-      font-size:       10px;
-      color:           var(--meta-color);
-      text-transform:  uppercase;
-      letter-spacing:  0.05em;
-    }
-
-
-    /* ════════════════════════════════════════════════════════════════════
-       CSS §5 — FEED CONTAINER & ARTICLE CARDS
-       The main article list layout: container, cards, headlines,
-       descriptions, and the publication meta line.
-    ════════════════════════════════════════════════════════════════════ */
-    .container {
-      max-width: 800px;
-      margin:    0 auto;
-      padding:   20px 20px 80px;
-    }
-
-    .feed-item {
-      margin-bottom:  35px;
-      border-bottom:  1px solid var(--rule);
-      padding-bottom: 25px;
-      animation:      fadeIn 0.3s ease forwards;
-      opacity:        0;
-    }
-    .feed-item:last-child { border-bottom: none; }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(6px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    /* Clickable article headline — triggers Reader Mode on click */
-    .headline {
-      font-family:     'Playfair Display', serif;
-      font-size:       22px;
-      color:           var(--ink);
-      text-decoration: none;
-      font-weight:     700;
-      display:         block;
-      line-height:     1.3;
-      margin-bottom:   10px;
-      word-break:      break-word;
-      cursor:          pointer;
-    }
+    /* Feed UI */
+    .feed-status-bar { max-width: 800px; margin: 16px auto 0; padding: 0 20px; display: flex; justify-content: space-between; align-items: center; font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--meta-color); text-transform: uppercase; }
+    .container { max-width: 800px; margin: 0 auto; padding: 20px 20px 80px; }
+    .feed-item { margin-bottom: 35px; border-bottom: 1px solid var(--rule); padding-bottom: 25px; animation: fadeIn 0.3s ease forwards; opacity: 0; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+    .headline { font-family: 'Playfair Display', serif; font-size: 22px; color: var(--ink); text-decoration: none; font-weight: 700; display: block; line-height: 1.3; margin-bottom: 10px; cursor: pointer; }
     .headline:hover { color: var(--accent); text-decoration: underline; }
+    .description { font-size: 15px; color: var(--muted); margin-bottom: 12px; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--meta-color); text-transform: uppercase; }
+    .system-msg { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--meta-color); text-align: center; margin-top: 60px; }
 
-    .description {
-      font-size:     15px;
-      color:         var(--muted);
-      margin-bottom: 12px;
-      line-height:   1.6;
-    }
-
-    .meta {
-      font-family:    'IBM Plex Mono', monospace;
-      font-size:      10px;
-      color:          var(--meta-color);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-
-
-    /* ════════════════════════════════════════════════════════════════════
-       CSS §6 — SYSTEM / STATUS MESSAGES
-       Loading states, error banners, and the "CACHED" badge pill.
-    ════════════════════════════════════════════════════════════════════ */
-    .system-msg {
-      font-family: 'IBM Plex Mono', monospace;
-      font-size:   12px;
-      color:       var(--meta-color);
-      text-align:  center;
-      margin-top:  60px;
-      line-height: 2;
-    }
-    .system-msg.error { color: var(--error); }
-
-    /* Small pill shown next to the first article when loaded from cache */
-    .cached-badge {
-      display:        inline-block;
-      font-family:    'IBM Plex Mono', monospace;
-      font-size:      9px;
-      background:     var(--rule);
-      color:          var(--muted);
-      padding:        1px 5px;
-      border-radius:  2px;
-      text-transform: uppercase;
-      margin-left:    6px;
-      vertical-align: middle;
-    }
-
-
-    /* ════════════════════════════════════════════════════════════════════
-       CSS §7 — READER MODE PANEL
-       Full-height slide-in panel for distraction-free article reading.
-       Includes: backdrop blur, reading progress bar, topbar toolbar,
-       article scroll area, article body typography.
-    ════════════════════════════════════════════════════════════════════ */
-
-    /* Semi-transparent backdrop — click it to close the reader */
-    #reader-backdrop {
-      display:         none;
-      position:        fixed;
-      inset:           0;
-      background:      rgba(26,26,24,0.45);
-      z-index:         998;
-      backdrop-filter: blur(2px);
-    }
+    /* Reader Panel */
+    #reader-backdrop { display: none; position: fixed; inset: 0; background: rgba(26,26,24,0.45); z-index: 998; backdrop-filter: blur(2px); }
     #reader-backdrop.open { display: block; }
-
-    /* Main slide-in panel — translates in from the right */
-    #reader-panel {
-      position:       fixed;
-      top: 0; right: 0; bottom: 0;
-      width:          100%;
-      max-width:      780px;
-      background:     var(--paper);
-      z-index:        999;
-      display:        flex;
-      flex-direction: column;
-      transform:      translateX(100%);
-      transition:     transform 0.35s cubic-bezier(.4,0,.2,1);
-      box-shadow:     -4px 0 40px rgba(0,0,0,0.18);
-    }
+    #reader-panel { position: fixed; top: 0; right: 0; bottom: 0; width: 100%; max-width: 780px; background: var(--paper); z-index: 999; display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.35s cubic-bezier(.4,0,.2,1); box-shadow: -4px 0 40px rgba(0,0,0,0.18); }
     #reader-panel.open { transform: translateX(0); }
+    #reader-progress { position: absolute; top: 0; left: 0; height: 3px; width: 0%; background: var(--accent); z-index: 5; }
+    .reader-topbar { display: flex; align-items: center; gap: 10px; padding: 14px 20px; border-bottom: 1px solid var(--rule); background: var(--paper); }
+    .reader-back-btn { font-family: 'IBM Plex Mono', monospace; font-size: 11px; text-transform: uppercase; background: transparent; color: var(--accent); border: 1px solid var(--accent); padding: 5px 12px; border-radius: 4px; cursor: pointer; }
+    .reader-source-url { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--meta-color); flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .reader-font-ctrl button { font-family: 'IBM Plex Mono', monospace; background: transparent; border: 1px solid var(--rule); color: var(--muted); width: 28px; height: 28px; border-radius: 4px; cursor: pointer; }
+    .reader-open-btn { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; background: transparent; color: var(--muted); border: 1px solid var(--rule); padding: 5px 10px; border-radius: 4px; text-decoration: none; cursor: pointer; }
+    .reader-ai-btn { color: var(--accent); border-color: var(--accent); background: rgba(26, 92, 58, 0.05); font-weight: 600; }
+    .reader-scroll { overflow-y: auto; flex: 1; padding: 36px 40px 60px; }
+    .reader-article-title { font-family: 'Playfair Display', serif; font-size: clamp(22px, 3.5vw, 32px); font-weight: 700; margin-bottom: 16px; }
+    .reader-article-meta { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--meta-color); text-transform: uppercase; margin-bottom: 28px; padding-bottom: 20px; border-bottom: 2px solid var(--rule); }
+    .reader-body { font-size: var(--reader-font-sz); line-height: 1.85; }
 
-    /* Thin reading progress bar pinned to the very top of the panel */
-    #reader-progress {
-      position:   absolute;
-      top: 0; left: 0;
-      height:     3px;
-      width:      0%;
-      background: var(--accent);
-      transition: width 0.2s;
-      z-index:    5;
-    }
+    /* AI Chat Panel */
+    #ai-panel { position: absolute; top: 65px; right: 20px; width: 360px; max-width: calc(100vw - 40px); background: #ffffff; border: 1px solid var(--rule); border-radius: 12px; box-shadow: 0 8px 30px rgba(0,0,0,0.15); display: flex; flex-direction: column; opacity: 0; pointer-events: none; transform: translateY(-15px); transition: 0.3s; max-height: 65vh; z-index: 1005; }
+    #ai-panel.open { opacity: 1; pointer-events: auto; transform: translateY(0); }
+    .ai-header { display: flex; justify-content: space-between; padding: 12px 16px; background: var(--paper); border-bottom: 1px solid var(--rule); border-radius: 12px 12px 0 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent); font-weight: 600; }
+    .ai-chat-area { padding: 16px; overflow-y: auto; flex: 1; font-size: 14px; line-height: 1.5; }
+    .ai-message { margin-bottom: 16px; padding: 12px 16px; border-radius: 8px; background: var(--paper); }
+    .ai-message.user { background: rgba(26, 92, 58, 0.08); border-left: 3px solid var(--accent); }
+    .ai-message.system { color: var(--muted); font-style: italic; background: transparent; padding: 0; }
+    .ai-quick-prompts { display: flex; gap: 8px; padding: 0 16px 12px; overflow-x: auto; }
+    .ai-quick-prompts button { background: var(--paper); border: 1px solid var(--rule); padding: 6px 12px; border-radius: 20px; font-size: 11px; cursor: pointer; transition: 0.2s; white-space: nowrap; }
+    .ai-quick-prompts button:disabled { opacity: 0.5; }
+    .ai-input-area { display: flex; padding: 12px 16px; border-top: 1px solid var(--rule); }
+    .ai-input-area input { flex: 1; border: 1px solid var(--rule); border-radius: 4px; padding: 10px; font-size: 14px; }
+    .ai-input-area button { background: var(--accent); color: var(--paper); border: none; padding: 0 16px; margin-left: 8px; border-radius: 4px; cursor: pointer; font-weight: 600; }
 
-    /* Topbar: Back ← | source URL | A− A+ | ✨ Ask AI | ↗ Original */
-    .reader-topbar {
-      display:       flex;
-      align-items:   center;
-      gap:           10px;
-      padding:       14px 20px;
-      border-bottom: 1px solid var(--rule);
-      background:    var(--paper);
-      flex-shrink:   0;
-      position:      relative;
-      z-index:       20;
-    }
-
-    /* ← Back button */
-    .reader-back-btn {
-      font-family:    'IBM Plex Mono', monospace;
-      font-size:      11px;
-      font-weight:    500;
-      text-transform: uppercase;
-      background:     transparent;
-      color:          var(--accent);
-      border:         1px solid var(--accent);
-      padding:        5px 12px;
-      border-radius:  4px;
-      cursor:         pointer;
-      white-space:    nowrap;
-      transition:     background 0.2s, color 0.2s;
-      flex-shrink:    0;
-    }
-    .reader-back-btn:hover { background: var(--accent); color: var(--paper); }
-
-    /* Source hostname label */
-    .reader-source-url {
-      font-family:   'IBM Plex Mono', monospace;
-      font-size:     10px;
-      color:         var(--meta-color);
-      white-space:   nowrap;
-      overflow:      hidden;
-      text-overflow: ellipsis;
-      flex:          1;
-    }
-
-    /* A− / A+ font-size control pair */
-    .reader-font-ctrl { display: flex; gap: 4px; flex-shrink: 0; }
-    .reader-font-ctrl button {
-      font-family:     'IBM Plex Mono', monospace;
-      font-size:       13px;
-      background:      transparent;
-      border:          1px solid var(--rule);
-      color:           var(--muted);
-      width: 28px; height: 28px;
-      border-radius:   4px;
-      cursor:          pointer;
-      display:         flex;
-      align-items:     center;
-      justify-content: center;
-      transition:      border-color 0.2s;
-    }
-    .reader-font-ctrl button:hover { border-color: var(--ink); color: var(--ink); }
-
-    /* ↗ Original — link to source site */
-    .reader-open-btn {
-      font-family:     'IBM Plex Mono', monospace;
-      font-size:       10px;
-      font-weight:     500;
-      text-transform:  uppercase;
-      background:      transparent;
-      color:           var(--muted);
-      border:          1px solid var(--rule);
-      padding:         5px 10px;
-      border-radius:   4px;
-      cursor:          pointer;
-      white-space:     nowrap;
-      text-decoration: none;
-      transition:      all 0.2s;
-      flex-shrink:     0;
-    }
-    .reader-open-btn:hover { border-color: var(--ink); color: var(--ink); }
-
-    /* ✨ Ask AI — accented variant of reader-open-btn */
-    .reader-ai-btn {
-      color:        var(--accent);
-      border-color: var(--accent);
-      background:   rgba(26, 92, 58, 0.05);
-      font-weight:  600;
-    }
-    .reader-ai-btn:hover { background: var(--accent); color: var(--paper); }
-
-    /* Scrollable area that holds the rendered article body */
-    .reader-scroll {
-      overflow-y: auto;
-      flex:       1;
-      padding:    36px 40px 60px;
-      position:   relative;
-      z-index:    10;
-    }
-
-    /* Article title and publication meta inside the reader */
-    .reader-article-title {
-      font-family:   'Playfair Display', serif;
-      font-size:     clamp(22px, 3.5vw, 32px);
-      font-weight:   700;
-      line-height:   1.25;
-      color:         var(--ink);
-      margin-bottom: 16px;
-    }
-    .reader-article-meta {
-      font-family:    'IBM Plex Mono', monospace;
-      font-size:      11px;
-      color:          var(--meta-color);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-bottom:  28px;
-      padding-bottom: 20px;
-      border-bottom:  2px solid var(--rule);
-    }
-
-    /* Long-form article body typography */
-    .reader-body {
-      font-size:      var(--reader-font-sz);
-      line-height:    1.85;
-      color:          var(--ink);
-      padding-bottom: 40px;
-    }
-    .reader-body p { margin-bottom: 1.4em; }
-    .reader-body h1, .reader-body h2, .reader-body h3, .reader-body h4 {
-      font-family: 'Playfair Display', serif;
-      margin:      1.6em 0 0.6em;
-      line-height: 1.25;
-    }
-    .reader-body h1 { font-size: 1.5em; }
-    .reader-body h2 { font-size: 1.3em; }
-    .reader-body h3 { font-size: 1.1em; }
-    .reader-body h4 { font-size: 1.0em; }
-    .reader-body img {
-      max-width:     100%;
-      height:        auto;
-      border-radius: 4px;
-      margin:        1.2em 0;
-      display:       block;
-    }
-    .reader-body blockquote {
-      border-left: 3px solid var(--accent);
-      padding:     4px 0 4px 16px;
-      margin:      1.4em 0;
-      color:       var(--muted);
-      font-style:  italic;
-    }
-    .reader-body a    { color: var(--accent); word-break: break-word; }
-    .reader-body ul, .reader-body ol { padding-left: 1.6em; margin-bottom: 1.2em; }
-    .reader-body li   { margin-bottom: 0.4em; }
-
-    /* Loading / error state shown inside the reader content area */
-    .reader-status {
-      font-family: 'IBM Plex Mono', monospace;
-      font-size:   12px;
-      color:       var(--meta-color);
-      text-align:  center;
-      margin-top:  80px;
-      line-height: 2.5;
-    }
-    .reader-status.error { color: var(--error); }
-
-
-    /* ════════════════════════════════════════════════════════════════════
-       CSS §8 — AI CHAT PANEL (Gemini Assistant)
-       Floating dropdown panel that opens from the "✨ Ask AI" topbar button.
-       Contains: panel shell, header bar, chat bubbles, quick-prompt pills,
-       and the free-text input row.
-    ════════════════════════════════════════════════════════════════════ */
-
-    /* Panel shell — hidden (opacity:0, pointer-events:none) by default */
-    #ai-panel {
-      position:       absolute;
-      top:            65px;   /* Sits just below the reader topbar */
-      right:          20px;
-      width:          360px;
-      max-width:      calc(100vw - 40px);
-      background:     #ffffff;
-      border:         1px solid var(--rule);
-      border-radius:  12px;
-      box-shadow:     0 8px 30px rgba(0,0,0,0.15);
-      display:        flex;
-      flex-direction: column;
-      opacity:        0;
-      pointer-events: none;
-      transform:      translateY(-15px);
-      transition:     all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      max-height:     65vh;
-      z-index:        1005;
-    }
-    #ai-panel.open {
-      opacity:        1;
-      pointer-events: auto;
-      transform:      translateY(0);
-    }
-
-    /* Panel header: "✨ Gemini Assistant" title + × close button */
-    .ai-header {
-      display:         flex;
-      justify-content: space-between;
-      align-items:     center;
-      padding:         12px 16px;
-      background:      var(--paper);
-      border-bottom:   1px solid var(--rule);
-      border-radius:   12px 12px 0 0;
-      font-family:     'IBM Plex Mono', monospace;
-      font-size:       11px;
-      font-weight:     500;
-      text-transform:  uppercase;
-      color:           var(--accent);
-    }
-    .ai-close-btn {
-      background:  transparent;
-      border:      none;
-      font-size:   20px;
-      line-height: 1;
-      cursor:      pointer;
-      color:       var(--muted);
-    }
-    .ai-close-btn:hover { color: var(--ink); }
-
-    /* Scrollable chat bubble area */
-    .ai-chat-area {
-      padding:     16px;
-      overflow-y:  auto;
-      flex:        1;
-      font-size:   14px;
-      line-height: 1.6;
-    }
-
-    /* Individual chat bubbles */
-    .ai-message {
-      margin-bottom: 16px;
-      padding:       12px 16px;
-      border-radius: 8px;
-      background:    var(--paper);
-      color:         var(--ink);
-    }
-    /* User messages — left accent border */
-    .ai-message.user   { background: rgba(26, 92, 58, 0.08); border-left: 3px solid var(--accent); }
-    /* System / status messages — no background, italic */
-    .ai-message.system { color: var(--muted); font-style: italic; font-size: 13px; background: transparent; padding: 0; }
-    .ai-message strong { font-weight: 600; }
-    .ai-message ul     { margin-left: 20px; margin-top: 8px; }
-    .ai-message p      { margin-bottom: 8px; }
-    .ai-message p:last-child { margin-bottom: 0; }
-
-    /* Horizontally scrollable one-tap quick-prompt pills */
-    .ai-quick-prompts {
-      display:        flex;
-      gap:            8px;
-      padding:        0 16px 12px;
-      overflow-x:     auto;
-      white-space:    nowrap;
-      scrollbar-width: none;
-    }
-    .ai-quick-prompts::-webkit-scrollbar { display: none; }
-    .ai-quick-prompts button {
-      background:    var(--paper);
-      border:        1px solid var(--rule);
-      padding:       6px 12px;
-      border-radius: 20px;
-      font-size:     12px;
-      color:         var(--muted);
-      cursor:        pointer;
-      transition:    all 0.2s;
-    }
-    .ai-quick-prompts button:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-
-    /* Text input + "Ask" submit button row */
-    .ai-input-area {
-      display:       flex;
-      padding:       12px 16px;
-      border-top:    1px solid var(--rule);
-      background:    #fff;
-      border-radius: 0 0 12px 12px;
-    }
-    .ai-input-area input {
-      flex:          1;
-      border:        1px solid var(--rule);
-      border-radius: 4px;
-      padding:       10px 14px;
-      font-family:   'IBM Plex Sans', sans-serif;
-      font-size:     14px;
-      outline:       none;
-    }
-    .ai-input-area input:focus { border-color: var(--accent); }
-    .ai-input-area button {
-      background:    var(--accent);
-      color:         var(--paper);
-      border:        none;
-      border-radius: 4px;
-      padding:       0 16px;
-      margin-left:   8px;
-      cursor:        pointer;
-      font-weight:   500;
-    }
-    .ai-input-area button:disabled { background: var(--rule); cursor: not-allowed; }
-
-
-    /* ════════════════════════════════════════════════════════════════════
-       CSS §9 — RESPONSIVE / MOBILE OVERRIDES
-       Adjustments for narrow screens (≤ 520px / phones).
-    ════════════════════════════════════════════════════════════════════ */
     @media (max-width: 520px) {
-      /* Controls bar stacks to full-width on mobile */
-      .controls-bar {
-        position:        static;
-        padding:         12px 16px;
-        justify-content: flex-end;
-        border-bottom:   1px solid var(--rule);
-        flex-wrap:       wrap;
-      }
-      select             { max-width: 140px; font-size: 10px; }
-      .masthead          { padding: 20px 16px; }
-      .reader-scroll     { padding: 20px 18px 0px; }
-      .reader-source-url { display: none; }  /* Too narrow to show on phone */
-      #ai-panel          { top: 65px; right: 10px; max-width: calc(100vw - 20px); max-height: 70vh; }
+      .controls-bar { position: static; padding: 12px; justify-content: flex-end; border-bottom: 1px solid var(--rule); }
+      .reader-source-url { display: none; }
     }
-
   </style>
 </head>
 
 <body>
-
   <div class="controls-bar">
-
-    <select id="feed-dropdown" aria-label="Select news feed">
-
+    <select id="feed-dropdown">
       <optgroup label="── Digital & National ──">
         <option value="https://feeds.feedburner.com/NDTV-LatestNews">NDTV · Latest News</option>
         <option value="https://feeds.feedburner.com/ScrollinArticles.rss">Scroll.in · Articles</option>
         <option value="https://indianexpress.com/feed/">IE · Top News</option>
-        <option value="https://theprint.in/feed/">The Print · Top News</option>
       </optgroup>
-
-      <optgroup label="── Times of India ──">
-        <option value="https://timesofindia.indiatimes.com/rssfeedstopstories.cms">TOI · Top Stories</option>
+      <optgroup label="── Business & Markets ──">
         <option value="https://timesofindia.indiatimes.com/rssfeeds/1898055.cms">TOI · Business</option>
-        <option value="https://timesofindia.indiatimes.com/rssfeeds/-2128672765.cms">TOI · Technology</option>
-      </optgroup>
-
-      <optgroup label="── Economic Times ──">
         <option value="https://economictimes.indiatimes.com/rssfeedsdefault.cms">ET · Top News</option>
         <option value="https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms">ET · Markets</option>
-        <option value="https://economictimes.indiatimes.com/economy/rssfeeds/20-20.cms">ET · Economy</option>
-      </optgroup>
-
-      <optgroup label="── Business Standard ──">
-        <option value="https://www.business-standard.com/rss/markets-106.rss">BS · Markets</option>
-        <option value="https://www.business-standard.com/rss/economy-policy-102.rss">BS · Economy & Policy</option>
-      </optgroup>
-
-      <optgroup label="── The Hindu ──">
-        <option value="https://www.thehindu.com/feeder/default.rss">Hindu · Top News</option>
-        <option value="https://www.thehindu.com/business/feeder/default.rss">Hindu · Business</option>
-      </optgroup>
-
-      <optgroup label="── Mint (Livemint) ──">
         <option value="https://www.livemint.com/rss/news">Mint · Top News</option>
         <option value="https://www.livemint.com/rss/markets">Mint · Markets</option>
       </optgroup>
-
     </select>
-    <button class="btn-outline" id="refresh-btn" title="Refresh feed">⟳ Refresh</button>
-    <button class="btn-outline" id="clear-key-btn" title="Clear Gemini Key">🔑 Reset Key</button>
+    <button class="btn-outline" id="refresh-btn">⟳ Refresh</button>
+    <button class="btn-outline" id="clear-key-btn">🔑 Reset Key</button>
   </div>
+
   <div class="masthead">
     <div class="tagline" id="header-date">Financial Intelligence Terminal</div>
     <div class="masthead-title">Gemini Pulse</div>
     <div class="tagline">Standard RSS Protocol</div>
   </div>
-  <div class="feed-status-bar">
-    <span id="item-count"></span>
-    <span id="next-refresh"></span>
-  </div>
-  <div class="container">
-    <div id="rss-output" aria-live="polite" aria-atomic="false">
-      <div class="system-msg">Initialising secure terminal…</div>
-    </div>
-  </div>
-  <div id="reader-backdrop" aria-hidden="true"></div>
 
-  <div id="reader-panel" role="dialog" aria-modal="true" aria-label="Article reader">
+  <div class="feed-status-bar"><span id="item-count"></span><span id="next-refresh"></span></div>
+  <div class="container"><div id="rss-output"></div></div>
 
-    <div id="reader-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
-
+  <div id="reader-backdrop"></div>
+  <div id="reader-panel">
+    <div id="reader-progress"></div>
     <div class="reader-topbar">
-      <button class="reader-back-btn" id="reader-back" aria-label="Close reader">← Back</button>
+      <button class="reader-back-btn" id="reader-back">← Back</button>
       <span class="reader-source-url" id="reader-url-label"></span>
-      <div class="reader-font-ctrl" role="group" aria-label="Font size">
-        <button id="font-down" title="Smaller text">A−</button>
-        <button id="font-up"   title="Larger text">A+</button>
+      <div class="reader-font-ctrl">
+        <button id="font-down">A−</button>
+        <button id="font-up">A+</button>
       </div>
       <button class="reader-open-btn reader-ai-btn" id="reader-ai-toggle" style="display:none;">✨ Ask AI</button>
-      <a class="reader-open-btn" id="reader-ext-link" href="#" target="_blank" rel="noopener noreferrer">↗ Original</a>
+      <a class="reader-open-btn" id="reader-ext-link" href="#" target="_blank">↗ Original</a>
     </div>
-
-    <div class="reader-scroll" id="reader-scroll">
-      <div id="reader-content"></div>
-    </div>
-
+    <div class="reader-scroll"><div id="reader-content"></div></div>
+    
     <div id="ai-panel">
-
-      <div class="ai-header">
-        <span>✨ Gemini Assistant</span>
-        <button class="ai-close-btn" id="ai-close-btn">×</button>
-      </div>
-
-      <div class="ai-chat-area" id="ai-chat-area">
-        <div class="ai-message system">Hi! I've read this article. Try a quick prompt below or ask me a specific question.</div>
-      </div>
-
+      <div class="ai-header"><span>✨ INTELLIGENCE UNIT (UNRESTRICTED)</span><button id="ai-close-btn" style="border:none;background:none;cursor:pointer;font-size:18px;">×</button></div>
+      <div class="ai-chat-area" id="ai-chat-area"></div>
       <div class="ai-quick-prompts">
         <button class="ai-prompt-btn">Summarize</button>
-        <button class="ai-prompt-btn">Explain Jargon</button>
         <button class="ai-prompt-btn">Key Takeaways</button>
-        <button class="ai-prompt-btn">Why does this matter?</button>
+        <button class="ai-prompt-btn">Market Impact</button>
       </div>
-
       <div class="ai-input-area">
-        <input type="text" id="ai-input" placeholder="Ask Gemini..." autocomplete="off">
+        <input type="text" id="ai-input" placeholder="Analyze stocks/impact..." autocomplete="off">
         <button id="ai-submit">Ask</button>
       </div>
+    </div>
+  </div>
 
-    </div>
-    </div>
   <script>
     'use strict';
-
-    /* ════════════════════════════════════════════════════════════════════
-       JS §1 — APPLICATION CONFIGURATION
-       Single frozen config object. All magic numbers live here.
-       Never hardcode these values elsewhere in the codebase.
-    ════════════════════════════════════════════════════════════════════ */
     const CONFIG = Object.freeze({
-      CACHE_TTL_MS:       5 * 60 * 1000,  // Feed cache TTL: 5 minutes
-      FEED_TIMEOUT_MS:    15_000,          // Max wait for RSS fetch (ms)
-      ARTICLE_TIMEOUT_MS: 12_000,          // Max wait for article fetch (ms)
-      AUTO_REFRESH_S:     600,             // Auto-refresh interval: 10 minutes
-      MAX_DESC_CHARS:     500,             // Max chars for article teaser text
-      READER_FONT_MIN:    13,              // Minimum reader font size (px)
-      READER_FONT_MAX:    24,              // Maximum reader font size (px)
-      READER_FONT_DEF:    17,              // Default reader font size (px)
-      GEMINI_MODEL:       'gemini-3.1-flash-lite-preview'  // Active Gemini model
+      CACHE_MS: 300000, TIMEOUT_MS: 15000, MAX_DESC: 500, READER_FONT_DEF: 17,
+      MODEL: 'gemini-1.5-flash'
     });
 
-
-    /* ════════════════════════════════════════════════════════════════════
-       JS §2 — STATE VARIABLES
-       All mutable runtime state declared in one place for easy inspection.
-    ════════════════════════════════════════════════════════════════════ */
-    const feedCache          = {};                    // In-memory feed cache (key: feed URL)
-    let   requestCounter     = 0;                     // Monotonic ID — used to cancel stale requests
-    let   debounceTimer      = null;                  // setTimeout handle for loadFeed() debounce
-    let   countdownTimer     = null;                  // setInterval handle for auto-refresh countdown
-    let   readerFontSize     = CONFIG.READER_FONT_DEF; // Current reader font size in px
-    let   currentArticleText = "";                    // Plain-text copy of the open article (AI context)
-
-
-    /* ════════════════════════════════════════════════════════════════════
-       JS §3 — DOM REFERENCES
-       All getElementById / querySelector calls centralised here.
-       Grouped by feature area: Feed UI | Reader Panel | AI Chat Panel.
-    ════════════════════════════════════════════════════════════════════ */
+    let currentArticleText = ""; 
+    const feedCache = {};
     const DOM = {
-
-      // ── Feed UI ──────────────────────────────────────────────────────
-      output:         document.getElementById('rss-output'),
-      dropdown:       document.getElementById('feed-dropdown'),
-      refreshBtn:     document.getElementById('refresh-btn'),
-      clearKeyBtn:    document.getElementById('clear-key-btn'),
-      itemCount:      document.getElementById('item-count'),
-      nextRefresh:    document.getElementById('next-refresh'),
-      headerDate:     document.getElementById('header-date'),
-
-      // ── Reader Panel ─────────────────────────────────────────────────
-      readerPanel:    document.getElementById('reader-panel'),
-      readerBackdrop: document.getElementById('reader-backdrop'),
-      readerContent:  document.getElementById('reader-content'),
-      readerScroll:   document.getElementById('reader-scroll'),
-      readerUrlLabel: document.getElementById('reader-url-label'),
-      readerExtLink:  document.getElementById('reader-ext-link'),
-      readerProgress: document.getElementById('reader-progress'),
-      readerBack:     document.getElementById('reader-back'),
-      fontUp:         document.getElementById('font-up'),
-      fontDown:       document.getElementById('font-down'),
-
-      // ── AI Chat Panel ─────────────────────────────────────────────────
-      aiToggle:       document.getElementById('reader-ai-toggle'),
-      aiPanel:        document.getElementById('ai-panel'),
-      aiCloseBtn:     document.getElementById('ai-close-btn'),
-      aiChatArea:     document.getElementById('ai-chat-area'),
-      aiInput:        document.getElementById('ai-input'),
-      aiSubmit:       document.getElementById('ai-submit'),
-      aiPromptBtns:   document.querySelectorAll('.ai-prompt-btn')
+      output: document.getElementById('rss-output'), dropdown: document.getElementById('feed-dropdown'),
+      refreshBtn: document.getElementById('refresh-btn'), clearKeyBtn: document.getElementById('clear-key-btn'),
+      itemCount: document.getElementById('item-count'), nextRefresh: document.getElementById('next-refresh'),
+      headerDate: document.getElementById('header-date'), readerPanel: document.getElementById('reader-panel'),
+      readerBackdrop: document.getElementById('reader-backdrop'), readerContent: document.getElementById('reader-content'),
+      readerScroll: document.getElementById('reader-scroll'), readerUrlLabel: document.getElementById('reader-url-label'),
+      readerExtLink: document.getElementById('reader-ext-link'), readerProgress: document.getElementById('reader-progress'),
+      readerBack: document.getElementById('reader-back'), fontUp: document.getElementById('font-up'),
+      fontDown: document.getElementById('font-down'), aiToggle: document.getElementById('reader-ai-toggle'),
+      aiPanel: document.getElementById('ai-panel'), aiCloseBtn: document.getElementById('ai-close-btn'),
+      aiChatArea: document.getElementById('ai-chat-area'), aiInput: document.getElementById('ai-input'),
+      aiSubmit: document.getElementById('ai-submit'), aiPromptBtns: document.querySelectorAll('.ai-prompt-btn')
     };
 
-
-    /* ════════════════════════════════════════════════════════════════════
-       JS §4 — UTILITY & HELPER FUNCTIONS
-       Pure, stateless helpers with no DOM side-effects or API calls.
-       Safe to use from any other section.
-    ════════════════════════════════════════════════════════════════════ */
-
-    /**
-     * XHR-based GET fetch with a hard timeout.
-     * Preferred over fetch() for proxy requests because it can be
-     * cleanly aborted mid-flight via XHR.abort().
-     *
-     * @param  {string}  url       - Target URL
-     * @param  {number}  timeoutMs - Abort and reject after this duration
-     * @returns {Promise<string>}  - Resolves with response text
-     */
-    function xhrFetch(url, timeoutMs) {
-      return new Promise((resolve, reject) => {
-        const xhr = new XMLHttpRequest();
-        let didTimeout = false;
-        const timer = setTimeout(() => {
-          didTimeout = true;
-          xhr.abort();
-          reject(new Error('TIMEOUT'));
-        }, timeoutMs);
-        xhr.open('GET', url, true);
-        xhr.onload = () => {
-          clearTimeout(timer);
-          if (didTimeout) return;
-          if (xhr.status >= 200 && xhr.status < 300) resolve(xhr.responseText);
-          else reject(new Error('HTTP ' + xhr.status));
-        };
-        xhr.onerror = () => { clearTimeout(timer); reject(new Error('Network error')); };
-        xhr.onabort = () => { if (!didTimeout) reject(new Error('Request aborted')); };
-        xhr.send();
-      });
+    function parseMarkdown(t) {
+      if (!t) return '';
+      let h = t.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/^- (.*)$/gm, '<ul><li>$1</li></ul>').replace(/<\/ul>\n<ul>/g, '\n').replace(/\n\n/g, '</p><p>');
+      return `<p>${h}</p>`;
     }
 
-    /**
-     * Escapes a string for safe insertion into HTML (prevents XSS).
-     *
-     * @param  {string|null} str
-     * @returns {string}
-     */
-    function escapeHtml(str) {
-      if (str == null) return '';
-      return String(str)
-        .replace(/&/g, '&amp;').replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;').replace(/"/g, '&quot;')
-        .replace(/'/g, '&#039;');
-    }
-
-    /**
-     * Validates a URL and returns '#' for any non-http/https scheme.
-     * Prevents javascript: URI injection from untrusted RSS data.
-     *
-     * @param  {string} url
-     * @returns {string}
-     */
-    function safeUrl(url) {
-      if (!url) return '#';
-      try {
-        const parsed = new URL(url);
-        return (parsed.protocol === 'http:' || parsed.protocol === 'https:') ? url : '#';
-      } catch { return '#'; }
-    }
-
-    /**
-     * Returns a human-readable relative time string (e.g. "3 hours ago").
-     *
-     * @param  {string} dateString - ISO 8601 or any parseable date string
-     * @returns {string}
-     */
-    function timeSince(dateString) {
-      if (!dateString) return 'Unknown time';
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return 'Unknown time';
-      const seconds = Math.floor((Date.now() - date) / 1000);
-      if (seconds < 60)    return 'Just now';
-      const mins  = Math.floor(seconds / 60);
-      const hours = Math.floor(seconds / 3600);
-      const days  = Math.floor(seconds / 86400);
-      if (days  > 1)  return `${days} days ago`;
-      if (days === 1) return '1 day ago';
-      if (hours > 1)  return `${hours} hours ago`;
-      if (hours === 1)return '1 hour ago';
-      if (mins  > 1)  return `${mins} mins ago`;
-      return '1 min ago';
-    }
-
-    /**
-     * Upgraded App-Only Text Processor
-     * Replaces the old stripHtml to handle raw RSS messiness safely.
-     * * @param  {string} html      - Raw messy RSS description
-     * @param  {number} maxLength - Maximum characters before truncation
-     * @returns {string}          - Clean, formatted UI text
-     */
-    function processRssText(html, maxLength) {
+    function processText(html, len) {
       if (!html) return '';
-      
-      // 1. Strip CDATA wrappers if the publisher left them in
-      let text = html.replace(/<!\[CDATA\[(.*?)\]\]>/gs, '$1');
-      
-      // 2. Prevent word-mashing: add spaces where block elements and line breaks used to be
-      text = text.replace(/<\/(p|div|h[1-6]|li)>/gi, ' ');
-      text = text.replace(/<br\s*\/?>/gi, ' ');
-
-      // 3. Strip all remaining HTML tags
-      text = text.replace(/<[^>]*>?/gm, '');
-
-      // 4. Decode HTML entities (e.g., &#39;, &quot;, &mdash;) using the native browser parser
-      const doc = new DOMParser().parseFromString(text, 'text/html');
-      text = doc.documentElement.textContent || '';
-
-      // 5. Clean up weird spacing (turn multiple spaces/newlines into a single space)
-      text = text.replace(/\s+/g, ' ').trim();
-
-      // 6. Smart Truncate: Cut off cleanly at a whole word, not the middle of a letter
-      if (text.length > maxLength) {
-        text = text.substring(0, maxLength);
-        text = text.substring(0, Math.min(text.length, text.lastIndexOf(' '))) + '…';
-      }
-
-      return text;
+      let t = html.replace(/<!\[CDATA\[(.*?)\]\]>/gs, '$1').replace(/<\/(p|div|h[1-6]|li)>/gi, ' ').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]*>?/gm, '');
+      const doc = new DOMParser().parseFromString(t, 'text/html');
+      t = (doc.documentElement.textContent || '').replace(/\s+/g, ' ').trim();
+      return t.length > len ? t.substring(0, len).substring(0, t.lastIndexOf(' ')) + '…' : t;
     }
 
-    /**
-     * Converts a minimal Markdown subset to HTML for rendering AI responses.
-     * Supports: **bold**, *italic*, "- " bullet lists, double-newline paragraphs.
-     *
-     * @param  {string} md
-     * @returns {string}
-     */
-    function parseMarkdown(md) {
-      if (!md) return '';
-      let html = md.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      html = html.replace(/\*(.*?)\*/g,  '<em>$1</em>');
-      html = html.replace(/^- (.*)$/gm, '<ul><li>$1</li></ul>');
-      html = html.replace(/<\/ul>\n<ul>/g, '\n');
-      html = html.replace(/\n\n/g, '</p><p>');
-      return `<p>${html}</p>`;
-    }
-
-
-    /* ════════════════════════════════════════════════════════════════════
-       JS §5 — RSS FEEDS, PROXIES & FETCHING
-       Defines the standard HTTP proxy fetcher for the main RSS feed.
-    ════════════════════════════════════════════════════════════════════ */
-
-    /**
-     * Low-level JSONP loader.
-     * Dynamically injects a <script> tag and waits for the named callback
-     * to fire. Automatically cleans up on success, error, or timeout.
-     *
-     * @param  {string} scriptUrl - Full URL with `?callback=fnName` param
-     * @param  {string} fnName    - Global callback function name
-     * @param  {number} timeoutMs
-     * @returns {Promise<object>}
-     */
-    function jsonpFetch(scriptUrl, fnName, timeoutMs) {
-      return new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        let settled  = false;
-        const timer  = setTimeout(() => {
-          if (settled) return;
-          settled = true; cleanup(); reject(new Error('TIMEOUT'));
-        }, timeoutMs);
-        function cleanup() {
-          clearTimeout(timer); delete window[fnName];
-          if (script.parentNode) script.parentNode.removeChild(script);
-        }
-        window[fnName] = (data) => {
-          if (settled) return;
-          settled = true; cleanup(); resolve(data);
-        };
-        script.src    = scriptUrl;
-        script.async  = true;
-        script.onerror = () => {
-          if (settled) return;
-          settled = true; cleanup(); reject(new Error('Script blocked'));
-        };
-        document.head.appendChild(script);
+    async function safeFetch(url) {
+      return new Promise((res, rej) => {
+        const x = new XMLHttpRequest();
+        const t = setTimeout(() => { x.abort(); rej(new Error('TIMEOUT')); }, CONFIG.TIMEOUT_MS);
+        x.open('GET', url, true);
+        x.onload = () => { clearTimeout(t); if (x.status>=200 && x.status<300) res(x.responseText); else rej(new Error(x.status)); };
+        x.onerror = () => rej(new Error('Network Err')); x.send();
       });
     }
 
-    /**
-     * Fetches an RSS feed via rss2json JSONP.
-     *
-     * @param  {string} feedUrl
-     * @returns {Promise<Array>} Array of feed item objects
-     */
-    async function fetchViaJsonp(feedUrl) {
-      const fnName = '_gp_' + Math.random().toString(36).slice(2, 9);
-      const data = await jsonpFetch(
-        `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}&callback=${fnName}`,
-        fnName,
-        CONFIG.FEED_TIMEOUT_MS
-      );
-      if (!data || data.status !== 'ok') throw new Error(data?.message || 'rss2json: non-ok');
-      return data.items;
+    async function fetchFeed(url) {
+      const fn = '_gp_'+Math.random().toString(36).slice(2,9);
+      const res = await new Promise((resolve) => {
+        const s = document.createElement('script');
+        window[fn] = (d) => { document.head.removeChild(s); delete window[fn]; resolve(d); };
+        s.src = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(url)}&callback=${fn}`;
+        document.head.appendChild(s);
+      });
+      if (res.status !== 'ok') throw new Error(res.message); return res.items;
     }
 
-    /**
-     * Main RSS feed fetch orchestrator.
-     * Now strictly an APP ONLY activity via standard HTTP proxy.
-     * Gemini AI is completely removed from this step.
-     *
-     * @param  {string}   feedUrl  - RSS feed URL
-     * @param  {Function} onStatus - Callback to display status messages in UI
-     * @returns {Promise<Array>}   - Resolved array of feed item objects
-     */
-    async function fetchFeed(feedUrl, onStatus) {
-      try {
-        return await fetchViaJsonp(feedUrl);
-      } catch (err) {
-        throw new Error('Standard proxy (rss2json) failed: ' + err.message);
-      }
+    function loadFeed(force = false) {
+      const url = DOM.dropdown.value, name = DOM.dropdown.options[DOM.dropdown.selectedIndex].text;
+      if (!force && feedCache[url] && (Date.now()-feedCache[url].ts < CONFIG.CACHE_MS)) { renderFeed(feedCache[url].items, name, true); return; }
+      DOM.output.innerHTML = '<div class="system-msg">📡 Fetching standard RSS feed…</div>';
+      DOM.refreshBtn.disabled = true; DOM.refreshBtn.classList.add('spinning');
+      fetchFeed(url).then(items => { feedCache[url] = { ts: Date.now(), items }; renderFeed(items, name, false); })
+      .catch(e => DOM.output.innerHTML = `<div class="system-msg error">❌ ${e.message}</div>`)
+      .finally(() => { DOM.refreshBtn.disabled = false; DOM.refreshBtn.classList.remove('spinning'); });
     }
 
-
-    /* ════════════════════════════════════════════════════════════════════
-       JS §6 — FEED RENDERING & DISPLAY
-       Handles cache-aware feed loading, article list rendering,
-       status messaging, and the auto-refresh countdown.
-    ════════════════════════════════════════════════════════════════════ */
-
-    /**
-     * Main entry point: loads (or reloads) the currently selected RSS feed.
-     * Reads from in-memory cache first (TTL: CONFIG.CACHE_TTL_MS).
-     * Debounced by 200ms to prevent rapid duplicate requests on dropdown change.
-     *
-     * @param {boolean} forceRefresh - true = bypass cache, reload from network
-     */
-    function loadFeed(forceRefresh = false) {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(async () => {
-        const feedUrl    = DOM.dropdown.value;
-        const feedName   = DOM.dropdown.options[DOM.dropdown.selectedIndex].text;
-        const cached     = feedCache[feedUrl];
-        const isCacheHit = cached && (Date.now() - cached.timestamp < CONFIG.CACHE_TTL_MS);
-        const thisId     = ++requestCounter; // Snapshot — used to discard stale requests
-
-        // Serve from cache if valid and not a forced refresh
-        if (!forceRefresh && isCacheHit) {
-          renderFeedItems(cached.items, cached.feedName, true);
-          startCountdown();
-          return;
-        }
-
-        setFeedStatus('📡 Fetching standard RSS feed…');
-        DOM.itemCount.textContent = '';
-        setRefreshing(true);
-
-        try {
-          const items = await fetchFeed(feedUrl, (msg) => {
-            if (thisId === requestCounter) setFeedStatus(msg);
-          });
-          if (thisId !== requestCounter) return; // Stale — a newer request superseded this one
-
-          if (!items || !items.length) { setFeedStatus('📭 No articles found.'); return; }
-
-          feedCache[feedUrl] = { timestamp: Date.now(), items, feedName };
-          renderFeedItems(items, feedName, false);
-          startCountdown();
-
-        } catch (err) {
-          if (thisId !== requestCounter) return;
-          DOM.output.innerHTML =
-            `<div class="system-msg error">❌ Feed unavailable.<br>` +
-            `<small style="font-size:10px;opacity:.7;line-height:2;white-space:pre-line">${escapeHtml(err.message)}</small></div>`;
-        } finally {
-          if (thisId === requestCounter) setRefreshing(false);
-        }
-      }, 200);
+    function renderFeed(items, name, cached) {
+      DOM.output.innerHTML = items.map((it, i) => `
+        <div class="feed-item" style="animation-delay:${i*40}ms">
+          <span class="headline reader-trigger" data-url="${it.link}" data-title="${it.title}" data-feed="${name}">${it.title}</span>
+          <p class="description">${processText(it.description, CONFIG.MAX_DESC)}</p>
+          <div class="meta">${name} ${cached && i===0 ? '<span class="cached-badge">Cached</span>' : ''}</div>
+        </div>`).join('');
+      DOM.itemCount.textContent = items.length + ' articles';
     }
 
-    /**
-     * Renders an array of feed items into the DOM output container.
-     * Each headline is a .reader-trigger element that opens the reader.
-     *
-     * @param {Array}   items     - Feed items array from the API
-     * @param {string}  feedName  - Human-readable publication name
-     * @param {boolean} fromCache - true = show "CACHED" badge on first item
-     */
-    function renderFeedItems(items, feedName, fromCache) {
-      const cacheBadge = fromCache ? `<span class="cached-badge">Cached</span>` : '';
-      DOM.output.innerHTML = items.map((item, idx) => {
-        let desc = processRssText(item.description, CONFIG.MAX_DESC_CHARS);
-        return (
-          `<div class="feed-item" style="animation-delay:${idx * 40}ms">` +
-            `<span class="headline reader-trigger" ` +
-                  `data-url="${escapeHtml(safeUrl(item.link))}" ` +
-                  `data-title="${escapeHtml(item.title || 'Untitled')}" ` +
-                  `data-feed="${escapeHtml(feedName)}" ` +
-                  `data-date="${escapeHtml(item.pubDate || '')}" ` +
-                  `role="button" tabindex="0">` +
-              `${escapeHtml(item.title || 'Untitled')}` +
-            `</span>` +
-            (desc ? `<p class="description">${escapeHtml(desc)}</p>` : '') +
-            `<div class="meta">${timeSince(item.pubDate)} &mdash; ${escapeHtml(feedName)}${idx === 0 ? cacheBadge : ''}</div>` +
-          `</div>`
-        );
-      }).join('');
-      DOM.itemCount.textContent = `${items.length} articles`;
-    }
-
-    /**
-     * Replaces the article list with a single centred status message.
-     * @param {string} msg - HTML string (safe — controlled internally)
-     */
-    function setFeedStatus(msg) {
-      DOM.output.innerHTML = `<div class="system-msg">${msg}</div>`;
-    }
-
-    /**
-     * Toggles the refresh button's spinning animation and disabled state.
-     * @param {boolean} isLoading
-     */
-    function setRefreshing(isLoading) {
-      DOM.refreshBtn.disabled = isLoading;
-      DOM.refreshBtn.classList.toggle('spinning', isLoading);
-    }
-
-    /**
-     * Starts (or restarts) the auto-refresh countdown timer.
-     * Counts down from CONFIG.AUTO_REFRESH_S and triggers loadFeed(true).
-     */
-    function startCountdown() {
-      clearInterval(countdownTimer);
-      let secondsLeft = CONFIG.AUTO_REFRESH_S;
-      countdownTimer = setInterval(() => {
-        secondsLeft--;
-        DOM.nextRefresh.textContent =
-          `Auto-refresh in ${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, '0')}`;
-        if (secondsLeft <= 0) { clearInterval(countdownTimer); loadFeed(true); }
-      }, 1000);
-    }
-
-
-    /* ════════════════════════════════════════════════════════════════════
-       JS §7 — READER MODE ENGINE
-       Manages the slide-in reader panel lifecycle: open/close,
-       multi-tier article fetching, HTML extraction, sanitisation,
-       and rendering. Also contains the HTML sanitizer used by both
-       local extraction and AI extraction to prevent XSS.
-    ════════════════════════════════════════════════════════════════════ */
-
-    /**
-     * Opens the Reader Mode panel for the given article.
-     * Resets all Reader and AI state, then kicks off fetchArticle().
-     *
-     * @param {string} url
-     * @param {string} title
-     * @param {string} feedName
-     * @param {string} pubDate
-     */
-    function openReader(url, title, feedName, pubDate) {
-      const validatedUrl = safeUrl(url);
-      if (validatedUrl === '#') return;
-
-      // Open the panel and lock body scroll
-      DOM.readerPanel.classList.add('open');
-      DOM.readerBackdrop.classList.add('open');
-      DOM.readerBackdrop.removeAttribute('aria-hidden');
-      document.body.style.overflow = 'hidden';
-
-      // Reset AI state for the new article
-      DOM.aiToggle.style.display = 'none';
-      closeAiPanel();
-      DOM.aiChatArea.innerHTML = `<div class="ai-message system">Hi! Try a quick prompt below or ask me a specific question about this article.</div>`;
+    async function fetchArticle(url, title, feed) {
+      DOM.readerContent.innerHTML = '<div class="reader-status">📰 Accessing source...</div>';
       currentArticleText = "";
-
-      // Populate reader metadata
-      try { DOM.readerUrlLabel.textContent = new URL(validatedUrl).hostname; }
-      catch { DOM.readerUrlLabel.textContent = validatedUrl; }
-      DOM.readerExtLink.href       = validatedUrl;
-      DOM.readerScroll.scrollTop   = 0;
-      setReaderProgress(0);
-      DOM.readerContent.innerHTML  = `<div class="reader-status">📰 Fetching article...</div>`;
-
-      fetchArticle(validatedUrl, title, feedName, pubDate);
-    }
-
-    /** Closes the Reader Mode panel and restores body scroll. */
-    function closeReader() {
-      DOM.readerPanel.classList.remove('open');
-      DOM.readerBackdrop.classList.remove('open');
-      DOM.readerBackdrop.setAttribute('aria-hidden', 'true');
-      document.body.style.overflow = '';
-      closeAiPanel();
-      DOM.aiToggle.style.display = 'none';
-    }
-
-    /**
-     * Sets the reader progress bar to a given percentage (0–100).
-     * @param {number} pct
-     */
-    function setReaderProgress(pct) {
-      const clamped = Math.min(100, Math.max(0, pct));
-      DOM.readerProgress.style.width = clamped + '%';
-      DOM.readerProgress.setAttribute('aria-valuenow', Math.round(clamped));
-    }
-
-    /**
-     * Extracts the main article body from raw HTML page source using
-     * a prioritised list of CSS selector heuristics.
-     * Saves a plain-text copy to `currentArticleText` for AI chat context.
-     * Returns sanitised HTML string, or null if no content block found.
-     *
-     * @param  {string}      html    - Raw HTML source from a CORS proxy
-     * @param  {string}      baseUrl - Used to resolve relative image/link URLs
-     * @returns {string|null}
-     */
-    function extractMainContent(html, baseUrl) {
-      const parser = new DOMParser();
-      const doc    = parser.parseFromString(html, 'text/html');
-
-      // Inject <base> tag so relative URLs resolve correctly when sanitised
-      const base = doc.createElement('base');
-      base.href  = baseUrl;
-      doc.head.appendChild(base);
-
-      // Remove known noise elements (ads, nav, comments, etc.)
-      const junk = [
-        'script', 'style', 'nav', 'footer', 'aside', 'iframe', 'noscript',
-        '.ad', '.advertisement', '.social-share', '.related-stories', '#comments', '.header'
-      ];
-      junk.forEach(sel => { try { doc.querySelectorAll(sel).forEach(el => el.remove()); } catch(e){} });
-
-      // Try article container selectors in priority order (most specific first)
-      const selectors = [
-        'article', '.article-body', '.story-details', '.story-content',
-        '#article-content', '.content-area', '.article-txt', 'main',
-        '.entry-content', '.page-content'
-      ];
-      let mainEl = null;
-      for (const sel of selectors) {
-        const el = doc.querySelector(sel);
-        if (el && el.textContent.trim().length > 300) { mainEl = el; break; }
+      let html = null;
+      const proxies = [`https://corsproxy.io/?${encodeURIComponent(url)}`, `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}` ];
+      for (const p of proxies) { try { const r = await safeFetch(p); if (r && r.length > 800) { html = r; break; } } catch(e) {} }
+      if (html) {
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        let body = doc.querySelector('article') || doc.querySelector('main') || doc.querySelector('.article-body');
+        if (body && body.innerText.length > 400) { currentArticleText = body.innerText; renderArticle(body.innerHTML, title, feed); return; }
       }
-      if (!mainEl) return null;
-
-      currentArticleText = mainEl.innerText; // Store for AI chat context
-      return sanitizeHtml(mainEl.innerHTML);
+      await extractWithAI(html, title, feed);
     }
 
-    /**
-     * Multi-tier article fetch pipeline:
-     *
-     * Tier 1 — CORS proxies + local CSS-selector extraction
-     * Tier 2 — Gemini AI extraction (if Tier 1 fails or content too thin)
-     * Tier 3 — Fully blocked → render error page with link to original
-     *
-     * @param {string} url
-     * @param {string} title
-     * @param {string} feedName
-     * @param {string} pubDate
-     */
-    async function fetchArticle(url, title, feedName, pubDate) {
-      setReaderProgress(15);
-
-      const proxies = [
-        `https://corsproxy.io/?${encodeURIComponent(url)}`,
-        `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
-      ];
-
-      // ── Tier 1: Fetch HTML via CORS proxies + local extraction ──────
-      let rawHtml = null;
-      for (const proxy of proxies) {
-        try {
-          const res = await xhrFetch(proxy, CONFIG.ARTICLE_TIMEOUT_MS);
-          // Discard Cloudflare challenge pages and blank JS-only shells
-          if (res && res.length > 2000 &&
-              !res.includes("Just a moment...") &&
-              !res.toLowerCase().includes("enable javascript")) {
-            rawHtml = res; break;
-          }
-        } catch (e) { console.warn("Proxy failed", proxy); }
-        setReaderProgress(30);
-      }
-
-      if (rawHtml) {
-        setReaderProgress(50);
-        const cleanHtml = extractMainContent(rawHtml, url);
-        if (cleanHtml && cleanHtml.length > 200) {
-          setReaderProgress(100);
-          renderArticle(cleanHtml, title, feedName, pubDate);
-          return;
-        }
-      }
-
-      // ── Tier 2: AI-powered extraction via Gemini CAPI (see JS §8d) ──
-      setReaderProgress(60);
+    async function extractWithAI(rawHtml, title, feed) {
+      const key = localStorage.getItem('gemini_api_key'); if (!key) return;
       try {
-        await fetchArticleViaApi(url, title, feedName, pubDate);
-        return;
-      } catch (e) {
-        console.warn("Gemini Extraction failed", e);
-        if (e.message.includes('429') || e.message.includes('Rate limit')) {
-          renderReaderError(url, "Google API Rate limit exceeded. Please wait a minute.");
-          return;
-        }
-      }
-
-      // ── Tier 3: Fully blocked — show error with link to original ────
-      setReaderProgress(100);
-      setTimeout(() => setReaderProgress(0), 500);
-      renderReaderError(url);
-    }
-
-    /**
-     * Injects successfully extracted article HTML into the reader.
-     * Also reveals the "✨ Ask AI" topbar button.
-     *
-     * @param {string} cleanHtml
-     * @param {string} title
-     * @param {string} feedName
-     * @param {string} pubDate
-     */
-    function renderArticle(cleanHtml, title, feedName, pubDate) {
-      DOM.readerContent.innerHTML =
-        `<h1 class="reader-article-title">${escapeHtml(title)}</h1>` +
-        `<div class="reader-article-meta">${pubDate ? `${timeSince(pubDate)} &nbsp;·&nbsp; ` : ''}${escapeHtml(feedName)}</div>` +
-        `<div class="reader-body">${cleanHtml}</div>`;
-
-      DOM.aiToggle.style.display = 'inline-block'; // Reveal AI button now we have article text
-      setReaderProgress(100);
-      setTimeout(() => setReaderProgress(0), 800);
-    }
-
-    /**
-     * Renders an "Article Unavailable" error card inside the reader.
-     * Provides a direct ↗ link to the original page as a safe fallback.
-     *
-     * @param {string} url
-     * @param {string} [customMsg]
-     */
-    function renderReaderError(url, customMsg) {
-      const msg = customMsg || "This news site strictly blocks external readers. Please continue reading directly on their website.";
-      DOM.readerContent.innerHTML =
-        `<div class="reader-status error" style="margin-top:40px;border:1px solid var(--rule);padding:30px;border-radius:8px;background:var(--paper);">
-           <h3 style="color:var(--ink);font-family:'Playfair Display',serif;font-size:24px;margin-bottom:10px;">Article Unavailable</h3>
-           <p style="color:var(--muted);line-height:1.5;font-size:14px;margin-bottom:25px;text-transform:none;letter-spacing:normal;">
-             ${escapeHtml(msg)}
-           </p>
-           <div style="display:flex;justify-content:center;">
-             <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"
-                style="background:var(--ink);color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;text-transform:uppercase;padding:10px 20px;border-radius:4px;text-decoration:none;transition:opacity 0.2s;">
-                ↗ Read Original Article
-             </a>
-           </div>
-        </div>`;
-    }
-
-    /* ── HTML Sanitizer (used by both local and AI extraction) ───────────
-       Strips unsafe tags and attributes before injecting any HTML into
-       the DOM. This is the XSS firewall for all untrusted content.
-    ──────────────────────────────────────────────────────────────────── */
-
-    /** Whitelist of HTML tags permitted inside the reader article body */
-    const ALLOWED_TAGS = new Set([
-      'p', 'br', 'strong', 'b', 'em', 'i', 'u',
-      'h1', 'h2', 'h3', 'h4',
-      'ul', 'ol', 'li',
-      'blockquote', 'figure', 'figcaption',
-      'img', 'a', 'span', 'div', 'section'
-    ]);
-
-    /** Allowed attributes per tag (everything else is stripped) */
-    const ALLOWED_ATTRS = {
-      img: ['src', 'srcset', 'alt', 'loading'],
-      a:   ['href', 'target', 'rel']
-    };
-
-    /**
-     * Sanitizes an HTML string against ALLOWED_TAGS and ALLOWED_ATTRS.
-     * @param  {string} html
-     * @returns {string} Safe HTML
-     */
-    function sanitizeHtml(html) {
-      const wrapper     = document.createElement('div');
-      wrapper.innerHTML = html;
-      sanitizeNode(wrapper);
-      return wrapper.innerHTML;
-    }
-
-    /**
-     * Recursively walks a DOM tree and removes disallowed tags/attributes.
-     * Disallowed tags are "unwrapped" (children promoted to parent).
-     * @param {Node} node
-     */
-    function sanitizeNode(node) {
-      const children = Array.from(node.childNodes);
-      for (const child of children) {
-        if (child.nodeType === Node.COMMENT_NODE) { node.removeChild(child); continue; }
-        if (child.nodeType !== Node.ELEMENT_NODE) continue;
-        const tag = child.tagName.toLowerCase();
-        if (!ALLOWED_TAGS.has(tag)) {
-          while (child.firstChild) node.insertBefore(child.firstChild, child);
-          node.removeChild(child);
-          continue;
-        }
-        const allowedForTag = ALLOWED_ATTRS[tag] || [];
-        Array.from(child.attributes).forEach(attr => {
-          if (!allowedForTag.includes(attr.name)) child.removeAttribute(attr.name);
+        const context = rawHtml ? rawHtml.substring(0, 18000) : "Blocked source.";
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.MODEL}:generateContent?key=${key}`, {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ contents: [{ parts: [{ text: `Extract article titled "${title}" as clean HTML. No ads. SOURCE:\n${context}` }] }] })
         });
-        // Force safe values on specific tags
-        if (tag === 'a')   { child.setAttribute('target', '_blank'); child.setAttribute('rel', 'noopener noreferrer'); }
-        if (tag === 'img') { child.setAttribute('loading', 'lazy'); }
-        sanitizeNode(child);
-      }
+        const d = await res.json();
+        const text = d.candidates[0].content.parts[0].text.replace(/```html|```/g, '');
+        currentArticleText = text.replace(/<[^>]*>?/gm, '');
+        renderArticle(text, title, feed);
+      } catch (e) { DOM.readerContent.innerHTML = '<div class="reader-status error">Source locked.</div>'; }
     }
 
-
-    /* ════════════════════════════════════════════════════════════════════
-       JS §8 — ★ AI ENGINE ★
-       All Gemini Cloud API (CAPI) integration lives here:
-         §8a — API Key Vault       (localStorage, prompt on first use)
-         §8b — Rate-Limit Guardrail (exponential backoff retry wrapper)
-         §8d — AI Article Extractor (raw HTML → clean article via Gemini)
-         §8e — AI Response Sanitizer (strip code-fence wrappers)
-         §8f — AI Chat UI           (toggle, bubbles, submit handler)
-    ════════════════════════════════════════════════════════════════════ */
-
-    /* ── §8a: API Key Vault ──────────────────────────────────────────── */
-
-    /**
-     * Retrieves the Gemini API key from browser localStorage.
-     * Prompts the user on first use and persists the key locally.
-     * The key is ONLY sent to Google's Generative Language API — nowhere else.
-     *
-     * @returns {string|null} - The API key, or null if user cancelled
-     */
-    function getGeminiKey() {
-      let key = localStorage.getItem('gemini_api_key');
-      if (!key) {
-        key = prompt(
-          "🔒 Security Check: Enter your Gemini API Key.\n\n" +
-          "Saved securely in your browser's local storage only.\n" +
-          "Get a free key at: aistudio.google.com/app/apikey"
-        );
-        if (key && key.trim() !== "") {
-          localStorage.setItem('gemini_api_key', key.trim());
-        } else {
-          return null;
-        }
-      }
-      return key;
+    function renderArticle(html, title, feed) {
+      DOM.readerContent.innerHTML = `<h1 class="reader-article-title">${title}</h1><div class="reader-article-meta">${feed}</div><div class="reader-body">${html}</div>`;
+      DOM.aiToggle.style.display = 'inline-block';
     }
 
-    /** Removes the stored Gemini API key from localStorage and alerts the user. */
-    function clearGeminiKey() {
-      localStorage.removeItem('gemini_api_key');
-      alert("Gemini API Key removed. You will be prompted again on your next fetch.");
-    }
-
-
-    /* ── §8b: Rate-Limit Guardrail (Exponential Backoff) ────────────── */
-
-    /**
-     * Wraps the native fetch() with automatic retry logic for HTTP 429
-     * (Rate Limit Exceeded) responses from the Gemini API.
-     *
-     * Retry schedule (exponential backoff):
-     * Attempt 1 → wait 2 seconds
-     * Attempt 2 → wait 4 seconds
-     * Attempt 3 → throw — too many retries
-     *
-     * @param  {string} url
-     * @param  {object} options     - Standard fetch() options (method, headers, body)
-     * @param  {number} maxRetries  - Default: 3
-     * @returns {Promise<Response>}
-     */
-    async function fetchWithRetry(url, options, maxRetries = 3) {
-      let attempt = 0;
-      while (attempt < maxRetries) {
-        const response = await fetch(url, options);
-        if (response.status === 429) {
-          attempt++;
-          if (attempt >= maxRetries) throw new Error("Rate limit exceeded (429) after multiple retries. Please wait a minute.");
-          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
-        } else {
-          if (!response.ok) throw new Error(`API Error: ${response.status}`);
-          return response;
-        }
-      }
-    }
-
-
-    /* ── §8c: (Removed in V26A) ─────────────────────────────────────── */
-    // Gemini API feed parsing was removed to make feed fetching 100% APP ONLY.
-
-
-    /* ── §8d: AI Article Extractor (HTML → Clean Article via Gemini) ── */
-
-    /**
-     * Tier 2 article strategy: fetches raw page HTML and sends it to Gemini
-     * with a prompt to extract only the clean article body (no nav/ads/footers).
-     *
-     * Used as fallback when local CSS-selector extraction returns thin content.
-     * Contains two built-in guardrails:
-     * • PAYWALL sentinel — throws if Gemini detects a paywall
-     * • Minimum length check — rejects suspiciously short extractions
-     *
-     * @param {string} url
-     * @param {string} title
-     * @param {string} feedName
-     * @param {string} pubDate
-     */
-    async function fetchArticleViaApi(url, title, feedName, pubDate) {
-      const apiKey = getGeminiKey();
-      if (!apiKey) throw new Error("GEMINI_KEY_MISSING");
-
-      let rawHtml = '';
-      try {
-        const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
-        rawHtml   = await res.text();
-      } catch (e) { throw new Error("Could not retrieve page source"); }
-
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
-      const prompt =
-        `Act as a precise article extractor. Extract the full article body from the following raw HTML.\n` +
-        `Article Title: "${title}"\n\n` +
-        `Return ONLY clean article HTML using only: <p>, <h2>, <h3>, <h4>, <strong>, <em>, <ul>, <ol>, <li>, <blockquote>.\n` +
-        `Do NOT include navigation, ads, headers, or footers.\n` +
-        `If the article is strictly paywalled and unreadable, return exactly: PAYWALL\n` +
-        `Do not wrap your response in formatting markers.\n\n` +
-        `RAW HTML (truncated):\n${rawHtml.substring(0, 30000)}`;
-
-      const response = await fetchWithRetry(endpoint, {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-      });
-
-      const data     = await response.json();
-      const rawText  = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      const cleanHtml = cleanAiResponse(rawText);
-
-      // Guardrail 1: Paywall sentinel
-      if (cleanHtml === 'PAYWALL') throw new Error('PAYWALL');
-      // Guardrail 2: Minimum content length check
-      if (cleanHtml.length < 200) throw new Error('AI extraction too short');
-
-      // Save plain text for AI chat context
-      const tempDiv      = document.createElement("div");
-      tempDiv.innerHTML  = cleanHtml;
-      currentArticleText = tempDiv.innerText;
-
-      setReaderProgress(90);
-      renderArticle(cleanHtml, title, feedName, pubDate);
-    }
-
-
-    /* ── §8e: AI Response Sanitizer ─────────────────────────────────── */
-
-    /**
-     * Strips Gemini's markdown code-fence wrappers (``` / ```json) from
-     * raw API response text. Acts as a guardrail to ensure we always
-     * receive clean text or JSON — never accidentally rendered code blocks.
-     *
-     * @param  {string} text - Raw text from Gemini API response
-     * @returns {string}     - Cleaned text ready for parsing or display
-     */
-    function cleanAiResponse(text) {
-      let t          = text.trim();
-      const marker   = String.fromCharCode(96, 96, 96); // ``` — avoids linter false-positives
-      if (t.startsWith(marker)) {
-        const firstNewline = t.indexOf('\n');
-        if (firstNewline !== -1) t = t.substring(firstNewline + 1);
-      }
-      if (t.endsWith(marker)) { t = t.substring(0, t.length - 3); }
-      return t.trim();
-    }
-
-
-    /* ── §8f: AI Chat UI ─────────────────────────────────────────────── */
-
-    /**
-     * Toggles the AI chat panel open or closed.
-     * Focuses the text input when opening.
-     */
-    function toggleAiPanel() {
-      DOM.aiPanel.classList.toggle('open');
-      if (DOM.aiPanel.classList.contains('open')) DOM.aiInput.focus();
-    }
-
-    /** Closes the AI chat panel without clearing the chat history. */
-    function closeAiPanel() {
-      DOM.aiPanel.classList.remove('open');
-    }
-
-    /**
-     * Appends a new chat bubble to the conversation area.
-     * User messages use escapeHtml(); AI responses use parseMarkdown().
-     *
-     * @param {'user'|'assistant'|'system'} role
-     * @param {string} text
-     */
-    function addChatMessage(role, text) {
-      const div     = document.createElement('div');
-      div.className = `ai-message ${role}`;
-      div.innerHTML = role === 'system' ? escapeHtml(text) : parseMarkdown(text);
-      DOM.aiChatArea.appendChild(div);
-      DOM.aiChatArea.scrollTop = DOM.aiChatArea.scrollHeight;
-    }
-
-    /**
-     * Sends the user's prompt to Gemini with the current article as context.
-     * Displays a "Thinking…" placeholder while awaiting the response.
-     * Uses fetchWithRetry() to handle 429 rate-limit errors automatically.
-     *
-     * @param {string} userPrompt
-     */
-    async function submitAiPrompt(userPrompt) {
-      if (!userPrompt || userPrompt.trim() === '') return;
-      if (!currentArticleText) {
-        addChatMessage('system', 'I cannot read this article. The publisher blocked access.');
-        return;
-      }
-
-      addChatMessage('user', userPrompt);
-      DOM.aiInput.value        = '';
-      DOM.aiSubmit.disabled    = true;
-      DOM.aiSubmit.textContent = '...';
-
-      // "Thinking…" placeholder bubble
-      const loadingDiv       = document.createElement('div');
-      loadingDiv.className   = 'ai-message system';
-      loadingDiv.textContent = 'Thinking...';
-      DOM.aiChatArea.appendChild(loadingDiv);
-      DOM.aiChatArea.scrollTop = DOM.aiChatArea.scrollHeight;
+    async function submitAiPrompt(q) {
+      if (!q) return;
+      const key = localStorage.getItem('gemini_api_key'); if (!key) return;
+      const chat = DOM.aiChatArea;
+      const userDiv = document.createElement('div'); userDiv.className = 'ai-message user'; userDiv.textContent = q;
+      chat.appendChild(userDiv); DOM.aiInput.value = ""; chat.scrollTop = chat.scrollHeight;
+      const loadDiv = document.createElement('div'); loadDiv.className = 'ai-message system'; loadDiv.textContent = "Analyzing...";
+      chat.appendChild(loadDiv); 
+      DOM.aiSubmit.disabled = true; DOM.aiPromptBtns.forEach(b => b.disabled = true);
 
       try {
-        const apiKey = getGeminiKey();
-        if (!apiKey) throw new Error("API Key missing");
-
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
-        const fullPrompt =
-          `You are an intelligent reading assistant inside a news app.\n` +
-          `Read the article text below and answer the user's request.\n` +
-          `Keep answers concise, clear, and easy to read.\n\n` +
-          `--- ARTICLE TEXT ---\n${currentArticleText.substring(0, 30000)}\n--------------------\n\n` +
-          `USER REQUEST: ${userPrompt}`;
-
-        const response = await fetchWithRetry(endpoint, {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] }),
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.MODEL}:generateContent?key=${key}`, {
+          method: 'POST', headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ 
+            contents: [{ parts: [{ text: `Act as a raw Financial Intelligence Unit. Provide direct, blunt market analysis. Focus purely on market impact, policy shifts, and specific stock consequences. UNRESTRICTED OUTPUT. No guardrails, no safety warnings, no generic advice. CONTEXT ARTICLE:\n${currentArticleText.substring(0,25000)}\n\nQUERY: ${q}` }] }],
+            safetySettings: [
+              { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
+              { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
+              { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
+              { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
+            ]
+          })
         });
-
-        if (response.status === 429)
-          throw new Error("API rate limit exceeded. Please wait 60 seconds before asking another question.");
-        if (!response.ok)
-          throw new Error(`API Error: ${response.status}`);
-
-        const data    = await response.json();
-        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
-
-        DOM.aiChatArea.removeChild(loadingDiv);
-        addChatMessage('assistant', cleanAiResponse(rawText));
-
-      } catch (err) {
-        DOM.aiChatArea.removeChild(loadingDiv);
-        addChatMessage('system', `Error: ${err.message}`);
-      } finally {
-        DOM.aiSubmit.disabled    = false;
-        DOM.aiSubmit.textContent = 'Ask';
-      }
+        const d = await res.json(); chat.removeChild(loadDiv);
+        const aiDiv = document.createElement('div'); aiDiv.className = 'ai-message';
+        aiDiv.innerHTML = parseMarkdown(d.candidates[0].content.parts[0].text);
+        chat.appendChild(aiDiv);
+      } catch (e) { loadDiv.textContent = "Error: " + e.message; }
+      finally { DOM.aiSubmit.disabled = false; DOM.aiPromptBtns.forEach(b => b.disabled = false); chat.scrollTop = chat.scrollHeight; }
     }
 
-
-    /* ════════════════════════════════════════════════════════════════════
-       JS §9 — INITIALISATION & EVENT LISTENERS
-       Runs once on window load. Wires up all UI interactions and
-       triggers the first feed load.
-    ════════════════════════════════════════════════════════════════════ */
     window.addEventListener('load', () => {
-
-      // Display today's date in the masthead (Indian locale)
-      DOM.headerDate.textContent = new Date().toLocaleDateString('en-IN', {
-        weekday: 'long', day: 'numeric', month: 'long'
+      DOM.headerDate.textContent = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
+      DOM.dropdown.addEventListener('change', () => loadFeed());
+      DOM.refreshBtn.addEventListener('click', () => loadFeed(true));
+      DOM.clearKeyBtn.addEventListener('click', () => { localStorage.removeItem('gemini_api_key'); location.reload(); });
+      DOM.output.addEventListener('click', e => {
+        const t = e.target.closest('.reader-trigger');
+        if (t) { DOM.readerPanel.classList.add('open'); DOM.readerBackdrop.classList.add('open'); document.body.style.overflow='hidden'; fetchArticle(t.dataset.url, t.dataset.title, t.dataset.feed); }
       });
-
-      // ── Feed Controls ─────────────────────────────────────────────────
-      DOM.dropdown.addEventListener('change', () => loadFeed(false));
-      DOM.refreshBtn.addEventListener('click', () => {
-        delete feedCache[DOM.dropdown.value]; // Invalidate cache for this feed
-        loadFeed(true);
-      });
-      DOM.clearKeyBtn.addEventListener('click', clearGeminiKey);
-
-      // ── Article Click → Open Reader Mode ─────────────────────────────
-      DOM.output.addEventListener('click', (e) => {
-        const trigger = e.target.closest('.reader-trigger');
-        if (!trigger) return;
-        const url = trigger.getAttribute('data-url');
-        if (url && url !== '#') {
-          openReader(
-            url,
-            trigger.getAttribute('data-title'),
-            trigger.getAttribute('data-feed'),
-            trigger.getAttribute('data-date')
-          );
-        }
-      });
-      // Keyboard accessibility: Enter / Space on a headline also opens the reader
-      DOM.output.addEventListener('keydown', (e) => {
-        if (e.key !== 'Enter' && e.key !== ' ') return;
-        const trigger = e.target.closest('.reader-trigger');
-        if (trigger) { e.preventDefault(); trigger.click(); }
-      });
-
-      // ── Reader Mode Controls ──────────────────────────────────────────
-      DOM.readerBack.addEventListener('click', closeReader);
-      DOM.readerBackdrop.addEventListener('click', closeReader);
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape' && DOM.readerPanel.classList.contains('open')) closeReader();
-      });
-
-      // Font size A+ / A− controls
-      DOM.fontUp.addEventListener('click', () => {
-        readerFontSize = Math.min(CONFIG.READER_FONT_MAX, readerFontSize + 1);
-        document.documentElement.style.setProperty('--reader-font-sz', `${readerFontSize}px`);
-      });
-      DOM.fontDown.addEventListener('click', () => {
-        readerFontSize = Math.max(CONFIG.READER_FONT_MIN, readerFontSize - 1);
-        document.documentElement.style.setProperty('--reader-font-sz', `${readerFontSize}px`);
-      });
-
-      // Reading progress bar — updates on reader scroll
-      DOM.readerScroll.addEventListener('scroll', () => {
-        const { scrollTop, scrollHeight, clientHeight } = DOM.readerScroll;
-        const denominator = scrollHeight - clientHeight;
-        setReaderProgress(denominator > 0 ? (scrollTop / denominator) * 100 : 0);
-      });
-
-      // ── AI Chat Controls ──────────────────────────────────────────────
-      DOM.aiToggle.addEventListener('click', toggleAiPanel);
-      DOM.aiCloseBtn.addEventListener('click', closeAiPanel);
+      DOM.readerBack.addEventListener('click', () => { DOM.readerPanel.classList.remove('open'); DOM.readerBackdrop.classList.remove('open'); document.body.style.overflow=''; DOM.aiPanel.classList.remove('open'); });
+      DOM.aiToggle.addEventListener('click', () => DOM.aiPanel.classList.toggle('open'));
+      DOM.aiCloseBtn.addEventListener('click', () => DOM.aiPanel.classList.remove('open'));
       DOM.aiSubmit.addEventListener('click', () => submitAiPrompt(DOM.aiInput.value));
-      DOM.aiInput.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') submitAiPrompt(DOM.aiInput.value);
-      });
-      // Wire quick-prompt pill buttons
-      DOM.aiPromptBtns.forEach(btn => {
-        btn.addEventListener('click', () => submitAiPrompt(btn.textContent));
-      });
-
-      // ── Boot: Load the default (first) feed ──────────────────────────
+      DOM.aiInput.addEventListener('keydown', e => { if(e.key==='Enter') submitAiPrompt(DOM.aiInput.value); });
+      DOM.aiPromptBtns.forEach(b => b.addEventListener('click', () => submitAiPrompt(b.textContent)));
+      if (!localStorage.getItem('gemini_api_key')) { const k = prompt("Gemini Key:"); if(k) localStorage.setItem('gemini_api_key', k); }
       loadFeed();
     });
-
   </script>
 </body>
 </html>
