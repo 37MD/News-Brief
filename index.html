@@ -667,9 +667,7 @@
       MAX_DESC_CHARS:    350,
       READER_FONT_MIN:   13,
       READER_FONT_MAX:   24,
-      READER_FONT_DEF:   17,
-      // Reverted to the absolute stable 1.5 flash model
-      GEMINI_MODEL:      'gemini-1.5-flash' 
+      READER_FONT_DEF:   17
     });
 
     /* ============================================================
@@ -764,22 +762,42 @@
       });
     }
 
-    // Advanced fetch engine that automatically retries if Google throws a 429 (Rate Limit) error
-    async function fetchWithRetry(url, options, maxRetries = 3) {
-      let attempt = 0;
-      while (attempt < maxRetries) {
-        const response = await fetch(url, options);
-        if (response.status === 429) {
-          attempt++;
-          if (attempt >= maxRetries) throw new Error("Rate limit exceeded (429) after multiple retries. Please wait a minute.");
-          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
-        } else if (response.status === 404) {
-          throw new Error(`Model not found (404). Please ensure you have a valid API Key and the model name is correct.`);
-        } else {
-          if (!response.ok) throw new Error(`API Error: ${response.status}`);
-          return response;
+    // Auto-Fallback Engine: Iterates through standard models if one 404s.
+    async function fetchWithRetry(urlTemplate, options, maxRetries = 3) {
+      const modelsToTry = [
+        'gemini-1.5-flash',
+        'gemini-1.5-pro',
+        'gemini-1.0-pro',
+        'gemini-pro'
+      ];
+      
+      let lastError;
+      for (const model of modelsToTry) {
+        const url = urlTemplate.replace('{MODEL_NAME}', model);
+        let attempt = 0;
+        
+        while (attempt < maxRetries) {
+          try {
+            const response = await fetch(url, options);
+            if (response.status === 429) {
+              attempt++;
+              if (attempt >= maxRetries) throw new Error("Rate limit exceeded (429). Please wait a minute.");
+              await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+            } else if (response.status === 404) {
+              lastError = new Error(`Model not found (404). Your key may lack access to ${model}.`);
+              break; // Break the while loop to try the next model in the array
+            } else {
+              if (!response.ok) throw new Error(`API Error: ${response.status}`);
+              return response; // Success!
+            }
+          } catch(e) {
+             // If fetch literally fails (network error)
+             if(e.message === 'Failed to fetch') throw e;
+             throw e;
+          }
         }
       }
+      throw lastError || new Error("All standard models failed to connect.");
     }
 
     function escapeHtml(str) {
@@ -865,7 +883,7 @@
 
       if(!rawData) throw new Error("Failed to retrieve source XML.");
 
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
+      const endpointTemplate = `https://generativelanguage.googleapis.com/v1beta/models/{MODEL_NAME}:generateContent?key=${apiKey}`;
       const prompt = `Parse this raw RSS/Atom XML feed into a JSON array of the latest articles.
 Source name: ${feedName}
 
@@ -880,8 +898,7 @@ Return ONLY the JSON array. Maximum 15 items. Do not include formatting wrappers
 Raw XML data (truncated):
 ${rawData.substring(0, 15000)}`;
 
-      // Utilize the retry engine to bypass 429s
-      const response = await fetchWithRetry(endpoint, {
+      const response = await fetchWithRetry(endpointTemplate, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
@@ -1155,7 +1172,7 @@ ${rawData.substring(0, 15000)}`;
         rawHtml = await res.text();
       } catch (e) { throw new Error("Could not retrieve page source"); }
 
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
+      const endpointTemplate = `https://generativelanguage.googleapis.com/v1beta/models/{MODEL_NAME}:generateContent?key=${apiKey}`;
       const prompt = `Act as a precise article extractor. Extract the full article body from the following raw HTML.
 Article Title: "${title}"
 
@@ -1167,7 +1184,7 @@ Do not wrap your response in formatting markers.
 RAW HTML (truncated):
 ${rawHtml.substring(0, 30000)}`;
 
-      const response = await fetchWithRetry(endpoint, {
+      const response = await fetchWithRetry(endpointTemplate, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
@@ -1290,7 +1307,7 @@ ${rawHtml.substring(0, 30000)}`;
         const apiKey = getGeminiKey();
         if (!apiKey) throw new Error("API Key missing");
 
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
+        const endpointTemplate = `https://generativelanguage.googleapis.com/v1beta/models/{MODEL_NAME}:generateContent?key=${apiKey}`;
         const fullPrompt = `You are an intelligent reading assistant inside a news app. 
         Read the following article text and answer the user's request. Keep answers concise, clear, and easy to read.
         
@@ -1300,17 +1317,12 @@ ${rawHtml.substring(0, 30000)}`;
 
         USER REQUEST: ${userPrompt}`;
 
-        const response = await fetchWithRetry(endpoint, {
+        const response = await fetchWithRetry(endpointTemplate, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] }),
         });
 
-        if (response.status === 429) {
-            throw new Error("API rate limit exceeded. Please wait 60 seconds before asking another question.");
-        }
-        if (!response.ok) throw new Error(`API Error: ${response.status}`);
-        
         const data = await response.json();
         const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
         
