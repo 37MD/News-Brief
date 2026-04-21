@@ -10,7 +10,7 @@
                  font-src    https://fonts.gstatic.com;
                  img-src     * data:;
                  connect-src *;">
-  <title>Pulse v26B</title>
+  <title>Pulse v26C</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 
   <style>
@@ -758,9 +758,7 @@
 
       <div class="ai-quick-prompts">
         <button class="ai-prompt-btn">Summarize</button>
-        <button class="ai-prompt-btn">Explain Jargon</button>
         <button class="ai-prompt-btn">Key Takeaways</button>
-        <button class="ai-prompt-btn">Why does this matter?</button>
       </div>
 
       <div class="ai-input-area">
@@ -781,7 +779,7 @@
     const CONFIG = Object.freeze({
       CACHE_TTL_MS:       5 * 60 * 1000,  // Feed cache TTL: 5 minutes
       FEED_TIMEOUT_MS:    15_000,          // Max wait for RSS fetch (ms)
-      ARTICLE_TIMEOUT_MS: 12_000,          // Max wait for article fetch (ms)
+      ARTICLE_TIMEOUT_MS: 7_000,           // Max wait for article fetch (ms)
       AUTO_REFRESH_S:     600,             // Auto-refresh interval: 10 minutes
       MAX_DESC_CHARS:     500,             // Max chars for article teaser text
       READER_FONT_MIN:    13,              // Minimum reader font size (px)
@@ -1210,7 +1208,7 @@
       // Reset AI state for the new article
       DOM.aiToggle.style.display = 'none';
       closeAiPanel();
-      DOM.aiChatArea.innerHTML = `<div class="ai-message system">Hi! Try a quick prompt below or ask me a specific question about this article.</div>`;
+      DOM.aiChatArea.innerHTML = `<div class="ai-message system">Ask me anything — about this article, or any topic.</div>`;
       currentArticleText = "";
 
       // Populate reader metadata
@@ -1301,18 +1299,14 @@
       junk.forEach(sel => { try { doc.querySelectorAll(sel).forEach(el => el.remove()); } catch(e){} });
 
       // ── Post-removal cleanup: purge empty block shells left behind ───
-      // Iterates until no more empties are found (handles nested empties)
-      const BLOCK_TAGS = new Set(['div','p','section','span','ul','ol','li','blockquote','header','h1','h2','h3','h4','h5','h6']);
-      let hadEmpties = true;
-      while (hadEmpties) {
-        hadEmpties = false;
-        doc.querySelectorAll(Array.from(BLOCK_TAGS).join(',')).forEach(el => {
-          if (el.textContent.trim() === '' && !el.querySelector('img')) {
-            el.remove();
-            hadEmpties = true;
-          }
+      // Uses a bottom-up NodeList (querySelectorAll returns document order,
+      // so reversing ensures children are checked before parents — O(n) not O(n²))
+      const emptyBlockSel = 'div,p,section,span,ul,ol,li,blockquote,h1,h2,h3,h4,h5,h6';
+      Array.from(doc.querySelectorAll(emptyBlockSel))
+        .reverse()
+        .forEach(el => {
+          if (el.textContent.trim() === '' && !el.querySelector('img')) el.remove();
         });
-      }
 
       // Try article container selectors in priority order (most specific first)
       const selectors = [
@@ -1346,25 +1340,32 @@
     async function fetchArticle(url, title, feedName, pubDate) {
       setReaderProgress(15);
 
-      const proxies = [
+      // ── Tier 1: Race both CORS proxies in parallel ──────────────────
+      // Both proxies are fired at once; whichever returns usable HTML first wins.
+      let rawHtml = null;
+      const proxyUrls = [
         `https://corsproxy.io/?${encodeURIComponent(url)}`,
         `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
       ];
 
-      // ── Tier 1: Fetch HTML via CORS proxies + local extraction ──────
-      let rawHtml = null;
-      for (const proxy of proxies) {
-        try {
-          const res = await xhrFetch(proxy, CONFIG.ARTICLE_TIMEOUT_MS);
-          // Discard Cloudflare challenge pages and blank JS-only shells
-          if (res && res.length > 2000 &&
-              !res.includes("Just a moment...") &&
-              !res.toLowerCase().includes("enable javascript")) {
-            rawHtml = res; break;
-          }
-        } catch (e) { console.warn("Proxy failed", proxy); }
-        setReaderProgress(30);
+      const isUsable = html =>
+        html && html.length > 2000 &&
+        !html.includes("Just a moment...") &&
+        !html.toLowerCase().includes("enable javascript");
+
+      try {
+        rawHtml = await Promise.any(
+          proxyUrls.map(proxy =>
+            xhrFetch(proxy, CONFIG.ARTICLE_TIMEOUT_MS).then(res => {
+              if (!isUsable(res)) throw new Error('unusable');
+              return res;
+            })
+          )
+        );
+      } catch (e) {
+        // Promise.any rejects only if ALL proxies fail — fall through to Tier 2
       }
+      setReaderProgress(50);
 
       if (rawHtml) {
         setReaderProgress(50);
@@ -1470,17 +1471,13 @@
       sanitizeNode(wrapper);
 
       // ── Post-sanitize cleanup ────────────────────────────────────────
-      // 1. Remove block elements that became empty after sanitization
+      // Remove block elements that became empty after sanitization (bottom-up, O(n))
       const blockSels = 'div,p,section,span,ul,ol,li,blockquote,h1,h2,h3,h4';
-      let hadEmpties = true;
-      while (hadEmpties) {
-        hadEmpties = false;
-        wrapper.querySelectorAll(blockSels).forEach(el => {
-          if (el.textContent.trim() === '' && !el.querySelector('img')) {
-            el.remove(); hadEmpties = true;
-          }
+      Array.from(wrapper.querySelectorAll(blockSels))
+        .reverse()
+        .forEach(el => {
+          if (el.textContent.trim() === '' && !el.querySelector('img')) el.remove();
         });
-      }
       // 2. Collapse runs of 3+ <br> tags into a single paragraph break
       wrapper.innerHTML = wrapper.innerHTML
         .replace(/(<br\s*\/?>\s*){3,}/gi, '</p><p>')
@@ -1719,10 +1716,6 @@
      */
     async function submitAiPrompt(userPrompt) {
       if (!userPrompt || userPrompt.trim() === '') return;
-      if (!currentArticleText) {
-        addChatMessage('system', 'I cannot read this article. The publisher blocked access.');
-        return;
-      }
 
       addChatMessage('user', userPrompt);
       DOM.aiInput.value        = '';
@@ -1741,23 +1734,25 @@
         if (!apiKey) throw new Error("API Key missing");
 
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
+
+        // Include article context if available, otherwise act as a pure AI assistant
+        const articleContext = currentArticleText
+          ? `--- CURRENT ARTICLE ---\n${currentArticleText.substring(0, 30000)}\n-----------------------\n\n`
+          : '';
+
         const fullPrompt =
-          `You are an intelligent reading assistant inside a news app.\n` +
-          `Read the article text below and answer the user's request.\n` +
-          `Keep answers concise, clear, and easy to read.\n\n` +
-          `--- ARTICLE TEXT ---\n${currentArticleText.substring(0, 30000)}\n--------------------\n\n` +
-          `USER REQUEST: ${userPrompt}`;
+          `You are a smart, helpful AI assistant embedded in Pulse, an Indian news reader app.\n` +
+          `Answer the user's question clearly and helpfully.\n` +
+          `If an article is provided below, you may use it as context — but you are not limited to it.\n` +
+          `You can answer general knowledge questions, explain concepts, or discuss any topic freely.\n\n` +
+          articleContext +
+          `USER: ${userPrompt}`;
 
         const response = await fetchWithRetry(endpoint, {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
           body:    JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] }),
         });
-
-        if (response.status === 429)
-          throw new Error("API rate limit exceeded. Please wait 60 seconds before asking another question.");
-        if (!response.ok)
-          throw new Error(`API Error: ${response.status}`);
 
         const data    = await response.json();
         const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
