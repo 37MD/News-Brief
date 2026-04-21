@@ -1,11 +1,11 @@
-
+```html
 <!DOCTYPE html>
 <!--
   ╔══════════════════════════════════════════════════════════════════╗
   ║  GEMINI PULSE — Indian News Aggregator with Reader Mode          ║
-  ║  Version  : 5.0 (AI Reading Assistant Edition)                   ║
-  ║  Features : In-Reader AI Chat (Summarize, Explain Jargon),       ║
-  ║             Mozilla Readability, Gemini 2.5 Flash Parsing.       ║
+  ║  Version  : 5.1 (Floating AI Assistant & 429 Protection)         ║
+  ║  Features : Floating AI Chat, 429 Rate Limit Handling, Single    ║
+  ║             File Architecture, Smart Proxy Routing.              ║
   ╚══════════════════════════════════════════════════════════════════╝
 -->
 <html lang="en">
@@ -249,7 +249,6 @@
       transform:       translateX(100%);
       transition:      transform 0.35s cubic-bezier(.4,0,.2,1);
       box-shadow:      -4px 0 40px rgba(0,0,0,0.18);
-      overflow:        hidden;
     }
     #reader-panel.open { transform: translateX(0); }
 
@@ -334,19 +333,11 @@
       flex-shrink:    0;
     }
     .reader-open-btn:hover { border-color: var(--ink); color: var(--ink); }
-    
-    .reader-ai-btn {
-      color: var(--accent);
-      border-color: var(--accent);
-      background: rgba(26, 92, 58, 0.05);
-    }
-    .reader-ai-btn:hover { background: var(--accent); color: var(--paper); }
 
     .reader-scroll {
       overflow-y: auto;
       flex:       1;
       padding:    36px 40px 60px;
-      position:   relative;
     }
 
     .reader-article-title {
@@ -373,7 +364,7 @@
       font-size:   var(--reader-font-sz);
       line-height: 1.85;
       color:       var(--ink);
-      padding-bottom: 80px; /* Space for AI panel */
+      padding-bottom: 40px; 
     }
     .reader-body p { margin-bottom: 1.4em; }
     .reader-body h1, .reader-body h2, .reader-body h3, .reader-body h4 {
@@ -400,8 +391,7 @@
       font-style:  italic;
     }
     .reader-body a    { color: var(--accent); word-break: break-word; }
-    .reader-body ul,
-    .reader-body ol   { padding-left: 1.6em; margin-bottom: 1.2em; }
+    .reader-body ul, .reader-body ol { padding-left: 1.6em; margin-bottom: 1.2em; }
     .reader-body li   { margin-bottom: 0.4em; }
 
     .reader-status {
@@ -415,33 +405,65 @@
     .reader-status.error { color: var(--error); }
 
     /* ================================================================
-       AI ASSISTANT PANEL (In-Reader)
+       FLOATING AI ASSISTANT PANEL
     ================================================================ */
+    .floating-ai-btn {
+      position: absolute;
+      bottom: 24px;
+      right: 24px;
+      width: 56px;
+      height: 56px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: var(--paper);
+      font-size: 24px;
+      display: none; /* Shown only when article loads */
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 4px 12px rgba(26, 92, 58, 0.4);
+      border: none;
+      z-index: 1010;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .floating-ai-btn:hover {
+      transform: scale(1.05);
+      box-shadow: 0 6px 16px rgba(26, 92, 58, 0.5);
+    }
+
     #ai-panel {
       position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
+      bottom: 90px;
+      right: 24px;
+      width: 360px;
+      max-width: calc(100vw - 48px);
       background: #ffffff;
-      border-top: 2px solid var(--accent);
-      box-shadow: 0 -4px 20px rgba(0,0,0,0.1);
+      border: 1px solid var(--rule);
+      border-radius: 12px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.15);
       display: flex;
       flex-direction: column;
-      transform: translateY(100%);
-      transition: transform 0.3s ease-out;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(20px);
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
       max-height: 60vh;
-      z-index: 10;
+      z-index: 1005;
     }
     #ai-panel.open {
+      opacity: 1;
+      pointer-events: auto;
       transform: translateY(0);
     }
+    
     .ai-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px 20px;
+      padding: 12px 16px;
       background: var(--paper);
       border-bottom: 1px solid var(--rule);
+      border-radius: 12px 12px 0 0;
       font-family: 'IBM Plex Mono', monospace;
       font-size: 11px;
       font-weight: 500;
@@ -451,7 +473,7 @@
     .ai-close-btn {
       background: transparent;
       border: none;
-      font-size: 18px;
+      font-size: 20px;
       line-height: 1;
       cursor: pointer;
       color: var(--muted);
@@ -459,7 +481,7 @@
     .ai-close-btn:hover { color: var(--ink); }
     
     .ai-chat-area {
-      padding: 20px;
+      padding: 16px;
       overflow-y: auto;
       flex: 1;
       font-size: 14px;
@@ -473,12 +495,11 @@
       color: var(--ink);
     }
     .ai-message.user {
-      background: rgba(26, 92, 58, 0.1);
+      background: rgba(26, 92, 58, 0.08);
       border-left: 3px solid var(--accent);
     }
-    .ai-message.system { color: var(--muted); font-style: italic; font-size: 13px; }
+    .ai-message.system { color: var(--muted); font-style: italic; font-size: 13px; background: transparent; padding: 0; }
     
-    /* Simple markdown parsing styles */
     .ai-message strong { font-weight: 600; }
     .ai-message ul { margin-left: 20px; margin-top: 8px; }
     .ai-message p { margin-bottom: 8px; }
@@ -487,10 +508,10 @@
     .ai-quick-prompts {
       display: flex;
       gap: 8px;
-      padding: 0 20px 12px;
+      padding: 0 16px 12px;
       overflow-x: auto;
       white-space: nowrap;
-      scrollbar-width: none; /* Firefox */
+      scrollbar-width: none; 
     }
     .ai-quick-prompts::-webkit-scrollbar { display: none; }
     .ai-quick-prompts button {
@@ -511,9 +532,10 @@
 
     .ai-input-area {
       display: flex;
-      padding: 12px 20px;
+      padding: 12px 16px;
       border-top: 1px solid var(--rule);
       background: #fff;
+      border-radius: 0 0 12px 12px;
     }
     .ai-input-area input {
       flex: 1;
@@ -552,7 +574,8 @@
       .masthead       { padding: 20px 16px; }
       .reader-scroll  { padding: 20px 18px 0px; }
       .reader-source-url { display: none; }
-      #ai-panel { max-height: 80vh; }
+      #ai-panel { bottom: 80px; right: 16px; max-width: calc(100vw - 32px); }
+      .floating-ai-btn { bottom: 16px; right: 16px; width: 50px; height: 50px; font-size: 20px; }
     }
   </style>
 </head>
@@ -594,8 +617,8 @@
       </optgroup>
     </select>
 
-    <button class="btn-outline" id="refresh-btn" title="Refresh feed" aria-label="Refresh feed">⟳ Refresh</button>
-    <button class="btn-outline" id="clear-key-btn" title="Clear Gemini Key" aria-label="Clear API Key">🔑 Reset Key</button>
+    <button class="btn-outline" id="refresh-btn" title="Refresh feed">⟳ Refresh</button>
+    <button class="btn-outline" id="clear-key-btn" title="Clear Gemini Key">🔑 Reset Key</button>
   </div>
 
   <!-- ==============================================================
@@ -638,35 +661,38 @@
         <button id="font-down" title="Smaller text">A−</button>
         <button id="font-up"   title="Larger text">A+</button>
       </div>
-      <button class="reader-open-btn reader-ai-btn" id="reader-ai-toggle" style="display:none;">✨ Ask AI</button>
       <a class="reader-open-btn" id="reader-ext-link" href="#" target="_blank" rel="noopener noreferrer">↗ Original</a>
     </div>
 
+    <!-- MAIN ARTICLE SCROLL AREA -->
     <div class="reader-scroll" id="reader-scroll">
       <div id="reader-content"></div>
-      
-      <!-- AI ASSISTANT PANEL -->
-      <div id="ai-panel">
-        <div class="ai-header">
-          <span>✨ Gemini Reader Assistant</span>
-          <button class="ai-close-btn" id="ai-close-btn">×</button>
-        </div>
-        <div class="ai-chat-area" id="ai-chat-area">
-          <div class="ai-message system">How can I help you understand this article? Try a quick action below or ask a specific question.</div>
-        </div>
-        <div class="ai-quick-prompts">
-          <button class="ai-prompt-btn">Summarize</button>
-          <button class="ai-prompt-btn">Explain Jargon</button>
-          <button class="ai-prompt-btn">Key Takeaways</button>
-          <button class="ai-prompt-btn">Why does this matter?</button>
-        </div>
-        <div class="ai-input-area">
-          <input type="text" id="ai-input" placeholder="Ask Gemini about this text..." autocomplete="off">
-          <button id="ai-submit">Ask</button>
-        </div>
-      </div>
-
     </div>
+
+    <!-- FLOATING AI BUTTON -->
+    <button class="floating-ai-btn" id="floating-ai-btn" title="Ask Gemini">✨</button>
+
+    <!-- FLOATING AI CHAT PANEL -->
+    <div id="ai-panel">
+      <div class="ai-header">
+        <span>✨ Gemini Assistant</span>
+        <button class="ai-close-btn" id="ai-close-btn">×</button>
+      </div>
+      <div class="ai-chat-area" id="ai-chat-area">
+        <div class="ai-message system">Hi! I've read this article. Try a quick prompt below or ask me a specific question.</div>
+      </div>
+      <div class="ai-quick-prompts">
+        <button class="ai-prompt-btn">Summarize</button>
+        <button class="ai-prompt-btn">Explain Jargon</button>
+        <button class="ai-prompt-btn">Key Takeaways</button>
+        <button class="ai-prompt-btn">Why does this matter?</button>
+      </div>
+      <div class="ai-input-area">
+        <input type="text" id="ai-input" placeholder="Ask Gemini..." autocomplete="off">
+        <button id="ai-submit">Ask</button>
+      </div>
+    </div>
+
   </div>
 
   <!-- ==============================================================
@@ -697,7 +723,7 @@
     let   debounceTimer  = null;
     let   countdownTimer = null;
     let   readerFontSize = CONFIG.READER_FONT_DEF;
-    let   currentArticleText = ""; // Holds text for AI to read
+    let   currentArticleText = ""; 
 
     /* ============================================================
        3. DOM REFS
@@ -721,8 +747,8 @@
       fontDown:        document.getElementById('font-down'),
       headerDate:      document.getElementById('header-date'),
       
-      // AI Panel Refs
-      aiToggle:        document.getElementById('reader-ai-toggle'),
+      // Floating AI Refs
+      floatingBtn:     document.getElementById('floating-ai-btn'),
       aiPanel:         document.getElementById('ai-panel'),
       aiCloseBtn:      document.getElementById('ai-close-btn'),
       aiChatArea:      document.getElementById('ai-chat-area'),
@@ -833,14 +859,13 @@
       return t.trim();
     }
 
-    // Basic markdown parser for Chat responses
     function parseMarkdown(md) {
       if (!md) return '';
-      let html = md.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>'); // Bold
-      html = html.replace(/\*(.*?)\*/g, '<em>$1</em>'); // Italics
-      html = html.replace(/^- (.*)$/gm, '<ul><li>$1</li></ul>'); // Lists
-      html = html.replace(/<\/ul>\n<ul>/g, '\n'); // Combine adjacent lists
-      html = html.replace(/\n\n/g, '</p><p>'); // Paragraphs
+      let html = md.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+      html = html.replace(/^- (.*)$/gm, '<ul><li>$1</li></ul>');
+      html = html.replace(/<\/ul>\n<ul>/g, '\n');
+      html = html.replace(/\n\n/g, '</p><p>');
       return `<p>${html}</p>`;
     }
 
@@ -890,6 +915,10 @@ ${rawData.substring(0, 15000)}`;
         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
       });
 
+      // --- CATCH ERROR 429 ---
+      if (response.status === 429) {
+          throw new Error("Rate limit exceeded (Error 429). Google allows a limited number of requests per minute on free tiers. Please wait 60 seconds.");
+      }
       if (!response.ok) throw new Error(`Gemini API Error: ${response.status}`);
 
       const data = await response.json();
@@ -943,7 +972,13 @@ ${rawData.substring(0, 15000)}`;
       catch (err) {
         errors.push(`T0-Gemini: ${err.message}`);
         console.warn('[Proxy T0 Gemini]', err.message);
-        onStatus('📡 AI unavailable. Retrying via standard proxy…');
+        
+        // Show specific 429 message instead of jumping straight to JSONP silently
+        if (err.message.includes('429')) {
+             onStatus('📡 AI rate limited (429). Falling back to basic proxy…');
+        } else {
+             onStatus('📡 AI unavailable. Retrying via standard proxy…');
+        }
       }
 
       try { return await fetchViaJsonp(feedUrl); } 
@@ -1038,9 +1073,9 @@ ${rawData.substring(0, 15000)}`;
       document.body.style.overflow = 'hidden';
 
       // Reset AI Panel state
-      DOM.aiToggle.style.display = 'none';
+      DOM.floatingBtn.style.display = 'none';
       closeAiPanel();
-      DOM.aiChatArea.innerHTML = `<div class="ai-message system">How can I help you understand this article? Try a quick action below or ask a specific question.</div>`;
+      DOM.aiChatArea.innerHTML = `<div class="ai-message system">Hi! Try a quick prompt below or ask me a specific question about this article.</div>`;
       currentArticleText = "";
 
       try { DOM.readerUrlLabel.textContent = new URL(validatedUrl).hostname; } 
@@ -1060,6 +1095,7 @@ ${rawData.substring(0, 15000)}`;
       DOM.readerBackdrop.setAttribute('aria-hidden', 'true');
       document.body.style.overflow = '';
       closeAiPanel();
+      DOM.floatingBtn.style.display = 'none';
     }
 
     function setReaderProgress(pct) {
@@ -1088,7 +1124,7 @@ ${rawData.substring(0, 15000)}`;
 
       if (!mainEl) return null;
       
-      // Save raw text for AI before sanitization destroys structure
+      // Save raw text for AI
       currentArticleText = mainEl.innerText; 
       
       return sanitizeHtml(mainEl.innerHTML);
@@ -1114,6 +1150,7 @@ ${rawData.substring(0, 15000)}`;
         setReaderProgress(30);
       }
 
+      // Tier 1: Local extraction (No AI API usage, saves Rate Limit!)
       if (rawHtml) {
          setReaderProgress(50);
          const cleanHtml = extractMainContent(rawHtml, url);
@@ -1124,14 +1161,20 @@ ${rawData.substring(0, 15000)}`;
          }
       }
 
+      // Tier 2: AI Extraction
       setReaderProgress(60);
       try {
          await fetchArticleViaApi(url, title, feedName, pubDate);
          return;
       } catch(e) {
          console.warn("Gemini Extraction failed", e);
+         if (e.message.includes('429')) {
+             renderReaderError(url, "Rate limit exceeded. Please wait a minute.");
+             return;
+         }
       }
 
+      // Tier 3: Blocked
       setReaderProgress(100);
       setTimeout(() => setReaderProgress(0), 500);
       renderReaderError(url);
@@ -1165,7 +1208,10 @@ ${rawHtml.substring(0, 30000)}`;
         body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
       });
 
+      // --- CATCH ERROR 429 ---
+      if (response.status === 429) throw new Error("429 Too Many Requests");
       if (!response.ok) throw new Error(`Gemini API Error: ${response.status}`);
+      
       const data = await response.json();
       const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
       const cleanHtml = cleanAiResponse(rawText);
@@ -1173,7 +1219,6 @@ ${rawHtml.substring(0, 30000)}`;
       if (cleanHtml === 'PAYWALL') throw new Error('PAYWALL');
       if (cleanHtml.length < CONFIG.MIN_ARTICLE_LEN) throw new Error('AI extraction too short');
 
-      // Strip HTML tags to save as raw text for the AI Assistant
       const tempDiv = document.createElement("div");
       tempDiv.innerHTML = cleanHtml;
       currentArticleText = tempDiv.innerText;
@@ -1188,17 +1233,19 @@ ${rawHtml.substring(0, 30000)}`;
         `<div class="reader-article-meta">${pubDate ? `${timeSince(pubDate)} &nbsp;·&nbsp; ` : ''}${escapeHtml(feedName)}</div>` +
         `<div class="reader-body">${cleanHtml}</div>`;
         
-      DOM.aiToggle.style.display = 'inline-block'; // Show AI button only on success
+      // Show the floating AI button
+      DOM.floatingBtn.style.display = 'flex'; 
       setReaderProgress(100);
       setTimeout(() => setReaderProgress(0), 800);
     }
 
-    function renderReaderError(url) {
+    function renderReaderError(url, customMsg) {
+      const msg = customMsg || "This news site strictly blocks external readers. Please continue reading directly on their website.";
       DOM.readerContent.innerHTML =
         `<div class="reader-status error" style="margin-top: 40px; border: 1px solid var(--rule); padding: 30px; border-radius: 8px; background: var(--paper);">
-           <h3 style="color: var(--ink); font-family: 'Playfair Display', serif; font-size: 24px; margin-bottom: 10px;">Publisher Firewall Detected</h3>
+           <h3 style="color: var(--ink); font-family: 'Playfair Display', serif; font-size: 24px; margin-bottom: 10px;">Article Unavailable</h3>
            <p style="color: var(--muted); line-height: 1.5; font-size: 14px; margin-bottom: 25px; text-transform: none; letter-spacing: normal;">
-             This news site strictly blocks external readers to force you to view their ads. Please continue reading the original article directly on their website.
+             ${escapeHtml(msg)}
            </p>
            <div style="display:flex; justify-content:center;">
              <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" 
@@ -1239,16 +1286,22 @@ ${rawHtml.substring(0, 30000)}`;
     }
 
     /* ============================================================
-       9. AI IN-READER CHAT LOGIC
+       9. AI IN-READER CHAT LOGIC (Floating Panel)
     ============================================================ */
     function toggleAiPanel() {
       DOM.aiPanel.classList.toggle('open');
       if(DOM.aiPanel.classList.contains('open')) {
         DOM.aiInput.focus();
+        // Hide FAB when panel open
+        DOM.floatingBtn.style.transform = 'scale(0)';
       }
     }
     function closeAiPanel() {
       DOM.aiPanel.classList.remove('open');
+      // Show FAB when panel closed
+      if (currentArticleText) {
+         DOM.floatingBtn.style.transform = 'scale(1)';
+      }
     }
     
     function addChatMessage(role, text) {
@@ -1271,7 +1324,6 @@ ${rawHtml.substring(0, 30000)}`;
       DOM.aiSubmit.disabled = true;
       DOM.aiSubmit.textContent = '...';
 
-      // Add temporary loading message
       const loadingDiv = document.createElement('div');
       loadingDiv.className = 'ai-message system';
       loadingDiv.textContent = 'Thinking...';
@@ -1283,8 +1335,6 @@ ${rawHtml.substring(0, 30000)}`;
         if (!apiKey) throw new Error("API Key missing");
 
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-        
-        // Construct the context-aware prompt
         const fullPrompt = `You are an intelligent reading assistant inside a news app. 
         Read the following article text and answer the user's request. Keep answers concise, clear, and easy to read.
         
@@ -1300,14 +1350,16 @@ ${rawHtml.substring(0, 30000)}`;
           body: JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] }),
         });
 
+        // --- CATCH ERROR 429 IN CHAT ---
+        if (response.status === 429) {
+            throw new Error("API rate limit exceeded. Please wait 60 seconds before asking another question.");
+        }
         if (!response.ok) throw new Error(`API Error: ${response.status}`);
         
         const data = await response.json();
         const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
         
-        // Remove loading div
         DOM.aiChatArea.removeChild(loadingDiv);
-        
         addChatMessage('assistant', cleanAiResponse(rawText));
 
       } catch (err) {
@@ -1360,8 +1412,8 @@ ${rawHtml.substring(0, 30000)}`;
         setReaderProgress(denominator > 0 ? (scrollTop / denominator) * 100 : 0);
       });
 
-      // AI Panel Listeners
-      DOM.aiToggle.addEventListener('click', toggleAiPanel);
+      // Floating AI Listeners
+      DOM.floatingBtn.addEventListener('click', toggleAiPanel);
       DOM.aiCloseBtn.addEventListener('click', closeAiPanel);
       
       DOM.aiSubmit.addEventListener('click', () => submitAiPrompt(DOM.aiInput.value));
@@ -1382,4 +1434,3 @@ ${rawHtml.substring(0, 30000)}`;
 </html>
 
 
-```
