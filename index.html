@@ -738,7 +738,7 @@
     }
 
     /* ============================================================
-       5. UTILITY & API ENGINE (With Exponential Backoff Retry)
+       5. UTILITY & API ENGINE (With Auto-Fallback)
     ============================================================ */
     function xhrFetch(url, timeoutMs) {
       return new Promise((resolve, reject) => {
@@ -762,13 +762,13 @@
       });
     }
 
-    // Auto-Fallback Engine: Iterates through standard models if one 404s.
+    // Auto-Fallback Engine: Iterates through stable models if one 404s.
     async function fetchWithRetry(urlTemplate, options, maxRetries = 3) {
+      // Prioritizing the models guaranteed to work with free API keys globally
       const modelsToTry = [
         'gemini-1.5-flash',
-        'gemini-1.5-pro',
-        'gemini-1.0-pro',
-        'gemini-pro'
+        'gemini-1.5-flash-latest',
+        'gemini-1.0-pro'
       ];
       
       let lastError;
@@ -784,14 +784,13 @@
               if (attempt >= maxRetries) throw new Error("Rate limit exceeded (429). Please wait a minute.");
               await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
             } else if (response.status === 404) {
-              lastError = new Error(`Model not found (404). Your key may lack access to ${model}.`);
+              lastError = new Error(`Model not found (404) for ${model}.`);
               break; // Break the while loop to try the next model in the array
             } else {
               if (!response.ok) throw new Error(`API Error: ${response.status}`);
               return response; // Success!
             }
           } catch(e) {
-             // If fetch literally fails (network error)
              if(e.message === 'Failed to fetch') throw e;
              throw e;
           }
@@ -898,6 +897,7 @@ Return ONLY the JSON array. Maximum 15 items. Do not include formatting wrappers
 Raw XML data (truncated):
 ${rawData.substring(0, 15000)}`;
 
+      // Utilize the retry engine
       const response = await fetchWithRetry(endpointTemplate, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
