@@ -544,6 +544,7 @@
       transition:    all 0.2s;
     }
     .ai-quick-prompts button:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+    .ai-quick-prompts button:disabled { cursor: not-allowed; }
 
     /* Text input + "Ask" submit button row */
     .ai-input-area {
@@ -1595,8 +1596,12 @@
 
       addChatMessage('user', userPrompt);
       DOM.aiInput.value        = '';
+      
+      // ★ NEW: Lock the entire UI to prevent concurrent 429s ★
       DOM.aiSubmit.disabled    = true;
       DOM.aiSubmit.textContent = '...';
+      DOM.aiPromptBtns.forEach(btn => btn.disabled = true);
+      DOM.aiPromptBtns.forEach(btn => btn.style.opacity = '0.5');
 
       // "Thinking…" placeholder bubble
       const loadingDiv       = document.createElement('div');
@@ -1633,7 +1638,7 @@
         });
 
         if (response.status === 429)
-          throw new Error("API rate limit exceeded. Please wait 60 seconds before asking another question.");
+          throw new Error("API rate limit exceeded. Google Free Tier requires pacing. Please wait 60 seconds.");
         if (!response.ok)
           throw new Error(`API Error: ${response.status}`);
 
@@ -1647,8 +1652,11 @@
         DOM.aiChatArea.removeChild(loadingDiv);
         addChatMessage('system', `Error: ${err.message}`);
       } finally {
+        // ★ NEW: Unlock the UI when finished ★
         DOM.aiSubmit.disabled    = false;
         DOM.aiSubmit.textContent = 'Ask';
+        DOM.aiPromptBtns.forEach(btn => btn.disabled = false);
+        DOM.aiPromptBtns.forEach(btn => btn.style.opacity = '1');
       }
     }
 
