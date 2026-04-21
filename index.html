@@ -1,20 +1,25 @@
 ```html
 <!DOCTYPE html>
+<!--
+  ╔══════════════════════════════════════════════════════════════════╗
+  ║  GEMINI PULSE — Indian News Aggregator with Reader Mode          ║
+  ║  Version  : 4.0 (Native Reader Replication)                      ║
+  ║  Features : Mozilla Readability logic, CORS Proxy routing,       ║
+  ║             Gemini AI Parsing, Native Text-Mode Fallback.        ║
+  ╚══════════════════════════════════════════════════════════════════╝
+-->
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <!-- Content Security Policy: Relaxed slightly to allow modern proxies -->
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self';
                  script-src  'unsafe-inline' https://api.rss2json.com;
                  style-src   'unsafe-inline' https://fonts.googleapis.com;
                  font-src    https://fonts.gstatic.com;
                  img-src     * data:;
-                 connect-src https://api.rss2json.com
-                             https://api.allorigins.win
-                             https://api.codetabs.com
-                             https://r.jina.ai
-                             https://generativelanguage.googleapis.com;">
+                 connect-src *;">
   <title>Gemini Pulse</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 
@@ -429,6 +434,9 @@
 
 <body>
 
+  <!-- ==============================================================
+       CONTROLS BAR
+  =============================================================== -->
   <div class="controls-bar">
     <select id="feed-dropdown" aria-label="Select news feed">
       <optgroup label="── Digital & National ──">
@@ -465,23 +473,35 @@
     <button class="btn-outline" id="clear-key-btn" title="Clear Gemini Key" aria-label="Clear API Key">🔑 Reset Key</button>
   </div>
 
+  <!-- ==============================================================
+       MASTHEAD
+  =============================================================== -->
   <div class="masthead">
     <div class="tagline" id="header-date">Financial Intelligence Terminal</div>
     <div class="masthead-title">Gemini Pulse</div>
     <div class="tagline">Live Feed</div>
   </div>
 
+  <!-- ==============================================================
+       FEED STATUS BAR
+  =============================================================== -->
   <div class="feed-status-bar">
     <span id="item-count"></span>
     <span id="next-refresh"></span>
   </div>
 
+  <!-- ==============================================================
+       FEED OUTPUT
+  =============================================================== -->
   <div class="container">
     <div id="rss-output" aria-live="polite" aria-atomic="false">
       <div class="system-msg">Initialising secure terminal…</div>
     </div>
   </div>
 
+  <!-- ==============================================================
+       READER MODE
+  =============================================================== -->
   <div id="reader-backdrop" aria-hidden="true"></div>
   <div id="reader-panel" role="dialog" aria-modal="true" aria-label="Article reader">
     <div id="reader-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
@@ -499,6 +519,9 @@
     </div>
   </div>
 
+  <!-- ==============================================================
+       JAVASCRIPT LOGIC
+  =============================================================== -->
   <script>
     'use strict';
 
@@ -506,8 +529,9 @@
        1. CONFIG
     ============================================================ */
     const CONFIG = Object.freeze({
-      CACHE_TTL_MS:      5 * 60 * 1000, // 5 min cache
+      CACHE_TTL_MS:      5 * 60 * 1000, 
       FEED_TIMEOUT_MS:   15_000,
+      ARTICLE_TIMEOUT_MS: 12_000,
       AUTO_REFRESH_S:    600,
       MAX_DESC_CHARS:    350,
       READER_FONT_MIN:   13,
@@ -561,7 +585,7 @@
         if (key && key.trim() !== "") {
           localStorage.setItem('gemini_api_key', key.trim());
         } else {
-          return null; // User cancelled
+          return null; 
         }
       }
       return key;
@@ -636,7 +660,6 @@
         .replace(/&quot;/g, '"').trim();
     }
 
-    // Safely cleans AI response formatting markers
     function cleanAiResponse(text) {
       let t = text.trim();
       const marker = String.fromCharCode(96, 96, 96); 
@@ -655,12 +678,12 @@
     ============================================================ */
     const proxyUrl = {
       rss2json:   (feed, cb) => `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed)}${cb ? '&callback='+cb : ''}`,
-      allOrigins: (feed) => `https://api.allorigins.win/get?url=${encodeURIComponent(feed)}`,
-      codetabs:   (feed) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(feed)}`,
+      allOrigins: (feed) => `https://api.allorigins.win/raw?url=${encodeURIComponent(feed)}`,
+      corsproxy:  (feed) => `https://corsproxy.io/?${encodeURIComponent(feed)}`
     };
 
     /**
-     * Tier 0 — Gemini API
+     * Tier 0 — Gemini API for robust Feed Parsing
      */
     async function fetchViaGeminiApi(feedUrl, feedName) {
       const apiKey = getGeminiKey();
@@ -668,10 +691,9 @@
 
       let rawData = "";
       try {
-        rawData = await xhrFetch(proxyUrl.codetabs(feedUrl), CONFIG.FEED_TIMEOUT_MS);
+        rawData = await xhrFetch(proxyUrl.corsproxy(feedUrl), CONFIG.FEED_TIMEOUT_MS);
       } catch(e) {
-        const res = await xhrFetch(proxyUrl.allOrigins(feedUrl), CONFIG.FEED_TIMEOUT_MS);
-        rawData = JSON.parse(res).contents;
+        rawData = await xhrFetch(proxyUrl.allOrigins(feedUrl), CONFIG.FEED_TIMEOUT_MS);
       }
 
       if(!rawData) throw new Error("Failed to retrieve source XML.");
@@ -737,7 +759,7 @@ ${rawData.substring(0, 15000)}`;
 
     async function fetchViaJsonp(feedUrl) {
       const fnName = '_gp_' + Math.random().toString(36).slice(2, 9);
-      const data = await jsonpFetch(proxyUrl.rss2json(feedUrl, fnName), fnName, CONFIG.FEED_TIMEOUT_MS);
+      const data = await jsonpFetch(`https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}&callback=${fnName}`, fnName, CONFIG.FEED_TIMEOUT_MS);
       if (!data || data.status !== 'ok') throw new Error(data?.message || 'rss2json: non-ok');
       return data.items;
     }
@@ -833,7 +855,7 @@ ${rawData.substring(0, 15000)}`;
     }
 
     /* ============================================================
-       8. JINA AI + GEMINI READER MODE 
+       8. READER MODE ENGINE (Readability + Text Mode Fallback)
     ============================================================ */
     function openReader(url, title, feedName, pubDate) {
       const validatedUrl = safeUrl(url);
@@ -850,7 +872,7 @@ ${rawData.substring(0, 15000)}`;
       DOM.readerExtLink.href = validatedUrl;
       DOM.readerScroll.scrollTop = 0;
       setReaderProgress(0);
-      DOM.readerContent.innerHTML = `<div class="reader-status">📰 Connecting to Publisher via Jina AI...</div>`;
+      DOM.readerContent.innerHTML = `<div class="reader-status">📰 Fetching article...</div>`;
 
       fetchArticle(validatedUrl, title, feedName, pubDate);
     }
@@ -868,58 +890,117 @@ ${rawData.substring(0, 15000)}`;
       DOM.readerProgress.setAttribute('aria-valuenow', Math.round(clamped));
     }
 
+    // Custom DOM Extractor based on Mozilla Readability concepts
+    function extractMainContent(html, baseUrl) {
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
+      
+      // Fix relative images/links
+      const base = doc.createElement('base');
+      base.href = baseUrl;
+      doc.head.appendChild(base);
+
+      // Strip useless elements
+      const junk = ['script', 'style', 'nav', 'footer', 'aside', 'iframe', 'noscript', '.ad', '.advertisement', '.social-share', '.related-stories', '#comments', '.header'];
+      junk.forEach(sel => { try { doc.querySelectorAll(sel).forEach(el => el.remove()); } catch(e){} });
+
+      // Find primary content node
+      const selectors = ['article', '.article-body', '.story-details', '.story-content', '#article-content', '.content-area', '.article-txt', 'main', '.entry-content', '.page-content'];
+      let mainEl = null;
+      for(const sel of selectors) {
+         const el = doc.querySelector(sel);
+         if (el && el.textContent.trim().length > 300) { mainEl = el; break; }
+      }
+
+      if (!mainEl) return null;
+      return sanitizeHtml(mainEl.innerHTML);
+    }
+
     async function fetchArticle(url, title, feedName, pubDate) {
       setReaderProgress(15);
-      try {
-        // STEP 1: Use Jina AI to bypass bot protections and get article Markdown
-        const jinaResponse = await fetch('https://r.jina.ai/' + encodeURIComponent(url));
-        if (!jinaResponse.ok) throw new Error("Jina AI could not bypass publisher");
-        
-        const markdownContent = await jinaResponse.text();
-        
-        // If the text mentions enabling cookies/JS, the bot protection still won
-        if (!markdownContent || markdownContent.length < 200 || markdownContent.includes('Enable JavaScript and cookies')) {
-             throw new Error("Publisher strictly blocked access.");
-        }
-        
-        setReaderProgress(50);
-        DOM.readerContent.innerHTML = `<div class="reader-status">✨ Formatting with Gemini...</div>`;
+      
+      const proxies = [
+        `https://corsproxy.io/?${encodeURIComponent(url)}`,
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
+      ];
 
-        // STEP 2: Use Gemini to convert Jina's raw markdown into beautiful HTML
-        const apiKey = getGeminiKey();
-        if (!apiKey) throw new Error("GEMINI_KEY_MISSING");
-
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
-        const prompt = `Convert this article markdown into clean HTML using only <p>, <h2>, <h3>, <h4>, <strong>, <em>, <ul>, <ol>, <li>, <blockquote>.
-        Article Title: "${title}"
-        Do NOT include markdown formatting markers like \`\`\`html.
-        If the text clearly states it's a paywall or asks to subscribe to read, return exactly: PAYWALL
-
-        MARKDOWN CONTENT:
-        ${markdownContent.substring(0, 25000)}`;
-
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
-        });
-
-        if (!response.ok) throw new Error(`Gemini Formatting Error: ${response.status}`);
-        const data = await response.json();
-        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-        const cleanHtml = cleanAiResponse(rawText);
-
-        if (cleanHtml === 'PAYWALL') throw new Error('PAYWALL');
-
-        setReaderProgress(90);
-        renderArticle(cleanHtml, title, feedName, pubDate);
-
-      } catch (err) {
-        console.warn('[Reader Pipeline Failed]', err.message);
-        setReaderProgress(100);
-        setTimeout(() => setReaderProgress(0), 600);
-        renderReaderError(err, url);
+      let rawHtml = null;
+      for (const proxy of proxies) {
+        try {
+          const res = await xhrFetch(proxy, CONFIG.ARTICLE_TIMEOUT_MS);
+          // Check to ensure it's not a Cloudflare/Akamai challenge page
+          if (res && res.length > 2000 && !res.includes("Just a moment...") && !res.toLowerCase().includes("enable javascript")) {
+            rawHtml = res;
+            break;
+          }
+        } catch (e) { console.warn("Proxy failed", proxy); }
+        setReaderProgress(30);
       }
+
+      // If we got the HTML, try extracting it locally
+      if (rawHtml) {
+         setReaderProgress(50);
+         const cleanHtml = extractMainContent(rawHtml, url);
+         if (cleanHtml && cleanHtml.length > 200) {
+            setReaderProgress(100);
+            renderArticle(cleanHtml, title, feedName, pubDate);
+            return;
+         }
+      }
+
+      // Tier 2: If internal extraction fails or proxy is blocked, use Gemini API
+      setReaderProgress(60);
+      try {
+         await fetchArticleViaApi(url, title, feedName, pubDate);
+         return;
+      } catch(e) {
+         console.warn("Gemini Extraction failed", e);
+      }
+
+      // Tier 3: TOTAL BLOCK -> Show Text Mode bypass buttons
+      setReaderProgress(100);
+      setTimeout(() => setReaderProgress(0), 500);
+      renderReaderError(url);
+    }
+
+    async function fetchArticleViaApi(url, title, feedName, pubDate) {
+      const apiKey = getGeminiKey();
+      if (!apiKey) throw new Error("GEMINI_KEY_MISSING");
+
+      let rawHtml = '';
+      try {
+        const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
+        rawHtml = await res.text();
+      } catch (e) { throw new Error("Could not retrieve page source"); }
+
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+      const prompt = `Act as a precise article extractor. Extract the full article body from the following raw HTML.
+Article Title: "${title}"
+
+Return ONLY the clean article HTML using only these tags: <p>, <h2>, <h3>, <h4>, <strong>, <em>, <ul>, <ol>, <li>, <blockquote>.
+Do NOT include navigation, ads, headers, or footers.
+If the article is strictly paywalled and unreadable, return exactly: PAYWALL
+Do not wrap your response in formatting markers.
+
+RAW HTML (truncated):
+${rawHtml.substring(0, 30000)}`;
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] }),
+      });
+
+      if (!response.ok) throw new Error(`Gemini API Error: ${response.status}`);
+      const data = await response.json();
+      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      const cleanHtml = cleanAiResponse(rawText);
+
+      if (cleanHtml === 'PAYWALL') throw new Error('PAYWALL');
+      if (cleanHtml.length < CONFIG.MIN_ARTICLE_LEN) throw new Error('AI extraction too short');
+
+      setReaderProgress(90);
+      renderArticle(cleanHtml, title, feedName, pubDate);
     }
 
     function renderArticle(cleanHtml, title, feedName, pubDate) {
@@ -931,21 +1012,54 @@ ${rawData.substring(0, 15000)}`;
       setTimeout(() => setReaderProgress(0), 800);
     }
 
-    function renderReaderError(err, url) {
-      let msg, hint;
-      if (err.message === 'PAYWALL') {
-        msg = '🔒 Paywall or Login Wall detected';
-        hint = 'Open the original link to read the full article.';
-      } else {
-        msg = '❌ Interactive Reader Blocked';
-        hint = 'This publisher strictly restricts reading outside their website.';
-      }
-
+    function renderReaderError(url) {
+      // Provide the user with the ultimate workaround: a dedicated Text Mode proxy
       DOM.readerContent.innerHTML =
-        `<div class="reader-status error">${msg}<br>` +
-        `<small style="font-size:11px;opacity:.7;line-height:2.5">${hint}</small><br><br>` +
-        `<a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" ` +
-        `style="font-size:13px;color:var(--accent);border:1px solid var(--accent);padding:8px 16px;border-radius:4px;text-decoration:none;display:inline-block;">↗ Continue Reading at Source</a></div>`;
+        `<div class="reader-status error" style="margin-top: 40px; border: 1px solid var(--rule); padding: 30px; border-radius: 8px; background: var(--paper);">
+           <h3 style="color: var(--ink); font-family: 'Playfair Display', serif; font-size: 24px; margin-bottom: 10px;">Publisher Firewall Detected</h3>
+           <p style="color: var(--muted); line-height: 1.5; font-size: 14px; margin-bottom: 25px; text-transform: none; letter-spacing: normal;">
+             This news site strictly blocks external readers to force you to view their ads. However, you can still read it cleanly using our dedicated Text Mode bypass.
+           </p>
+           <div style="display:flex; gap:15px; justify-content:center; flex-wrap:wrap;">
+             <a href="https://txtify.it/${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" 
+                style="background: var(--ink); color: var(--paper); font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 500; text-transform: uppercase; padding: 10px 20px; border-radius: 4px; text-decoration: none; transition: opacity 0.2s;">
+                📄 Read in Text Mode
+             </a>
+             <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" 
+                style="background: transparent; color: var(--ink); border: 1px solid var(--ink); font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 500; text-transform: uppercase; padding: 10px 20px; border-radius: 4px; text-decoration: none; transition: background 0.2s;">
+                ↗ Open Original
+             </a>
+           </div>
+        </div>`;
+    }
+
+    const ALLOWED_TAGS = new Set(['p', 'br', 'strong', 'b', 'em', 'i', 'u', 'h1', 'h2', 'h3', 'h4', 'ul', 'ol', 'li', 'blockquote', 'figure', 'figcaption', 'img', 'a', 'span', 'div', 'section']);
+    const ALLOWED_ATTRS = { img: ['src', 'srcset', 'alt', 'loading'], a: ['href', 'target', 'rel'] };
+
+    function sanitizeHtml(html) {
+      const wrapper = document.createElement('div');
+      wrapper.innerHTML = html;
+      sanitizeNode(wrapper);
+      return wrapper.innerHTML;
+    }
+
+    function sanitizeNode(node) {
+      const children = Array.from(node.childNodes);
+      for (const child of children) {
+        if (child.nodeType === Node.COMMENT_NODE) { node.removeChild(child); continue; }
+        if (child.nodeType !== Node.ELEMENT_NODE) continue;
+        const tag = child.tagName.toLowerCase();
+        if (!ALLOWED_TAGS.has(tag)) {
+          while (child.firstChild) node.insertBefore(child.firstChild, child);
+          node.removeChild(child);
+          continue;
+        }
+        const allowedForTag = ALLOWED_ATTRS[tag] || [];
+        Array.from(child.attributes).forEach(attr => { if (!allowedForTag.includes(attr.name)) child.removeAttribute(attr.name); });
+        if (tag === 'a') { child.setAttribute('target', '_blank'); child.setAttribute('rel', 'noopener noreferrer'); }
+        if (tag === 'img') { child.setAttribute('loading', 'lazy'); }
+        sanitizeNode(child);
+      }
     }
 
     /* ============================================================
