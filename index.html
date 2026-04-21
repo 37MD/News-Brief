@@ -492,7 +492,11 @@
       cursor: pointer;
       transition: all 0.2s;
     }
-    .ai-quick-prompts button:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+    .ai-quick-prompts button:hover {
+      background: var(--ink);
+      color: var(--paper);
+      border-color: var(--ink);
+    }
 
     .ai-input-area {
       display: flex;
@@ -524,7 +528,7 @@
     .ai-input-area button:disabled { background: var(--rule); cursor: not-allowed; }
 
     /* ================================================================
-       SETTINGS MODAL (API Key & Model Selection)
+       SETTINGS MODAL (API Key Configuration)
     ================================================================ */
     #settings-modal-wrapper {
       display: none;
@@ -565,8 +569,7 @@
       margin-bottom: 8px;
     }
     .settings-group input[type="password"],
-    .settings-group input[type="text"],
-    .settings-group select {
+    .settings-group input[type="text"] {
       width: 100%;
       padding: 10px 12px;
       border: 1px solid var(--rule);
@@ -575,7 +578,7 @@
       font-size: 14px;
       background: #fff;
     }
-    .settings-group input:focus, .settings-group select:focus {
+    .settings-group input:focus {
       outline: none;
       border-color: var(--accent);
     }
@@ -649,15 +652,6 @@
         <input type="password" id="api-key-input" placeholder="Paste your API key here">
       </div>
       
-      <div class="settings-group">
-        <label for="model-select">Preferred AI Model</label>
-        <select id="model-select" style="max-width: 100%;">
-          <option value="gemini-1.5-flash">Gemini 1.5 Flash (Fastest / Free Workhorse)</option>
-          <option value="gemini-1.5-pro">Gemini 1.5 Pro (Advanced / Complex Tasks)</option>
-          <option value="gemini-1.0-pro">Gemini 1.0 Pro (Legacy Fallback)</option>
-        </select>
-      </div>
-
       <div id="settings-error"></div>
 
       <div class="settings-actions">
@@ -776,7 +770,8 @@
       MAX_DESC_CHARS:    350,
       READER_FONT_MIN:   13,
       READER_FONT_MAX:   24,
-      READER_FONT_DEF:   17
+      READER_FONT_DEF:   17,
+      GEMINI_MODEL:      'gemini-1.5-flash' // STRICTLY using the requested model
     });
 
     const feedCache      = {};
@@ -811,7 +806,6 @@
       // Settings Refs
       settingsModal:   document.getElementById('settings-modal-wrapper'),
       apiKeyInput:     document.getElementById('api-key-input'),
-      modelSelect:     document.getElementById('model-select'),
       saveSettingsBtn: document.getElementById('save-settings-btn'),
       closeSettingsBtn:document.getElementById('close-settings-btn'),
       settingsError:   document.getElementById('settings-error'),
@@ -831,15 +825,13 @@
     ============================================================ */
     function getStoredConfig() {
       return {
-        key: localStorage.getItem('gemini_api_key') || '',
-        model: localStorage.getItem('gemini_model') || 'gemini-1.5-flash'
+        key: localStorage.getItem('gemini_api_key') || ''
       };
     }
 
     function openSettings() {
       const conf = getStoredConfig();
       DOM.apiKeyInput.value = conf.key;
-      DOM.modelSelect.value = conf.model;
       DOM.settingsError.style.display = 'none';
       DOM.settingsModal.classList.add('open');
     }
@@ -850,7 +842,6 @@
 
     async function verifyAndSaveSettings() {
       const key = DOM.apiKeyInput.value.trim();
-      const model = DOM.modelSelect.value;
 
       if (!key) {
         showSettingsError("API Key cannot be empty.");
@@ -866,15 +857,15 @@
       DOM.settingsError.style.display = 'none';
 
       try {
-        const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+        const testUrl = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${key}`;
         const response = await fetch(testUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: "Say the word 'OK'" }] }] })
+          body: JSON.stringify({ contents: [{ parts: [{ text: "Say OK" }] }] })
         });
 
         if (response.status === 404) {
-          throw new Error(`Model not found (404). Your key lacks access to ${model}. Try selecting 1.5 Flash.`);
+          throw new Error(`Model not found (404) for ${CONFIG.GEMINI_MODEL}. Check key permissions.`);
         }
         if (response.status === 400 || response.status === 403) {
           throw new Error(`API Key invalid or permission denied (${response.status}).`);
@@ -885,9 +876,8 @@
 
         // Success!
         localStorage.setItem('gemini_api_key', key);
-        localStorage.setItem('gemini_model', model);
         closeSettings();
-        loadFeed(true); // reload feed with new key
+        loadFeed(true);
 
       } catch (err) {
         showSettingsError(err.message);
@@ -912,7 +902,7 @@
     }
 
     /* ============================================================
-       4. UTILITY & API ENGINE
+       4. UTILITY & API ENGINE (Strict 1.5-Flash Logic)
     ============================================================ */
     function xhrFetch(url, timeoutMs) {
       return new Promise((resolve, reject) => {
@@ -936,7 +926,6 @@
       });
     }
 
-    // Retries 429s automatically. Uses exactly the model saved in settings.
     async function fetchWithRetry(url, options, maxRetries = 3) {
       let attempt = 0;
       while (attempt < maxRetries) {
@@ -946,7 +935,7 @@
           if (attempt >= maxRetries) throw new Error("Rate limit exceeded (429). Please wait a minute.");
           await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
         } else if (response.status === 404) {
-          throw new Error("Model not found (404). Please open Settings and select a different model.");
+          throw new Error(`Model not found (404). Your key lacks access to ${CONFIG.GEMINI_MODEL}.`);
         } else if (response.status === 400 || response.status === 403) {
           throw new Error(`API Error (${response.status}). Please check your API Key in Settings.`);
         } else {
@@ -1036,7 +1025,7 @@
 
       if(!rawData) throw new Error("Failed to retrieve source XML.");
 
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${conf.model}:generateContent?key=${conf.key}`;
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${conf.key}`;
       const prompt = `Parse this raw RSS/Atom XML feed into a JSON array of the latest articles.
 Source name: ${feedName}
 
@@ -1162,7 +1151,7 @@ ${rawData.substring(0, 15000)}`;
             startCountdown();
           } catch (err) {
             if (thisId !== requestCounter) return;
-            if (err.message === "API_KEY_MISSING") return; // Handled by checkKeyAndRun
+            if (err.message === "API_KEY_MISSING") return; 
             
             DOM.output.innerHTML = `<div class="system-msg error">❌ Feed unavailable.<br>` +
               `<small style="font-size:10px;opacity:.7;line-height:2;white-space:pre-line">${escapeHtml(err.message)}</small></div>`;
@@ -1269,9 +1258,7 @@ ${rawData.substring(0, 15000)}`;
 
       if (!mainEl) return null;
       
-      // Save raw text for AI
       currentArticleText = mainEl.innerText; 
-      
       return sanitizeHtml(mainEl.innerHTML);
     }
 
@@ -1306,7 +1293,7 @@ ${rawData.substring(0, 15000)}`;
          }
       }
 
-      // Tier 2: AI Extraction with Retries
+      // Tier 2: AI Extraction
       setReaderProgress(60);
       try {
          await fetchArticleViaApi(url, title, feedName, pubDate);
@@ -1338,7 +1325,7 @@ ${rawData.substring(0, 15000)}`;
         rawHtml = await res.text();
       } catch (e) { throw new Error("Could not retrieve page source"); }
 
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${conf.model}:generateContent?key=${conf.key}`;
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${conf.key}`;
       const prompt = `Act as a precise article extractor. Extract the full article body from the following raw HTML.
 Article Title: "${title}"
 
@@ -1377,7 +1364,6 @@ ${rawHtml.substring(0, 30000)}`;
         `<div class="reader-article-meta">${pubDate ? `${timeSince(pubDate)} &nbsp;·&nbsp; ` : ''}${escapeHtml(feedName)}</div>` +
         `<div class="reader-body">${cleanHtml}</div>`;
         
-      // Show the Top-Bar AI button
       DOM.aiToggle.style.display = 'inline-block'; 
       setReaderProgress(100);
       setTimeout(() => setReaderProgress(0), 800);
@@ -1430,7 +1416,7 @@ ${rawHtml.substring(0, 30000)}`;
     }
 
     /* ============================================================
-       9. AI IN-READER CHAT LOGIC (Top-Bar Dropdown Panel)
+       9. AI IN-READER CHAT LOGIC
     ============================================================ */
     function toggleAiPanel() {
       DOM.aiPanel.classList.toggle('open');
@@ -1473,7 +1459,7 @@ ${rawHtml.substring(0, 30000)}`;
         const conf = getStoredConfig();
         if (!conf.key) throw new Error("API Key missing");
 
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${conf.model}:generateContent?key=${conf.key}`;
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${conf.key}`;
         const fullPrompt = `You are an intelligent reading assistant inside a news app. 
         Read the following article text and answer the user's request. Keep answers concise, clear, and easy to read.
         
@@ -1513,7 +1499,6 @@ ${rawHtml.substring(0, 30000)}`;
       DOM.dropdown.addEventListener('change', () => loadFeed(false));
       DOM.refreshBtn.addEventListener('click', () => { delete feedCache[DOM.dropdown.value]; loadFeed(true); });
       
-      // Settings Modal Listeners
       DOM.settingsBtn.addEventListener('click', openSettings);
       DOM.closeSettingsBtn.addEventListener('click', closeSettings);
       DOM.saveSettingsBtn.addEventListener('click', verifyAndSaveSettings);
@@ -1549,7 +1534,6 @@ ${rawHtml.substring(0, 30000)}`;
         setReaderProgress(denominator > 0 ? (scrollTop / denominator) * 100 : 0);
       });
 
-      // Top-Bar AI Listeners
       DOM.aiToggle.addEventListener('click', toggleAiPanel);
       DOM.aiCloseBtn.addEventListener('click', closeAiPanel);
       
@@ -1564,7 +1548,6 @@ ${rawHtml.substring(0, 30000)}`;
         });
       });
 
-      // Load initial feed (Will open Settings modal if no key exists)
       checkKeyAndRun(() => loadFeed());
     });
   </script>
