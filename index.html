@@ -3,19 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
   <meta http-equiv="Content-Security-Policy"
         content="default-src 'self';
                  script-src  'unsafe-inline' https://api.rss2json.com;
                  style-src   'unsafe-inline' https://fonts.googleapis.com;
                  font-src    https://fonts.gstatic.com;
                  img-src     * data:;
-                 connect-src *;">
-  <title>Gemini Pulse</title>
+                 connect-src https://api.rss2json.com
+                             https://api.allorigins.win
+                             https://corsproxy.io
+                             https://generativelanguage.googleapis.com;">
+                             
+  <title>Gemini Pulse | Intelligence Terminal</title>
+  
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 
   <style>
     /* ================================================================
-       DESIGN TOKENS & BASE STYLES
+       [1] DESIGN TOKENS & CSS VARIABLES
     ================================================================ */
     :root {
       --ink:            #1a1a18;
@@ -28,6 +34,9 @@
       --reader-font-sz: 17px;
     }
 
+    /* ================================================================
+       [2] BASE RESET
+    ================================================================ */
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       background:   var(--paper);
@@ -38,7 +47,7 @@
     }
 
     /* ================================================================
-       CONTROLS BAR
+       [3] TOP CONTROLS & NAVIGATION
     ================================================================ */
     .controls-bar {
       position:    absolute;
@@ -82,14 +91,15 @@
     }
     .btn-outline:hover    { background: var(--accent); color: var(--paper); }
     .btn-outline:disabled { opacity: 0.4; cursor: not-allowed; }
-
+    
     #settings-btn { color: var(--muted); border-color: var(--rule); }
     #settings-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+    
     #refresh-btn.spinning { animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ================================================================
-       MASTHEAD
+       [4] HEADER / MASTHEAD
     ================================================================ */
     .masthead {
       border-bottom: 3px double var(--ink);
@@ -113,7 +123,7 @@
     }
 
     /* ================================================================
-       FEED STATUS BAR
+       [5] FEED LIST & ITEMS
     ================================================================ */
     .feed-status-bar {
       max-width:   800px;
@@ -129,9 +139,6 @@
       letter-spacing:  0.05em;
     }
 
-    /* ================================================================
-       FEED CONTAINER & ARTICLES
-    ================================================================ */
     .container {
       max-width: 800px;
       margin:    0 auto;
@@ -205,7 +212,7 @@
     }
 
     /* ================================================================
-       READER MODE PANEL
+       [6] FULLSCREEN READER OVERLAY
     ================================================================ */
     #reader-backdrop {
       display:         none;
@@ -352,6 +359,7 @@
       border-bottom:  2px solid var(--rule);
     }
 
+    /* Article Text Formatting */
     .reader-body {
       font-size:   var(--reader-font-sz);
       line-height: 1.85;
@@ -382,9 +390,9 @@
       color:       var(--muted);
       font-style:  italic;
     }
-    .reader-body a    { color: var(--accent); word-break: break-word; }
+    .reader-body a { color: var(--accent); word-break: break-word; }
     .reader-body ul, .reader-body ol { padding-left: 1.6em; margin-bottom: 1.2em; }
-    .reader-body li   { margin-bottom: 0.4em; }
+    .reader-body li { margin-bottom: 0.4em; }
 
     .reader-status {
       font-family: 'IBM Plex Mono', monospace;
@@ -397,7 +405,7 @@
     .reader-status.error { color: var(--error); }
 
     /* ================================================================
-       AI CHAT PANEL (Drops down from top right)
+       [7] AI CHAT ASSISTANT (Dropdown UI)
     ================================================================ */
     #ai-panel {
       position: absolute;
@@ -468,6 +476,7 @@
     }
     .ai-message.system { color: var(--muted); font-style: italic; font-size: 13px; background: transparent; padding: 0; }
     
+    /* Markdown parsing elements in chat */
     .ai-message strong { font-weight: 600; }
     .ai-message ul { margin-left: 20px; margin-top: 8px; }
     .ai-message p { margin-bottom: 8px; }
@@ -528,7 +537,7 @@
     .ai-input-area button:disabled { background: var(--rule); cursor: not-allowed; }
 
     /* ================================================================
-       SETTINGS MODAL (API Key & Model Selection)
+       [8] SETTINGS MODAL UI
     ================================================================ */
     #settings-modal-wrapper {
       display: none;
@@ -623,7 +632,7 @@
     }
 
     /* ================================================================
-       RESPONSIVE
+       [9] RESPONSIVE BREAKPOINTS
     ================================================================ */
     @media (max-width: 520px) {
       .controls-bar {
@@ -654,10 +663,10 @@
       </div>
       
       <div class="settings-group">
-        <label for="model-select">Preferred AI Model</label>
+        <label for="model-select">Preferred AI Engine</label>
         <select id="model-select" style="max-width: 100%;">
-          <option value="gemini-1.5-flash">Gemini 1.5 Flash (Stable / Fast)</option>
-          <option value="gemini-3.1-flash-lite-preview">Gemini 3.1 Flash Lite (Preview)</option>
+          <option value="gemini-3.1-flash-lite-preview">Gemini 3.1 Flash Lite (Recommended & Tested)</option>
+          <option value="gemini-2.5-flash">Gemini 2.5 Flash (Advanced Fallback)</option>
         </select>
       </div>
 
@@ -736,6 +745,7 @@
       </div>
       
       <button class="reader-open-btn reader-ai-btn" id="reader-ai-toggle" style="display:none;">✨ Ask AI</button>
+      
       <a class="reader-open-btn" id="reader-ext-link" href="#" target="_blank" rel="noopener noreferrer">↗ Original</a>
     </div>
 
@@ -769,28 +779,33 @@
     'use strict';
 
     /* ============================================================
-       1. CONFIG & STATE
+       [1] APP CONFIGURATION & STATE
     ============================================================ */
+    /**
+     * Application Constants
+     * @constant {Object}
+     */
     const CONFIG = Object.freeze({
-      CACHE_TTL_MS:      5 * 60 * 1000, 
-      FEED_TIMEOUT_MS:   15_000,
+      CACHE_TTL_MS:       5 * 60 * 1000, 
+      FEED_TIMEOUT_MS:    15_000,
       ARTICLE_TIMEOUT_MS: 12_000,
-      AUTO_REFRESH_S:    600,
-      MAX_DESC_CHARS:    350,
-      READER_FONT_MIN:   13,
-      READER_FONT_MAX:   24,
-      READER_FONT_DEF:   17
+      AUTO_REFRESH_S:     600,
+      MAX_DESC_CHARS:     350,
+      READER_FONT_MIN:    13,
+      READER_FONT_MAX:    24,
+      READER_FONT_DEF:    17
     });
 
+    /** State Variables */
     const feedCache      = {};
     let   requestCounter = 0;
     let   debounceTimer  = null;
     let   countdownTimer = null;
     let   readerFontSize = CONFIG.READER_FONT_DEF;
-    let   currentArticleText = ""; 
+    let   currentArticleText = ""; // Holds raw extracted text for AI context
 
     /* ============================================================
-       2. DOM REFS
+       [2] DOM NODE REFERENCES
     ============================================================ */
     const DOM = {
       output:          document.getElementById('rss-output'),
@@ -799,6 +814,8 @@
       settingsBtn:     document.getElementById('settings-btn'),
       itemCount:       document.getElementById('item-count'),
       nextRefresh:     document.getElementById('next-refresh'),
+      
+      // Reader Overlay Refs
       readerPanel:     document.getElementById('reader-panel'),
       readerBackdrop:  document.getElementById('reader-backdrop'),
       readerContent:   document.getElementById('reader-content'),
@@ -811,7 +828,7 @@
       fontDown:        document.getElementById('font-down'),
       headerDate:      document.getElementById('header-date'),
       
-      // Settings Refs
+      // Settings Modal Refs
       settingsModal:   document.getElementById('settings-modal-wrapper'),
       apiKeyInput:     document.getElementById('api-key-input'),
       modelSelect:     document.getElementById('model-select'),
@@ -819,7 +836,7 @@
       closeSettingsBtn:document.getElementById('close-settings-btn'),
       settingsError:   document.getElementById('settings-error'),
 
-      // Top-Bar AI Refs
+      // Top-Bar AI Chat Refs
       aiToggle:        document.getElementById('reader-ai-toggle'),
       aiPanel:         document.getElementById('ai-panel'),
       aiCloseBtn:      document.getElementById('ai-close-btn'),
@@ -830,15 +847,20 @@
     };
 
     /* ============================================================
-       3. SETTINGS & STORAGE LOGIC
+       [3] SECURITY & STORAGE MANAGER
     ============================================================ */
+    /**
+     * Retrieves the stored API configuration securely from the browser.
+     * @returns {Object} { key: string, model: string }
+     */
     function getStoredConfig() {
       return {
         key: localStorage.getItem('gemini_api_key') || '',
-        model: localStorage.getItem('gemini_model') || 'gemini-1.5-flash'
+        model: localStorage.getItem('gemini_model') || 'gemini-3.1-flash-lite-preview'
       };
     }
 
+    /** Opens Settings Modal */
     function openSettings() {
       const conf = getStoredConfig();
       DOM.apiKeyInput.value = conf.key;
@@ -847,22 +869,20 @@
       DOM.settingsModal.classList.add('open');
     }
 
+    /** Closes Settings Modal */
     function closeSettings() {
       DOM.settingsModal.classList.remove('open');
     }
 
+    /**
+     * Validates user API key against Google's endpoint before saving.
+     */
     async function verifyAndSaveSettings() {
       const key = DOM.apiKeyInput.value.trim();
       const model = DOM.modelSelect.value;
 
-      if (!key) {
-        showSettingsError("API Key cannot be empty.");
-        return;
-      }
-      if (!key.startsWith("AIza")) {
-         showSettingsError("Invalid Key Format. Google API Keys usually start with 'AIza'.");
-         return;
-      }
+      if (!key) return showSettingsError("API Key cannot be empty.");
+      if (!key.startsWith("AIza")) return showSettingsError("Invalid Key Format. Google API Keys start with 'AIza'.");
 
       DOM.saveSettingsBtn.textContent = "Verifying...";
       DOM.saveSettingsBtn.disabled = true;
@@ -873,24 +893,18 @@
         const response = await fetch(testUrl, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ contents: [{ parts: [{ text: "Say the word 'OK'" }] }] })
+          body: JSON.stringify({ contents: [{ parts: [{ text: "Say OK" }] }] })
         });
 
-        if (response.status === 404) {
-          throw new Error(`Model not found (404). Your key lacks access to ${model}. Please select 1.5 Flash.`);
-        }
-        if (response.status === 400 || response.status === 403) {
-          throw new Error(`API Key invalid or permission denied (${response.status}).`);
-        }
-        if (!response.ok) {
-          throw new Error(`Connection failed (${response.status}).`);
-        }
+        if (response.status === 404) throw new Error(`Model not found (404). Your key lacks access to ${model}.`);
+        if (response.status === 400 || response.status === 403) throw new Error(`API Key invalid or permission denied (${response.status}).`);
+        if (!response.ok) throw new Error(`Connection failed (${response.status}).`);
 
-        // Success!
+        // If verification passes, save to localStorage and reload app
         localStorage.setItem('gemini_api_key', key);
         localStorage.setItem('gemini_model', model);
         closeSettings();
-        loadFeed(true); // reload feed with new key
+        loadFeed(true); 
 
       } catch (err) {
         showSettingsError(err.message);
@@ -900,23 +914,25 @@
       }
     }
 
+    /** Helper to show errors in settings UI */
     function showSettingsError(msg) {
       DOM.settingsError.textContent = msg;
       DOM.settingsError.style.display = 'block';
     }
 
+    /** Forces settings setup if key is missing on load */
     function checkKeyAndRun(callback) {
       const conf = getStoredConfig();
-      if (!conf.key) {
-        openSettings();
-      } else {
-        callback();
-      }
+      if (!conf.key) openSettings();
+      else callback();
     }
 
     /* ============================================================
-       4. UTILITY & API ENGINE
+       [4] NETWORK & UTILITY ENGINE
     ============================================================ */
+    /**
+     * Timeout-wrapped XMLHttpRequest used for standard RSS fetching.
+     */
     function xhrFetch(url, timeoutMs) {
       return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
@@ -939,6 +955,9 @@
       });
     }
 
+    /**
+     * Advanced fetch engine with built-in Exponential Backoff for 429 Errors.
+     */
     async function fetchWithRetry(url, options, maxRetries = 3) {
       let attempt = 0;
       while (attempt < maxRetries) {
@@ -948,16 +967,17 @@
           if (attempt >= maxRetries) throw new Error("Rate limit exceeded (429). Please wait a minute.");
           await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
         } else if (response.status === 404) {
-          throw new Error("Model not found (404). Please open Settings and select a different model.");
+          throw new Error("Model not found (404). Please open Settings and verify your model.");
         } else if (response.status === 400 || response.status === 403) {
           throw new Error(`API Error (${response.status}). Please check your API Key in Settings.`);
         } else {
           if (!response.ok) throw new Error(`API Error: ${response.status}`);
-          return response;
+          return response; // Success
         }
       }
     }
 
+    /** General string sanitation tools */
     function escapeHtml(str) {
       if (str == null) return '';
       return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
@@ -971,6 +991,12 @@
       } catch { return '#'; }
     }
 
+    function stripHtml(html) {
+      if (!html) return '';
+      return html.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').trim();
+    }
+
+    /** Formats ISO dates into readable relative time (e.g., "5 mins ago") */
     function timeSince(dateString) {
       if (!dateString) return 'Unknown time';
       const date = new Date(dateString);
@@ -988,24 +1014,19 @@
       return '1 min ago';
     }
 
-    function stripHtml(html) {
-      if (!html) return '';
-      return html.replace(/<[^>]*>?/gm, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').trim();
-    }
-
+    /** Removes markdown fences generated by AI responses */
     function cleanAiResponse(text) {
       let t = text.trim();
-      const marker = String.fromCharCode(96, 96, 96); 
+      const marker = String.fromCharCode(96, 96, 96); // ```
       if (t.startsWith(marker)) {
         const firstNewline = t.indexOf('\n');
         if (firstNewline !== -1) t = t.substring(firstNewline + 1);
       }
-      if (t.endsWith(marker)) {
-        t = t.substring(0, t.length - 3);
-      }
+      if (t.endsWith(marker)) t = t.substring(0, t.length - 3);
       return t.trim();
     }
 
+    /** Minimal markdown parser for UI chat rendering */
     function parseMarkdown(md) {
       if (!md) return '';
       let html = md.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
@@ -1017,7 +1038,7 @@
     }
 
     /* ============================================================
-       6. RSS PROXIES & AI FETCH
+       [5] RSS AGGREGATION ENGINE
     ============================================================ */
     const proxyUrl = {
       rss2json:   (feed, cb) => `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feed)}${cb ? '&callback='+cb : ''}`,
@@ -1025,6 +1046,10 @@
       corsproxy:  (feed) => `https://corsproxy.io/?${encodeURIComponent(feed)}`
     };
 
+    /**
+     * Tier 0 — Fetches raw XML via proxy, uses Gemini to clean & parse to JSON.
+     * Bypasses traditional XML parsing errors.
+     */
     async function fetchViaGeminiApi(feedUrl, feedName) {
       const conf = getStoredConfig();
       if (!conf.key) throw new Error("API_KEY_MISSING");
@@ -1073,6 +1098,7 @@ ${rawData.substring(0, 15000)}`;
       return items;
     }
 
+    /** Tier 1 — Standard JSONP fallback if API fails */
     function jsonpFetch(scriptUrl, fnName, timeoutMs) {
       return new Promise((resolve, reject) => {
         const script = document.createElement('script');
@@ -1102,6 +1128,7 @@ ${rawData.substring(0, 15000)}`;
       return data.items;
     }
 
+    /** Master Fetch Controller */
     async function fetchFeed(feedUrl, onStatus) {
       const errors = [];
       const feedName = DOM.dropdown.options[DOM.dropdown.selectedIndex].text;
@@ -1111,17 +1138,12 @@ ${rawData.substring(0, 15000)}`;
       } 
       catch (err) {
         if (err.message === "API_KEY_MISSING") throw err;
-        
         errors.push(`T0-Gemini: ${err.message}`);
         console.warn('[Proxy T0 Gemini]', err.message);
         
-        if (err.message.includes('429')) {
-             onStatus('📡 AI heavily rate limited. Falling back to basic proxy…');
-        } else if (err.message.includes('404') || err.message.includes('400')) {
-             onStatus('📡 AI configuration error. Falling back to basic proxy…');
-        } else {
-             onStatus('📡 AI unavailable. Retrying via standard proxy…');
-        }
+        if (err.message.includes('429')) onStatus('📡 AI heavily rate limited. Falling back to basic proxy…');
+        else if (err.message.includes('404') || err.message.includes('400')) onStatus('📡 AI config error. Falling back to basic proxy…');
+        else onStatus('📡 AI unavailable. Retrying via standard proxy…');
       }
 
       try { return await fetchViaJsonp(feedUrl); } 
@@ -1132,7 +1154,7 @@ ${rawData.substring(0, 15000)}`;
     }
 
     /* ============================================================
-       7. FEED RENDERING
+       [6] FEED RENDERING & UI UPDATES
     ============================================================ */
     function loadFeed(forceRefresh = false) {
       checkKeyAndRun(() => {
@@ -1208,7 +1230,7 @@ ${rawData.substring(0, 15000)}`;
     }
 
     /* ============================================================
-       8. READER MODE ENGINE 
+       [7] READER MODE CORE (Mozilla Readability Logic)
     ============================================================ */
     function openReader(url, title, feedName, pubDate) {
       const validatedUrl = safeUrl(url);
@@ -1219,7 +1241,6 @@ ${rawData.substring(0, 15000)}`;
       DOM.readerBackdrop.removeAttribute('aria-hidden');
       document.body.style.overflow = 'hidden';
 
-      // Reset AI Panel state
       DOM.aiToggle.style.display = 'none';
       closeAiPanel();
       DOM.aiChatArea.innerHTML = `<div class="ai-message system">Hi! Try a quick prompt below or ask me a specific question about this article.</div>`;
@@ -1251,6 +1272,7 @@ ${rawData.substring(0, 15000)}`;
       DOM.readerProgress.setAttribute('aria-valuenow', Math.round(clamped));
     }
 
+    /** Custom DOM Extractor based on Mozilla Readability parsing logic */
     function extractMainContent(html, baseUrl) {
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
@@ -1259,9 +1281,11 @@ ${rawData.substring(0, 15000)}`;
       base.href = baseUrl;
       doc.head.appendChild(base);
 
+      // Strip useless/ad elements
       const junk = ['script', 'style', 'nav', 'footer', 'aside', 'iframe', 'noscript', '.ad', '.advertisement', '.social-share', '.related-stories', '#comments', '.header'];
       junk.forEach(sel => { try { doc.querySelectorAll(sel).forEach(el => el.remove()); } catch(e){} });
 
+      // Find primary content node
       const selectors = ['article', '.article-body', '.story-details', '.story-content', '#article-content', '.content-area', '.article-txt', 'main', '.entry-content', '.page-content'];
       let mainEl = null;
       for(const sel of selectors) {
@@ -1271,12 +1295,15 @@ ${rawData.substring(0, 15000)}`;
 
       if (!mainEl) return null;
       
-      // Save raw text for AI
-      currentArticleText = mainEl.innerText; 
-      
+      currentArticleText = mainEl.innerText; // Save raw for AI
       return sanitizeHtml(mainEl.innerHTML);
     }
 
+    /** * Orchestrates Article fetching. 
+     * Tier 1: Proxy DOM extraction. 
+     * Tier 2: AI Parsing Fallback. 
+     * Tier 3: Blocked.
+     */
     async function fetchArticle(url, title, feedName, pubDate) {
       setReaderProgress(15);
       
@@ -1297,7 +1324,7 @@ ${rawData.substring(0, 15000)}`;
         setReaderProgress(30);
       }
 
-      // Tier 1: Local extraction
+      // Tier 1: Local Extraction
       if (rawHtml) {
          setReaderProgress(50);
          const cleanHtml = extractMainContent(rawHtml, url);
@@ -1315,7 +1342,7 @@ ${rawData.substring(0, 15000)}`;
          return;
       } catch(e) {
          console.warn("Gemini Extraction failed", e);
-         if (e.message.includes('429')) {
+         if (e.message.includes('429') || e.message.includes('Rate limit')) {
              renderReaderError(url, "Google API Rate limit exceeded. Please wait a minute.");
              return;
          } else if (e.message.includes('404') || e.message.includes('400')) {
@@ -1324,7 +1351,7 @@ ${rawData.substring(0, 15000)}`;
          }
       }
 
-      // Tier 3: Blocked
+      // Tier 3: Hard Blocked by publisher
       setReaderProgress(100);
       setTimeout(() => setReaderProgress(0), 500);
       renderReaderError(url);
@@ -1401,6 +1428,7 @@ ${rawHtml.substring(0, 30000)}`;
         </div>`;
     }
 
+    /** Strict UI Sanitizer preventing XSS injections */
     const ALLOWED_TAGS = new Set(['p', 'br', 'strong', 'b', 'em', 'i', 'u', 'h1', 'h2', 'h3', 'h4', 'ul', 'ol', 'li', 'blockquote', 'figure', 'figcaption', 'img', 'a', 'span', 'div', 'section']);
     const ALLOWED_ATTRS = { img: ['src', 'srcset', 'alt', 'loading'], a: ['href', 'target', 'rel'] };
 
@@ -1431,13 +1459,11 @@ ${rawHtml.substring(0, 30000)}`;
     }
 
     /* ============================================================
-       9. AI IN-READER CHAT LOGIC (Top-Bar Dropdown Panel)
+       [8] AI ASSISTANT CHAT LOGIC
     ============================================================ */
     function toggleAiPanel() {
       DOM.aiPanel.classList.toggle('open');
-      if(DOM.aiPanel.classList.contains('open')) {
-        DOM.aiInput.focus();
-      }
+      if(DOM.aiPanel.classList.contains('open')) DOM.aiInput.focus();
     }
     
     function closeAiPanel() {
@@ -1452,6 +1478,7 @@ ${rawHtml.substring(0, 30000)}`;
       DOM.aiChatArea.scrollTop = DOM.aiChatArea.scrollHeight;
     }
 
+    /** Submits user query combined with current article context to Gemini */
     async function submitAiPrompt(userPrompt) {
       if (!userPrompt || userPrompt.trim() === '') return;
       if (!currentArticleText) {
@@ -1506,18 +1533,22 @@ ${rawHtml.substring(0, 30000)}`;
     }
 
     /* ============================================================
-       10. INIT & EVENT LISTENERS
+       [9] INITIALIZATION & EVENT LISTENERS
     ============================================================ */
     window.addEventListener('load', () => {
+      // Set Header Date
       DOM.headerDate.textContent = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
 
+      // Core Feed Events
       DOM.dropdown.addEventListener('change', () => loadFeed(false));
       DOM.refreshBtn.addEventListener('click', () => { delete feedCache[DOM.dropdown.value]; loadFeed(true); });
       
+      // Settings Modal Events
       DOM.settingsBtn.addEventListener('click', openSettings);
       DOM.closeSettingsBtn.addEventListener('click', closeSettings);
       DOM.saveSettingsBtn.addEventListener('click', verifyAndSaveSettings);
 
+      // Article Open Event Delegation
       DOM.output.addEventListener('click', (e) => {
         const trigger = e.target.closest('.reader-trigger');
         if (!trigger) return;
@@ -1530,6 +1561,7 @@ ${rawHtml.substring(0, 30000)}`;
         if (trigger) { e.preventDefault(); trigger.click(); }
       });
 
+      // Reader Modal Controls
       DOM.readerBack.addEventListener('click', closeReader);
       DOM.readerBackdrop.addEventListener('click', closeReader);
       document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && DOM.readerPanel.classList.contains('open')) closeReader(); });
@@ -1549,6 +1581,7 @@ ${rawHtml.substring(0, 30000)}`;
         setReaderProgress(denominator > 0 ? (scrollTop / denominator) * 100 : 0);
       });
 
+      // AI Chat Events
       DOM.aiToggle.addEventListener('click', toggleAiPanel);
       DOM.aiCloseBtn.addEventListener('click', closeAiPanel);
       
@@ -1563,6 +1596,7 @@ ${rawHtml.substring(0, 30000)}`;
         });
       });
 
+      // Initialize App
       checkKeyAndRun(() => loadFeed());
     });
   </script>
