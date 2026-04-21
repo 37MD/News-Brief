@@ -140,7 +140,7 @@
     const CONFIG = Object.freeze({
       CACHE_TTL_MS: 300000, FEED_TIMEOUT_MS: 15000, ARTICLE_TIMEOUT_MS: 12000,
       AUTO_REFRESH_S: 600, MAX_DESC_CHARS: 500, READER_FONT_DEF: 17,
-      GEMINI_MODEL: 'gemini-2.0-flash'
+      GEMINI_MODEL: 'gemini-1.5-flash'
     });
 
     const feedCache = {};
@@ -166,7 +166,11 @@
       let t = html.replace(/<!\[CDATA\[(.*?)\]\]>/gs, '$1').replace(/<\/(p|div|h[1-6]|li)>/gi, ' ').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]*>?/gm, '');
       const doc = new DOMParser().parseFromString(t, 'text/html');
       t = (doc.documentElement.textContent || '').replace(/\s+/g, ' ').trim();
-      return t.length > maxLength ? t.substring(0, maxLength).substring(0, t.lastIndexOf(' ', maxLength)) + '…' : t;
+      if (t.length > maxLength) {
+          const cut = t.substring(0, maxLength);
+          return cut.substring(0, cut.lastIndexOf(' ')) + '…';
+      }
+      return t;
     }
 
     async function xhrFetch(url, timeout) {
@@ -213,25 +217,46 @@
 
     async function fetchArticle(url, title, feed, date) {
       DOM.readerContent.innerHTML = '<div class="reader-status">📰 Fetching article...</div>';
-      try {
-        const raw = await xhrFetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`, CONFIG.ARTICLE_TIMEOUT_MS);
-        const doc = new DOMParser().parseFromString(raw, 'text/html');
-        let main = doc.querySelector('article') || doc.querySelector('main') || doc.querySelector('.article-body');
-        if (main && main.innerText.length > 300) { currentArticleText = main.innerText; renderArticle(main.innerHTML, title, feed, date); } 
-        else { fetchArticleAI(url, title, feed, date); }
-      } catch { fetchArticleAI(url, title, feed, date); }
+      let rawHtml = null;
+      const proxies = [
+          `https://corsproxy.io/?${encodeURIComponent(url)}`,
+          `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
+      ];
+
+      for (const proxy of proxies) {
+          try {
+              const res = await xhrFetch(proxy, CONFIG.ARTICLE_TIMEOUT_MS);
+              if (res && res.length > 500) { rawHtml = res; break; }
+          } catch (e) { console.warn("Proxy failed", proxy); }
+      }
+
+      if (rawHtml) {
+          const doc = new DOMParser().parseFromString(rawHtml, 'text/html');
+          let main = doc.querySelector('article') || doc.querySelector('main') || doc.querySelector('.article-body') || doc.querySelector('.story-details');
+          if (main && main.innerText.length > 400) {
+              currentArticleText = main.innerText;
+              renderArticle(main.innerHTML, title, feed, date);
+              return;
+          }
+      }
+      
+      // Fallback to AI extraction if proxy/selectors fail
+      await fetchArticleAI(rawHtml, url, title, feed, date);
     }
 
-    async function fetchArticleAI(url, title, feed, date) {
+    async function fetchArticleAI(html, url, title, feed, date) {
       const key = localStorage.getItem('gemini_api_key'); if (!key) return;
       try {
+        const sample = html ? html.substring(0, 20000) : "Source blocked. Link: " + url;
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${key}`, {
           method: 'POST', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ contents: [{ parts: [{ text: `Extract main article text from ${url} as clean HTML. No ads.` }] }] })
+          body: JSON.stringify({ contents: [{ parts: [{ text: `Extract the main body text of the article titled "${title}" from this HTML. Return clean HTML using only <p>, <h3>, and <ul> tags. No ads, no nav. HTML SOURCE:\n${sample}` }] }] })
         });
-        const data = await res.json(); const html = data.candidates[0].content.parts[0].text;
-        currentArticleText = html; renderArticle(html, title, feed, date);
-      } catch { DOM.readerContent.innerHTML = '<div class="reader-status error">Blocked by publisher.</div>'; }
+        const data = await res.json(); 
+        const extracted = data.candidates[0].content.parts[0].text.replace(/```html|```/g, '');
+        currentArticleText = extracted.replace(/<[^>]*>?/gm, '');
+        renderArticle(extracted, title, feed, date);
+      } catch { DOM.readerContent.innerHTML = '<div class="reader-status error">Article unavailable. Site protection active.</div>'; }
     }
 
     function renderArticle(html, title, feed, date) {
@@ -264,7 +289,8 @@
           })
         });
         const d = await res.json(); chat.removeChild(lMsg);
-        const aMsg = document.createElement('div'); aMsg.className = 'ai-message'; aMsg.innerHTML = d.candidates[0].content.parts[0].text;
+        let responseText = d.candidates[0].content.parts[0].text;
+        const aMsg = document.createElement('div'); aMsg.className = 'ai-message'; aMsg.innerHTML = responseText;
         chat.appendChild(aMsg);
       } catch (e) { lMsg.textContent = "Error: " + e.message; }
       finally { DOM.aiSubmit.disabled = false; DOM.aiPromptBtns.forEach(b => b.disabled = false); chat.scrollTop = chat.scrollHeight; }
@@ -277,9 +303,9 @@
       DOM.clearKeyBtn.addEventListener('click', () => { localStorage.removeItem('gemini_api_key'); location.reload(); });
       DOM.output.addEventListener('click', e => {
         const t = e.target.closest('.reader-trigger');
-        if (t) { DOM.readerPanel.classList.add('open'); DOM.readerBackdrop.classList.add('open'); fetchArticle(t.dataset.url, t.dataset.title, t.dataset.feed, t.dataset.date); }
+        if (t) { DOM.readerPanel.classList.add('open'); DOM.readerBackdrop.classList.add('open'); document.body.style.overflow = 'hidden'; fetchArticle(t.dataset.url, t.dataset.title, t.dataset.feed, t.dataset.date); }
       });
-      DOM.readerBack.addEventListener('click', () => { DOM.readerPanel.classList.remove('open'); DOM.readerBackdrop.classList.remove('open'); DOM.aiPanel.classList.remove('open'); });
+      DOM.readerBack.addEventListener('click', () => { DOM.readerPanel.classList.remove('open'); DOM.readerBackdrop.classList.remove('open'); document.body.style.overflow = ''; DOM.aiPanel.classList.remove('open'); });
       DOM.aiToggle.addEventListener('click', () => DOM.aiPanel.classList.toggle('open'));
       DOM.aiCloseBtn.addEventListener('click', () => DOM.aiPanel.classList.remove('open'));
       DOM.aiSubmit.addEventListener('click', () => submitAiPrompt(DOM.aiInput.value));
