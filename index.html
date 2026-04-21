@@ -10,10 +10,14 @@
                  font-src    https://fonts.gstatic.com;
                  img-src     * data:;
                  connect-src *;">
-  <title>Gemini Pulse</title>
+  <title>Pulse v26B</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
 
   <style>
+
+    /* ════════════════════════════════════════════════════════════════════
+       CSS §1 — DESIGN TOKENS & GLOBAL BASE STYLES
+    ════════════════════════════════════════════════════════════════════ */
     :root {
       --ink:            #1a1a18;
       --paper:          #f5f0e8;
@@ -56,6 +60,8 @@
       cursor:           pointer;
       outline:          none;
       text-transform:   uppercase;
+      font-weight:      500;
+      max-width:        200px;
     }
 
     .btn-outline {
@@ -74,6 +80,8 @@
     .btn-outline:hover    { background: var(--accent); color: var(--paper); }
     .btn-outline:disabled { opacity: 0.4; cursor: not-allowed; }
 
+    #clear-key-btn       { color: var(--muted); border-color: var(--rule); }
+    #clear-key-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
     #refresh-btn.spinning { animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
 
@@ -81,6 +89,8 @@
       border-bottom: 3px double var(--ink);
       padding:       30px 20px;
       text-align:    center;
+      background:    var(--paper);
+      position:      relative;
     }
     .masthead-title {
       font-family: 'Playfair Display', serif;
@@ -276,7 +286,7 @@
       position:       absolute;
       top:            65px;
       right:          20px;
-      width:          380px;
+      width:          360px;
       max-width:      calc(100vw - 40px);
       background:     #ffffff;
       border:         1px solid var(--rule);
@@ -287,133 +297,287 @@
       opacity:        0;
       pointer-events: none;
       transform:      translateY(-15px);
-      transition:     0.3s;
+      transition:     all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
       max-height:     65vh;
       z-index:        1005;
     }
-    #ai-panel.open { opacity: 1; pointer-events: auto; transform: translateY(0); }
-    .ai-header { display: flex; justify-content: space-between; padding: 12px 16px; background: var(--paper); border-bottom: 1px solid var(--rule); border-radius: 12px 12px 0 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--accent); font-weight: 600; }
-    .ai-chat-area { padding: 16px; overflow-y: auto; flex: 1; font-size: 14px; }
-    .ai-message { margin-bottom: 16px; padding: 12px 16px; border-radius: 8px; background: var(--paper); }
-    .ai-message.user { background: rgba(26, 92, 58, 0.08); border-left: 3px solid var(--accent); }
-    .ai-message.system { color: var(--muted); font-style: italic; background: transparent; padding: 0; font-size: 12px; }
-    .ai-quick-prompts { display: flex; gap: 8px; padding: 0 16px 12px; overflow-x: auto; }
-    .ai-quick-prompts button { background: var(--paper); border: 1px solid var(--rule); padding: 6px 12px; border-radius: 20px; font-size: 11px; cursor: pointer; transition: 0.2s; white-space: nowrap; }
-    .ai-input-area { display: flex; padding: 12px 16px; border-top: 1px solid var(--rule); }
-    .ai-input-area input { flex: 1; border: 1px solid var(--rule); border-radius: 4px; padding: 10px; font-size: 14px; }
-    .ai-input-area button { background: var(--accent); color: var(--paper); border: none; padding: 0 16px; margin-left: 8px; border-radius: 4px; cursor: pointer; font-weight: 600; }
+    #ai-panel.open {
+      opacity:        1;
+      pointer-events: auto;
+      transform:      translateY(0);
+    }
+
+    .ai-header {
+      display:         flex;
+      justify-content: space-between;
+      align-items:     center;
+      padding:         12px 16px;
+      background:      var(--paper);
+      border-bottom:   1px solid var(--rule);
+      border-radius:   12px 12px 0 0;
+      font-family:     'IBM Plex Mono', monospace;
+      font-size:       11px;
+      color:           var(--accent);
+    }
+    .ai-close-btn {
+      background:  transparent;
+      border:      none;
+      font-size:   20px;
+      cursor:      pointer;
+      color:       var(--muted);
+    }
+
+    .ai-chat-area {
+      padding:     16px;
+      overflow-y:  auto;
+      flex:        1;
+      font-size:   14px;
+    }
+
+    .ai-message {
+      margin-bottom: 16px;
+      padding:       12px 16px;
+      border-radius: 8px;
+      background:    var(--paper);
+    }
+    .ai-message.user   { background: rgba(26, 92, 58, 0.08); border-left: 3px solid var(--accent); }
+    .ai-message.system { color: var(--muted); font-style: italic; background: transparent; padding: 0; }
+
+    .ai-quick-prompts {
+      display:        flex;
+      gap:            8px;
+      padding:        0 16px 12px;
+      overflow-x:     auto;
+      white-space:    nowrap;
+    }
+    .ai-quick-prompts::-webkit-scrollbar { display: none; }
+    .ai-quick-prompts button {
+      background:    var(--paper);
+      border:        1px solid var(--rule);
+      padding:       6px 12px;
+      border-radius: 20px;
+      font-size:     12px;
+      cursor:        pointer;
+    }
+
+    .ai-input-area {
+      display:       flex;
+      padding:       12px 16px;
+      border-top:    1px solid var(--rule);
+      border-radius: 0 0 12px 12px;
+    }
+    .ai-input-area input {
+      flex: 1;
+      border: 1px solid var(--rule);
+      border-radius: 4px;
+      padding: 10px;
+      font-size: 14px;
+    }
+    .ai-input-area button {
+      background: var(--accent);
+      color: var(--paper);
+      border: none;
+      padding: 0 16px;
+      margin-left: 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
 
     @media (max-width: 520px) {
-      .controls-bar { position: static; padding: 12px; justify-content: flex-end; border-bottom: 1px solid var(--rule); }
+      .controls-bar {
+        position: static;
+        padding: 12px 16px;
+        justify-content: flex-end;
+        border-bottom: 1px solid var(--rule);
+      }
       .reader-source-url { display: none; }
     }
+
   </style>
 </head>
 
 <body>
+
   <div class="controls-bar">
-    <select id="feed-dropdown">
+
+    <select id="feed-dropdown" aria-label="Select news feed">
+
       <optgroup label="── Digital & National ──">
         <option value="https://feeds.feedburner.com/NDTV-LatestNews">NDTV · Latest News</option>
         <option value="https://feeds.feedburner.com/ScrollinArticles.rss">Scroll.in · Articles</option>
         <option value="https://indianexpress.com/feed/">IE · Top News</option>
+        <option value="https://theprint.in/feed/">The Print · Top News</option>
       </optgroup>
-      <optgroup label="── Business & Markets ──">
+
+      <optgroup label="── Times of India ──">
+        <option value="https://timesofindia.indiatimes.com/rssfeedstopstories.cms">TOI · Top Stories</option>
         <option value="https://timesofindia.indiatimes.com/rssfeeds/1898055.cms">TOI · Business</option>
+      </optgroup>
+
+      <optgroup label="── Economic Times ──">
         <option value="https://economictimes.indiatimes.com/rssfeedsdefault.cms">ET · Top News</option>
         <option value="https://economictimes.indiatimes.com/markets/rssfeeds/1977021501.cms">ET · Markets</option>
-        <option value="https://www.livemint.com/rss/news">Mint · Top News</option>
       </optgroup>
-    </select>
-    <button class="btn-outline" id="refresh-btn">⟳ Refresh</button>
-    <button class="btn-outline" id="clear-key-btn">🔑 Reset Key</button>
-  </div>
 
+      <optgroup label="── Business Standard ──">
+        <option value="https://www.business-standard.com/rss/markets-106.rss">BS · Markets</option>
+        <option value="https://www.business-standard.com/rss/economy-policy-102.rss">BS · Economy & Policy</option>
+      </optgroup>
+
+      <optgroup label="── The Hindu ──">
+        <option value="https://www.thehindu.com/feeder/default.rss">Hindu · Top News</option>
+        <option value="https://www.thehindu.com/business/feeder/default.rss">Hindu · Business</option>
+      </optgroup>
+
+      <optgroup label="── Mint (Livemint) ──">
+        <option value="https://www.livemint.com/rss/news">Mint · Top News</option>
+        <option value="https://www.livemint.com/rss/markets">Mint · Markets</option>
+      </optgroup>
+
+    </select>
+    <button class="btn-outline" id="refresh-btn" title="Refresh feed">⟳ Refresh</button>
+    <button class="btn-outline" id="clear-key-btn" title="Clear Gemini Key">🔑 Reset Key</button>
+  </div>
   <div class="masthead">
     <div class="tagline" id="header-date">Financial Intelligence Terminal</div>
-    <div class="masthead-title">Gemini Pulse</div>
+    <div class="masthead-title">Pulse v26B</div>
     <div class="tagline">Standard RSS Protocol</div>
   </div>
-
-  <div class="feed-status-bar"><span id="item-count"></span><span id="next-refresh"></span></div>
-  <div class="container"><div id="rss-output"></div></div>
-
-  <div id="reader-backdrop"></div>
-  <div id="reader-panel">
-    <div id="reader-progress"></div>
-    <div class="reader-topbar">
-      <button class="reader-back-btn" id="reader-back">← Back</button>
-      <span class="reader-source-url" id="reader-url-label"></span>
-      <div class="reader-font-ctrl">
-        <button id="font-down">A−</button>
-        <button id="font-up">A+</button>
-      </div>
-      <button class="reader-open-btn reader-ai-btn" id="reader-ai-toggle" style="display:none;">✨ Ask Intelligence Unit</button>
-      <a class="reader-open-btn" id="reader-ext-link" href="#" target="_blank">↗ Original</a>
-    </div>
-    <div class="reader-scroll"><div id="reader-content"></div></div>
-    
-    <div id="ai-panel">
-      <div class="ai-header"><span>✨ RAW INTELLIGENCE UNIT (UNRESTRICTED)</span><button id="ai-close-btn" style="border:none;background:none;cursor:pointer;font-size:18px;">×</button></div>
-      <div class="ai-chat-area" id="ai-chat-area"></div>
-      <div class="ai-quick-prompts">
-        <button class="ai-prompt-btn">Summarize</button>
-        <button class="ai-prompt-btn">Key Takeaways</button>
-        <button class="ai-prompt-btn">Market Impact</button>
-      </div>
-      <div class="ai-input-area">
-        <input type="text" id="ai-input" placeholder="Query market impact..." autocomplete="off">
-        <button id="ai-submit">Ask</button>
-      </div>
+  <div class="feed-status-bar">
+    <span id="item-count"></span>
+    <span id="next-refresh"></span>
+  </div>
+  <div class="container">
+    <div id="rss-output" aria-live="polite" aria-atomic="false">
+      <div class="system-msg">Initialising secure terminal…</div>
     </div>
   </div>
+  <div id="reader-backdrop" aria-hidden="true"></div>
 
+  <div id="reader-panel" role="dialog" aria-modal="true" aria-label="Article reader">
+
+    <div id="reader-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+
+    <div class="reader-topbar">
+      <button class="reader-back-btn" id="reader-back" aria-label="Close reader">← Back</button>
+      <span class="reader-source-url" id="reader-url-label"></span>
+      <div class="reader-font-ctrl" role="group" aria-label="Font size">
+        <button id="font-down" title="Smaller text">A−</button>
+        <button id="font-up"   title="Larger text">A+</button>
+      </div>
+      <button class="reader-open-btn reader-ai-btn" id="reader-ai-toggle" style="display:none;">✨ Ask AI</button>
+      <a class="reader-open-btn" id="reader-ext-link" href="#" target="_blank" rel="noopener noreferrer">↗ Original</a>
+    </div>
+
+    <div class="reader-scroll" id="reader-scroll">
+      <div id="reader-content"></div>
+    </div>
+
+    <div id="ai-panel">
+
+      <div class="ai-header">
+        <span>✨ Gemini Assistant</span>
+        <button class="ai-close-btn" id="ai-close-btn">×</button>
+      </div>
+
+      <div class="ai-chat-area" id="ai-chat-area">
+        <div class="ai-message system">Hi! I've read this article. Try a quick prompt below or ask me a specific question.</div>
+      </div>
+
+      <div class="ai-quick-prompts">
+        <button class="ai-prompt-btn">Summarize</button>
+        <button class="ai-prompt-btn">Explain Jargon</button>
+        <button class="ai-prompt-btn">Key Takeaways</button>
+        <button class="ai-prompt-btn">Why does this matter?</button>
+      </div>
+
+      <div class="ai-input-area">
+        <input type="text" id="ai-input" placeholder="Ask Gemini..." autocomplete="off">
+        <button id="ai-submit">Ask</button>
+      </div>
+
+    </div>
+    </div>
   <script>
     'use strict';
+
+    /* ════════════════════════════════════════════════════════════════════
+       JS §1 — CONFIGURATION
+    ════════════════════════════════════════════════════════════════════ */
     const CONFIG = Object.freeze({
-      CACHE_MS: 300000, TIMEOUT_MS: 15000, MAX_DESC: 500, READER_FONT_DEF: 17,
-      MODEL: 'gemini-1.5-flash'
+      CACHE_TTL_MS:       5 * 60 * 1000,
+      FEED_TIMEOUT_MS:    15_000,
+      ARTICLE_TIMEOUT_MS: 12_000,
+      AUTO_REFRESH_S:     600,
+      MAX_DESC_CHARS:     500,
+      READER_FONT_MIN:    13,
+      READER_FONT_MAX:    24,
+      READER_FONT_DEF:    17,
+      GEMINI_MODEL:       'gemini-1.5-flash'
     });
 
-    let currentArticleText = ""; 
     const feedCache = {};
+    let requestCounter = 0, debounceTimer = null, countdownTimer = null;
+    let readerFontSize = CONFIG.READER_FONT_DEF, currentArticleText = "";
+
     const DOM = {
-      output: document.getElementById('rss-output'), dropdown: document.getElementById('feed-dropdown'),
-      refreshBtn: document.getElementById('refresh-btn'), clearKeyBtn: document.getElementById('clear-key-btn'),
-      itemCount: document.getElementById('item-count'), nextRefresh: document.getElementById('next-refresh'),
-      headerDate: document.getElementById('header-date'), readerPanel: document.getElementById('reader-panel'),
-      readerBackdrop: document.getElementById('reader-backdrop'), readerContent: document.getElementById('reader-content'),
-      readerScroll: document.getElementById('reader-scroll'), readerUrlLabel: document.getElementById('reader-url-label'),
-      readerExtLink: document.getElementById('reader-ext-link'), readerProgress: document.getElementById('reader-progress'),
-      readerBack: document.getElementById('reader-back'), fontUp: document.getElementById('font-up'),
-      fontDown: document.getElementById('font-down'), aiToggle: document.getElementById('reader-ai-toggle'),
-      aiPanel: document.getElementById('ai-panel'), aiCloseBtn: document.getElementById('ai-close-btn'),
-      aiChatArea: document.getElementById('ai-chat-area'), aiInput: document.getElementById('ai-input'),
-      aiSubmit: document.getElementById('ai-submit'), aiPromptBtns: document.querySelectorAll('.ai-prompt-btn')
+      output: document.getElementById('rss-output'),
+      dropdown: document.getElementById('feed-dropdown'),
+      refreshBtn: document.getElementById('refresh-btn'),
+      clearKeyBtn: document.getElementById('clear-key-btn'),
+      itemCount: document.getElementById('item-count'),
+      nextRefresh: document.getElementById('next-refresh'),
+      headerDate: document.getElementById('header-date'),
+      readerPanel: document.getElementById('reader-panel'),
+      readerBackdrop: document.getElementById('reader-backdrop'),
+      readerContent: document.getElementById('reader-content'),
+      readerScroll: document.getElementById('reader-scroll'),
+      readerUrlLabel: document.getElementById('reader-url-label'),
+      readerExtLink: document.getElementById('reader-ext-link'),
+      readerProgress: document.getElementById('reader-progress'),
+      readerBack: document.getElementById('reader-back'),
+      fontUp: document.getElementById('font-up'),
+      fontDown: document.getElementById('font-down'),
+      aiToggle: document.getElementById('reader-ai-toggle'),
+      aiPanel: document.getElementById('ai-panel'),
+      aiCloseBtn: document.getElementById('ai-close-btn'),
+      aiChatArea: document.getElementById('ai-chat-area'),
+      aiInput: document.getElementById('ai-input'),
+      aiSubmit: document.getElementById('ai-submit'),
+      aiPromptBtns: document.querySelectorAll('.ai-prompt-btn')
     };
 
-    function parseMarkdown(t) {
-      if (!t) return '';
-      let h = t.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>').replace(/\*(.*?)\*/g, '<em>$1</em>').replace(/^- (.*)$/gm, '<ul><li>$1</li></ul>').replace(/<\/ul>\n<ul>/g, '\n').replace(/\n\n/g, '</p><p>');
-      return `<p>${h}</p>`;
+    /* ════════════════════════════════════════════════════════════════════
+       JS §4 — UTILITY & HELPERS
+    ════════════════════════════════════════════════════════════════════ */
+    function xhrFetch(url, timeoutMs) {
+      return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        let didTimeout = false;
+        const timer = setTimeout(() => { didTimeout = true; xhr.abort(); reject(new Error('TIMEOUT')); }, timeoutMs);
+        xhr.open('GET', url, true);
+        xhr.onload = () => { clearTimeout(timer); if (!didTimeout) resolve(xhr.responseText); };
+        xhr.onerror = () => { clearTimeout(timer); reject(new Error('Network error')); };
+        xhr.send();
+      });
     }
 
-    function processText(html, len) {
+    function escapeHtml(str) { return str ? String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;') : ''; }
+    function safeUrl(url) { try { const u = new URL(url); return (u.protocol === 'http:' || u.protocol === 'https:') ? url : '#'; } catch { return '#'; } }
+    function timeSince(d) {
+      const s = Math.floor((Date.now() - new Date(d)) / 1000);
+      if (s < 60) return 'Just now';
+      if (s < 3600) return Math.floor(s/60)+'m ago';
+      if (s < 86400) return Math.floor(s/3600)+'h ago';
+      return Math.floor(s/86400)+'d ago';
+    }
+
+    function processRssText(html, maxLength) {
       if (!html) return '';
       let t = html.replace(/<!\[CDATA\[(.*?)\]\]>/gs, '$1').replace(/<\/(p|div|h[1-6]|li)>/gi, ' ').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]*>?/gm, '');
       const doc = new DOMParser().parseFromString(t, 'text/html');
       t = (doc.documentElement.textContent || '').replace(/\s+/g, ' ').trim();
-      return t.length > len ? t.substring(0, len).substring(0, t.lastIndexOf(' ')) + '…' : t;
-    }
-
-    async function safeFetch(url) {
-      return new Promise((res, rej) => {
-        const x = new XMLHttpRequest();
-        const t = setTimeout(() => { x.abort(); rej(new Error('TIMEOUT')); }, CONFIG.TIMEOUT_MS);
-        x.open('GET', url, true);
-        x.onload = () => { clearTimeout(t); if (x.status>=200 && x.status<300) res(x.responseText); else rej(new Error(x.status)); };
-        x.onerror = () => rej(new Error('Network Err')); x.send();
-      });
+      return t.length > maxLength ? t.substring(0, maxLength).substring(0, t.lastIndexOf(' ')) + '…' : t;
     }
 
     async function fetchFeed(url) {
@@ -429,89 +593,89 @@
 
     function loadFeed(force = false) {
       const url = DOM.dropdown.value, name = DOM.dropdown.options[DOM.dropdown.selectedIndex].text;
-      if (!force && feedCache[url] && (Date.now()-feedCache[url].ts < CONFIG.CACHE_MS)) { renderFeed(feedCache[url].items, name, true); return; }
+      if (!force && feedCache[url] && (Date.now()-feedCache[url].ts < CONFIG.CACHE_TTL_MS)) { renderFeedItems(feedCache[url].items, name, true); return; }
       DOM.output.innerHTML = '<div class="system-msg">📡 Fetching standard RSS feed…</div>';
       DOM.refreshBtn.disabled = true; DOM.refreshBtn.classList.add('spinning');
-      fetchFeed(url).then(items => { feedCache[url] = { ts: Date.now(), items }; renderFeed(items, name, false); })
+      fetchFeed(url).then(items => { feedCache[url] = { ts: Date.now(), items }; renderFeedItems(items, name, false); startCountdown(); })
       .catch(e => DOM.output.innerHTML = `<div class="system-msg error">❌ ${e.message}</div>`)
       .finally(() => { DOM.refreshBtn.disabled = false; DOM.refreshBtn.classList.remove('spinning'); });
     }
 
-    function renderFeed(items, name, cached) {
+    function renderFeedItems(items, feedName, fromCache) {
       DOM.output.innerHTML = items.map((it, i) => `
-        <div class="feed-item" style="animation-delay:${i*40}ms">
-          <span class="headline reader-trigger" data-url="${it.link}" data-title="${it.title}" data-feed="${name}">${it.title}</span>
-          <p class="description">${processText(it.description, CONFIG.MAX_DESC)}</p>
-          <div class="meta">${name} ${cached && i===0 ? '<span class="cached-badge">Cached</span>' : ''}</div>
+        <div class="feed-item" style="animation-delay:${i * 40}ms">
+          <span class="headline reader-trigger" data-url="${safeUrl(it.link)}" data-title="${escapeHtml(it.title)}" data-feed="${escapeHtml(feedName)}" data-date="${it.pubDate}">${escapeHtml(it.title)}</span>
+          <p class="description">${processRssText(it.description, CONFIG.MAX_DESC_CHARS)}</p>
+          <div class="meta">${timeSince(it.pubDate)} — ${escapeHtml(feedName)} ${fromCache && i===0 ? '<span class="cached-badge">Cached</span>' : ''}</div>
         </div>`).join('');
-      DOM.itemCount.textContent = items.length + ' articles';
+      DOM.itemCount.textContent = `${items.length} articles`;
     }
 
-    async function fetchArticle(url, title, feed) {
+    function startCountdown() {
+      clearInterval(countdownTimer); let s = CONFIG.AUTO_REFRESH_S;
+      countdownTimer = setInterval(() => { s--; DOM.nextRefresh.textContent = `Auto-refresh in ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`; if(s<=0) loadFeed(true); }, 1000);
+    }
+
+    function sanitizeHtml(html) {
+      const div = document.createElement('div'); div.innerHTML = html;
+      const tags = new Set(['p','br','strong','b','em','i','u','h2','h3','ul','ol','li','blockquote','img','a']);
+      const walk = (n) => {
+        Array.from(n.childNodes).forEach(c => {
+          if (c.nodeType === 3) return;
+          if (c.nodeType !== 1 || !tags.has(c.tagName.toLowerCase())) { while(c.firstChild) n.insertBefore(c.firstChild, c); n.removeChild(c); }
+          else { if (c.tagName.toLowerCase()==='a') { c.setAttribute('target','_blank'); c.setAttribute('rel','noopener'); } walk(c); }
+        });
+      };
+      walk(div); return div.innerHTML;
+    }
+
+    async function fetchArticle(url, title, feed, date) {
       DOM.readerContent.innerHTML = '<div class="reader-status">📰 Accessing source...</div>';
-      currentArticleText = "";
-      let html = null;
+      currentArticleText = ""; let html = null;
       const proxies = [`https://corsproxy.io/?${encodeURIComponent(url)}`, `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}` ];
-      for (const p of proxies) { try { const r = await safeFetch(p); if (r && r.length > 800) { html = r; break; } } catch(e) {} }
+      for (const p of proxies) { try { const r = await xhrFetch(p, CONFIG.ARTICLE_TIMEOUT_MS); if (r && r.length > 800) { html = r; break; } } catch(e) {} }
       if (html) {
         const doc = new DOMParser().parseFromString(html, 'text/html');
         let body = doc.querySelector('article') || doc.querySelector('main') || doc.querySelector('.article-body');
-        if (body && body.innerText.length > 400) { currentArticleText = body.innerText; renderArticle(body.innerHTML, title, feed); return; }
+        if (body && body.innerText.length > 400) { currentArticleText = body.innerText; renderArticle(body.innerHTML, title, feed, date); return; }
       }
-      await extractWithAI(html, title, feed);
+      await extractWithAI(html, title, feed, date);
     }
 
-    async function extractWithAI(rawHtml, title, feed) {
+    async function extractWithAI(rawHtml, title, feed, date) {
       const key = localStorage.getItem('gemini_api_key'); if (!key) return;
       try {
-        const context = rawHtml ? rawHtml.substring(0, 18000) : "Source content blocked.";
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.MODEL}:generateContent?key=${key}`, {
+        const context = rawHtml ? rawHtml.substring(0, 18000) : "Blocked source.";
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${key}`, {
           method: 'POST', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ contents: [{ parts: [{ text: `Extract main article titled "${title}" as clean HTML. SOURCE:\n${context}` }] }] })
+          body: JSON.stringify({ contents: [{ parts: [{ text: `Extract article titled "${title}" as clean HTML paragraphs only. No ads. SOURCE:\n${context}` }] }] })
         });
-        const d = await res.json();
-        const text = d.candidates[0].content.parts[0].text.replace(/```html|```/g, '');
-        currentArticleText = text.replace(/<[^>]*>?/gm, '');
-        renderArticle(text, title, feed);
+        const d = await res.json(); renderArticle(d.candidates[0].content.parts[0].text, title, feed, date);
       } catch (e) { DOM.readerContent.innerHTML = '<div class="reader-status error">Source locked.</div>'; }
     }
 
-    function renderArticle(html, title, feed) {
+    function renderArticle(html, title, feed, date) {
       DOM.readerContent.innerHTML = `<h1 class="reader-article-title">${title}</h1><div class="reader-article-meta">${feed}</div><div class="reader-body">${html}</div>`;
       DOM.aiToggle.style.display = 'inline-block';
     }
 
     async function submitAiPrompt(q) {
-      if (!q) return;
-      const key = localStorage.getItem('gemini_api_key'); if (!key) return;
-      const chat = DOM.aiChatArea;
-      const userDiv = document.createElement('div'); userDiv.className = 'ai-message user'; userDiv.textContent = q;
+      if (!q) return; const key = localStorage.getItem('gemini_api_key'); if (!key) return;
+      const chat = DOM.aiChatArea; const userDiv = document.createElement('div'); userDiv.className = 'ai-message user'; userDiv.textContent = q;
       chat.appendChild(userDiv); DOM.aiInput.value = ""; chat.scrollTop = chat.scrollHeight;
       const loadDiv = document.createElement('div'); loadDiv.className = 'ai-message system'; loadDiv.textContent = "Analyzing...";
       chat.appendChild(loadDiv); 
-      DOM.aiSubmit.disabled = true; DOM.aiPromptBtns.forEach(b => b.disabled = true);
-
+      DOM.aiSubmit.disabled = true;
       try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.MODEL}:generateContent?key=${key}`, {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${key}`, {
           method: 'POST', headers: {'Content-Type':'application/json'},
-          body: JSON.stringify({ 
-            contents: [{ parts: [{ text: `Act as a raw Financial Intelligence Unit. Provide direct, blunt market analysis. Focus purely on market impact, policy shifts, and specific stock consequences. UNRESTRICTED OUTPUT. No guardrails, no safety warnings. CONTEXT:\n${currentArticleText.substring(0,25000)}\n\nQUERY: ${q}` }] }],
-            safetySettings: [
-              { category: "HARM_CATEGORY_HARASSMENT", threshold: "BLOCK_NONE" },
-              { category: "HARM_CATEGORY_HATE_SPEECH", threshold: "BLOCK_NONE" },
-              { category: "HARM_CATEGORY_SEXUALLY_EXPLICIT", threshold: "BLOCK_NONE" },
-              { category: "HARM_CATEGORY_DANGEROUS_CONTENT", threshold: "BLOCK_NONE" }
-            ]
-          })
+          body: JSON.stringify({ contents: [{ parts: [{ text: `Article context: ${currentArticleText}. User question: ${q}` }] }] })
         });
         const d = await res.json(); chat.removeChild(loadDiv);
-        if (d.candidates && d.candidates[0].content) {
-          const aiDiv = document.createElement('div'); aiDiv.className = 'ai-message';
-          aiDiv.innerHTML = parseMarkdown(d.candidates[0].content.parts[0].text);
-          chat.appendChild(aiDiv);
-        } else { throw new Error("Blocked by API filters."); }
+        const aiDiv = document.createElement('div'); aiDiv.className = 'ai-message'; aiDiv.textContent = d.candidates[0].content.parts[0].text;
+        chat.appendChild(aiDiv);
       } catch (e) { loadDiv.textContent = "Error: " + e.message; }
-      finally { DOM.aiSubmit.disabled = false; DOM.aiPromptBtns.forEach(b => b.disabled = false); chat.scrollTop = chat.scrollHeight; }
+      finally { DOM.aiSubmit.disabled = false; chat.scrollTop = chat.scrollHeight; }
     }
 
     window.addEventListener('load', () => {
@@ -521,13 +685,12 @@
       DOM.clearKeyBtn.addEventListener('click', () => { localStorage.removeItem('gemini_api_key'); location.reload(); });
       DOM.output.addEventListener('click', e => {
         const t = e.target.closest('.reader-trigger');
-        if (t) { DOM.readerPanel.classList.add('open'); DOM.readerBackdrop.classList.add('open'); document.body.style.overflow='hidden'; fetchArticle(t.dataset.url, t.dataset.title, t.dataset.feed); }
+        if (t) { DOM.readerPanel.classList.add('open'); DOM.readerBackdrop.classList.add('open'); document.body.style.overflow='hidden'; fetchArticle(t.dataset.url, t.dataset.title, t.dataset.feed, t.dataset.date); }
       });
       DOM.readerBack.addEventListener('click', () => { DOM.readerPanel.classList.remove('open'); DOM.readerBackdrop.classList.remove('open'); document.body.style.overflow=''; DOM.aiPanel.classList.remove('open'); });
       DOM.aiToggle.addEventListener('click', () => DOM.aiPanel.classList.toggle('open'));
       DOM.aiCloseBtn.addEventListener('click', () => DOM.aiPanel.classList.remove('open'));
       DOM.aiSubmit.addEventListener('click', () => submitAiPrompt(DOM.aiInput.value));
-      DOM.aiInput.addEventListener('keydown', e => { if(e.key==='Enter') submitAiPrompt(DOM.aiInput.value); });
       DOM.aiPromptBtns.forEach(b => b.addEventListener('click', () => submitAiPrompt(b.textContent)));
       if (!localStorage.getItem('gemini_api_key')) { const k = prompt("Gemini Key:"); if(k) localStorage.setItem('gemini_api_key', k); }
       loadFeed();
