@@ -123,7 +123,7 @@
     ════════════════════════════════════════════════════════════════════ */
     .feed-status-bar {
       max-width:       800px;
-      margin:          16px auto 0;
+      margin:          16px auto 0;   
       padding:         0 20px;
       display:         flex;
       justify-content: space-between;
@@ -256,7 +256,7 @@
 
     .reader-topbar {
       display:       flex;
-      align-items:   center;
+      align-items:   center;   
       gap:           10px;
       padding:       14px 20px;
       border-bottom: 1px solid var(--rule);
@@ -409,7 +409,7 @@
       font-family: 'IBM Plex Mono', monospace;
       font-size:   12px;
       color:       var(--meta-color);
-      text-align:  center;
+      text-align:  center;   
       margin-top:  80px;
       line-height: 2.5;
     }
@@ -665,11 +665,11 @@
 
     </select>
     
-    <button class="btn-outline" id="upload-pdf-btn" title="Upload PDF">📄 Upload PDF</button>
+    <button class="btn-outline" id="upload-pdf-btn" title="Upload PDF">📖</button>
     <input type="file" id="pdf-file-input" accept="application/pdf" style="display: none;">
     
-    <button class="btn-outline" id="refresh-btn" title="Refresh feed">⟳ Refresh</button>
-    <button class="btn-outline" id="clear-key-btn" title="Clear Gemini Key">🔑 Reset Key</button>
+    <button class="btn-outline" id="refresh-btn" title="Refresh feed">⟳</button>
+    <button class="btn-outline" id="clear-key-btn" title="Reset Gemini Key">🔑</button>
   </div>
   <div class="masthead">
     <div class="tagline" id="header-date">Financial Intelligence Terminal</div>
@@ -1313,7 +1313,6 @@
 
     function clearGeminiKey() {
       localStorage.removeItem('gemini_api_key');
-      alert("Gemini API Key removed. You will be prompted again on your next fetch.");
     }
 
     async function fetchWithRetry(url, options, maxRetries = 3) {
@@ -1457,10 +1456,6 @@
        JS §10 — PDF PROCESSING & LOCAL SUMMARY ENGINE
     ════════════════════════════════════════════════════════════════════ */
 
-    /**
-     * Entry point for the PDF processing feature. 
-     * Reads the file locally, then dispatches an AI call in the background.
-     */
     async function processPdf(file) {
       const apiKey = getGeminiKey();
       if (!apiKey) return;
@@ -1469,15 +1464,11 @@
       reader.onload = async () => {
         const base64 = reader.result.split(',')[1];
         
-        // Visual indicator that processing has started in the hood
-        const originalText = DOM.uploadPdfBtn.textContent;
-        DOM.uploadPdfBtn.textContent = "⚙ Analyzing...";
         DOM.uploadPdfBtn.disabled = true;
 
         try {
           const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
           
-          // Request meticulous extraction of every section
           const payload = {
             contents: [{
               parts: [
@@ -1499,23 +1490,19 @@
           try {
              sections = JSON.parse(cleanText);
           } catch(e) {
-             console.error("JSON parse failed", cleanText);
              throw new Error("AI response was not valid data.");
           }
 
-          // Transform AI sections into our standard feed item format
           const items = sections.map((s, i) => ({
             title: s.title || "Untitled Section",
             description: s.summary || "Summary unavailable.",
             full_text: s.full_text || s.summary || "Full text not found.",
-            link: `pdf-local-file-${i}`, // Virtual URL for local reader intercept
+            link: `pdf-local-file-${i}`, 
             pubDate: new Date().toISOString()
           }));
 
-          // Store in global cache
           feedCache['uploaded-pdf'] = { timestamp: Date.now(), items, feedName: 'PDF SUMMARY' };
 
-          // Add the "PDF SUMMARY" option if it doesn't exist
           let pdfOption = Array.from(DOM.dropdown.options).find(opt => opt.value === 'uploaded-pdf');
           if (!pdfOption) {
             const optGroup = document.createElement('optgroup');
@@ -1527,14 +1514,13 @@
             DOM.dropdown.prepend(optGroup);
           }
 
-          // UI Toast indicating completion
-          alert("✅ PDF analyzed! Select 'PDF SUMMARY' from the newspaper list to view.");
+          // SUCCESS: Confirm analysis completion silently via button color change
+          DOM.uploadPdfBtn.style.backgroundColor = '#90ee90'; 
+          DOM.uploadPdfBtn.style.borderColor = '#1a5c3a';
 
         } catch (err) {
           console.error("PDF extraction failed", err);
-          alert("❌ PDF background processing failed: " + err.message);
         } finally {
-          DOM.uploadPdfBtn.textContent = originalText;
           DOM.uploadPdfBtn.disabled = false;
         }
       };
@@ -1551,7 +1537,6 @@
         weekday: 'long', day: 'numeric', month: 'long'
       });
 
-      // ── Feed Controls ─────────────────────────────────────────────────
       DOM.dropdown.addEventListener('change', () => loadFeed(false));
       DOM.refreshBtn.addEventListener('click', () => {
         delete feedCache[DOM.dropdown.value]; 
@@ -1559,13 +1544,11 @@
       });
       DOM.clearKeyBtn.addEventListener('click', clearGeminiKey);
 
-      // ── PDF Controls ──────────────────────────────────────────────────
       DOM.uploadPdfBtn.addEventListener('click', () => DOM.pdfFileInput.click());
       DOM.pdfFileInput.addEventListener('change', (e) => {
         if (e.target.files[0]) processPdf(e.target.files[0]);
       });
 
-      // ── Article Click → Open Reader Mode ─────────────────────────────
       DOM.output.addEventListener('click', (e) => {
         const trigger = e.target.closest('.reader-trigger');
         if (!trigger) return;
@@ -1585,7 +1568,6 @@
         if (trigger) { e.preventDefault(); trigger.click(); }
       });
 
-      // ── Reader Mode Controls ──────────────────────────────────────────
       DOM.readerBack.addEventListener('click', closeReader);
       DOM.readerBackdrop.addEventListener('click', closeReader);
       document.addEventListener('keydown', (e) => {
@@ -1607,7 +1589,6 @@
         setReaderProgress(denominator > 0 ? (scrollTop / denominator) * 100 : 0);
       });
 
-      // ── AI Chat Controls ──────────────────────────────────────────────
       DOM.aiToggle.addEventListener('click', toggleAiPanel);
       DOM.aiCloseBtn.addEventListener('click', closeAiPanel);
       DOM.aiSubmit.addEventListener('click', () => submitAiPrompt(DOM.aiInput.value));
