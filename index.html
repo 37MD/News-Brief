@@ -539,7 +539,7 @@
       </optgroup>
 
       <optgroup label="── Times of India ──">
-        <option value="https://timesofindia.indiatimes.com/rssfeedstopstories.cms">TOI · Top News</option>
+        <option value="https://timesofindia.indiatimes.com/rssfeedstopstories.cms" selected>TOI · Top News</option>
         <option value="https://timesofindia.indiatimes.com/business/economy/rssfeedstopstories.cms">TOI · Economy</option>
         <option value="https://timesofindia.indiatimes.com/business/rssfeedstopstories.cms">TOI · Business</option>
         <option value="https://timesofindia.indiatimes.com/business/markets/rssfeedstopstories.cms">TOI · Markets</option>
@@ -943,7 +943,7 @@
       }).map(item => ({
         id:          articleId(item.title),
         title:       item.title || 'Untitled',
-        description: item.description || '',
+        description: processRssText(item.description, 500),
         link:        item.link || '#',
         pubDate:     item.pubDate || '',
         viewed:      false
@@ -979,7 +979,7 @@
     async function fetchViaJsonp(feedUrl) {
       const fn = '_gp_' + Math.random().toString(36).slice(2, 9);
       const data = await jsonpFetch(
-        `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}&callback=${fn}&count=${CONFIG.FETCH_PER_FEED}`,
+        `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}&callback=${fn}`,
         fn, CONFIG.FEED_TIMEOUT_MS
       );
       if (!data || data.status !== 'ok') throw new Error(data?.message || 'rss2json non-ok');
@@ -1140,21 +1140,32 @@
           if (!rawItems?.length) { setFeedStatus('📭 No articles found.'); return; }
 
           // Merge into localStorage (dedup + 24hr store)
-          const mergedItems = mergeIntoStore(feedUrl, feedName, rawItems);
+          let mergedItems;
+          try { mergedItems = mergeIntoStore(feedUrl, feedName, rawItems); } catch(e) { mergedItems = []; }
+
+          // If dedup filtered everything (shouldn't happen on first load), fall back to raw items
+          if (!mergedItems.length) {
+            mergedItems = rawItems.map(item => ({
+              id: articleId(item.title), title: item.title || 'Untitled',
+              description: processRssText(item.description, 500),
+              link: item.link || '#', pubDate: item.pubDate || '', viewed: false
+            }));
+          }
 
           // Memory cache (short TTL)
           feedCache[feedUrl] = { timestamp: Date.now(), items: mergedItems, feedName };
 
           // Only show non-viewed items, latest first
           const displayItems = mergedItems.filter(i => !i.viewed);
-          startPagination(displayItems, feedName, feedUrl);
+          startPagination(displayItems.length ? displayItems : mergedItems, feedName, feedUrl);
           startCountdown();
 
         } catch (err) {
           if (reqId !== requestCounter) return;
+          console.error('Feed load error:', err);
           DOM.output.innerHTML =
-            `<div class="system-msg error">❌ Feed unavailable.<br>` +
-            `<small style="font-size:10px;opacity:.7">${escapeHtml(err.message)}</small></div>`;
+            `<div class="system-msg error">❌ Feed unavailable: ${escapeHtml(err.message)}<br>` +
+            `<small style="font-size:10px;opacity:.7;display:block;margin-top:8px">Try the ⟳ refresh button or switch to a different feed.</small></div>`;
         } finally {
           if (reqId === requestCounter) setRefreshing(false);
         }
