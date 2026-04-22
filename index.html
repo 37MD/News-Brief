@@ -567,8 +567,12 @@
 
     <select id="feed-dropdown" aria-label="Select news feed">
 
-      <optgroup label="── Local Files ──" id="local-files-group" style="display:none;">
-        <option value="uploaded-pdf">SUMMARY OF PDF UPLOADED</option>
+      <optgroup label="── Times of India ──">
+        <option value="https://timesofindia.indiatimes.com/rssfeedstopstories.cms" selected>TOI · Top News</option>
+        <option value="https://timesofindia.indiatimes.com/business/economy/rssfeedstopstories.cms">TOI · Economy</option>
+        <option value="https://timesofindia.indiatimes.com/business/rssfeedstopstories.cms">TOI · Business</option>
+        <option value="https://timesofindia.indiatimes.com/business/markets/rssfeedstopstories.cms">TOI · Markets</option>
+        <option value="https://timesofindia.indiatimes.com/tech/rssfeedstopstories.cms">TOI · Technology</option>
       </optgroup>
 
       <optgroup label="── The Hindu ──">
@@ -595,14 +599,6 @@
         <option value="https://indianexpress.com/section/business/market/feed/">IE · Markets</option>
         <option value="https://indianexpress.com/section/technology/feed/">IE · Technology</option>
         <option value="https://indianexpress.com/section/opinion/editorials/feed/">IE · Editorial</option>
-      </optgroup>
-
-      <optgroup label="── Times of India ──">
-        <option value="https://timesofindia.indiatimes.com/rssfeedstopstories.cms">TOI · Top News</option>
-        <option value="https://timesofindia.indiatimes.com/business/economy/rssfeedstopstories.cms">TOI · Economy</option>
-        <option value="https://timesofindia.indiatimes.com/business/rssfeedstopstories.cms">TOI · Business</option>
-        <option value="https://timesofindia.indiatimes.com/business/markets/rssfeedstopstories.cms">TOI · Markets</option>
-        <option value="https://timesofindia.indiatimes.com/tech/rssfeedstopstories.cms">TOI · Technology</option>
       </optgroup>
 
       <optgroup label="── Economic Times ──">
@@ -777,7 +773,6 @@
       // ── PDF Upload Features ──────────────────────────────────────────
       uploadPdfBtn:    document.getElementById('upload-pdf-btn'),
       pdfFileInput:    document.getElementById('pdf-file-input'),
-      localFilesGroup: document.getElementById('local-files-group'),
 
       // ── Reader Panel ─────────────────────────────────────────────────
       readerPanel:     document.getElementById('reader-panel'),
@@ -838,7 +833,7 @@
 
     function safeUrl(url) {
       if (!url) return '#';
-      // Whitelist our generated local article IDs
+      // Whitelist our generated local article IDs so the reader can intercept them
       if (url.startsWith('pdf-local-file')) return url; 
       try {
         const parsed = new URL(url);
@@ -951,7 +946,7 @@
         const feedUrl    = DOM.dropdown.value;
         const feedName   = DOM.dropdown.options[DOM.dropdown.selectedIndex].text;
         
-        // Trap for Local PDF array routing
+        // Custom trap for Local PDF array routing
         if (feedUrl === 'uploaded-pdf') {
           if (feedCache[feedUrl]) {
             renderFeedItems(feedCache[feedUrl].items, 'SUMMARY OF PDF UPLOADED', true);
@@ -1019,7 +1014,7 @@
           `</div>`
         );
       }).join('');
-      DOM.itemCount.textContent = `${items.length} sections found`;
+      DOM.itemCount.textContent = `${items.length} articles found`;
     }
 
     function setFeedStatus(msg) {
@@ -1071,10 +1066,12 @@
         DOM.readerScroll.scrollTop      = 0;
         setReaderProgress(0);
 
-        const pdfDesc = feedCache['uploaded-pdf'].items[arrayIndex].description;
-        currentArticleText = pdfDesc; // Retain full section text context for AI chat
+        // Fetch the FULL TEXT we cached during extraction
+        const pdfItem = feedCache['uploaded-pdf'].items[arrayIndex];
+        currentArticleText = pdfItem.full_text; // Complete text context for AI chat
         
-        renderArticle(parseMarkdown(pdfDesc), title, feedName, pubDate);
+        // Render FULL TEXT inside reader
+        renderArticle(parseMarkdown(pdfItem.full_text), title, feedName, pubDate);
         return;
       }
 
@@ -1486,11 +1483,7 @@
         return;
       }
 
-      // Activate local PDF dropdown and force UI swap
-      DOM.localFilesGroup.style.display = '';
-      DOM.dropdown.value = 'uploaded-pdf';
-
-      setFeedStatus('📄 Extracting and dissecting PDF into articles with Gemini API...');
+      setFeedStatus('📄 Extracting and meticulously dissecting PDF into distinct articles with Gemini API...');
       DOM.itemCount.textContent = '';
       setRefreshing(true);
 
@@ -1501,7 +1494,7 @@
         const base64 = await readFileAsBase64(file);
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
 
-        // Prompt requests an array of distinct articles
+        // Aggressively strict prompt forcing extraction of EVERYTHING with the complete full text
         const payload = {
           contents: [{
             parts: [
@@ -1512,7 +1505,7 @@
                 }
               },
               { 
-                text: "Analyze this document thoroughly. Extract EACH distinct article, chapter, or major topic section found in the document. Return a valid JSON array of objects. Each object must represent a distinct section and contain exactly two string keys: 'title' (a concise, accurate headline for that specific section) and 'summary' (a highly detailed multi-paragraph summary covering all primary takeaways and technical findings for that section). Do NOT wrap your response in markdown blocks like ```json." 
+                text: "Analyze this document thoroughly from beginning to end. CRITICAL INSTRUCTION: You MUST extract EVERY SINGLE distinct article, chapter, or major section found in the document. DO NOT skip, combine, or omit any articles. You must list ALL of them.\n\nReturn a valid JSON array of objects. Each object must contain exactly three string keys:\n1. 'title': A concise, accurate headline for the section.\n2. 'summary': A brief 2-3 sentence summary.\n3. 'full_text': The COMPLETE, unabridged, exact text of the article/section. DO NOT truncate or summarize this field; provide the absolute full content for reading.\n\nDo NOT wrap your response in markdown blocks like ```json." 
               }
             ]
           }]
@@ -1531,27 +1524,42 @@
         let parsedArray;
         try {
           parsedArray = JSON.parse(cleanedText);
-          // Fallback if AI wraps the array in an object key
           if (!Array.isArray(parsedArray) && parsedArray.items) {
              parsedArray = parsedArray.items;
           } else if (!Array.isArray(parsedArray) && parsedArray.title) {
-             // Fallback if AI returns a single object instead of an array
              parsedArray = [parsedArray];
           }
         } catch (err) {
           // Graceful fallback if AI fails to return pure JSON array
-          parsedArray = [{ title: "Extracted Content from " + file.name, summary: cleanedText }];
+          parsedArray = [{ title: "Extracted Content from " + file.name, summary: "See full text for details.", full_text: cleanedText }];
         }
 
-        // Generate synthetic feed items bridging offline file chunks into the feed state
+        // Generate synthetic feed items including the full text
         const items = parsedArray.map((article, index) => ({
           title: article.title || `Article ${index + 1}`,
           description: article.summary || "No summary could be extracted.",
-          link: `pdf-local-file-${index}`, // Unique index trigger for Reader panel
+          full_text: article.full_text || article.summary || "Full text could not be extracted.",
+          link: `pdf-local-file-${index}`, 
           pubDate: new Date().toISOString()
         }));
 
         feedCache['uploaded-pdf'] = { timestamp: Date.now(), items, feedName: 'SUMMARY OF PDF UPLOADED' };
+        
+        // Dynamically create the dropdown option so it doesn't clutter the UI permanently
+        let pdfOption = Array.from(DOM.dropdown.options).find(opt => opt.value === 'uploaded-pdf');
+        if (!pdfOption) {
+          const optGroup = document.createElement('optgroup');
+          optGroup.label = "── Local Files ──";
+          optGroup.id = "local-files-group";
+          pdfOption = document.createElement('option');
+          pdfOption.value = 'uploaded-pdf';
+          pdfOption.textContent = 'SUMMARY OF PDF UPLOADED';
+          optGroup.appendChild(pdfOption);
+          DOM.dropdown.insertBefore(optGroup, DOM.dropdown.firstChild);
+        }
+        
+        // Automatically switch the feed view to the new PDF
+        DOM.dropdown.value = 'uploaded-pdf';
         renderFeedItems(items, 'SUMMARY OF PDF UPLOADED', false);
 
       } catch (err) {
@@ -1633,6 +1641,7 @@
         btn.addEventListener('click', () => submitAiPrompt(btn.textContent));
       });
 
+      // Will trigger on TOI Top News since it is selected by default in the HTML
       loadFeed();
     });
 
