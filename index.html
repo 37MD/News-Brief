@@ -19,14 +19,14 @@
        CSS §1 — DESIGN TOKENS & GLOBAL BASE STYLES
     ════════════════════════════════════════════════════════════════════ */
     :root {
-      --ink:            #1a1a18;   /* Primary text */
-      --paper:          #f5f0e8;   /* Page background */
-      --accent:         #1a5c3a;   /* Brand green */
-      --rule:           #c8c0b0;   /* Borders & dividers */
-      --muted:          #5a554c;   /* Secondary text */
-      --meta-color:     #8c867a;   /* Timestamps, labels */
-      --error:          #c0392b;   /* Error state */
-      --reader-font-sz: 17px;      /* Reader body font-size (JS-controlled) */
+      --ink:            #1a1a18;   
+      --paper:          #f5f0e8;   
+      --accent:         #1a5c3a;   
+      --rule:           #c8c0b0;   
+      --muted:          #5a554c;   
+      --meta-color:     #8c867a;   
+      --error:          #c0392b;   
+      --reader-font-sz: 17px;      
     }
 
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -568,7 +568,7 @@
     <select id="feed-dropdown" aria-label="Select news feed">
 
       <optgroup label="── Local Files ──" id="local-files-group" style="display:none;">
-        <option value="uploaded-pdf">Uploaded PDF Summary</option>
+        <option value="uploaded-pdf">SUMMARY OF PDF UPLOADED</option>
       </optgroup>
 
       <optgroup label="── The Hindu ──">
@@ -838,7 +838,8 @@
 
     function safeUrl(url) {
       if (!url) return '#';
-      if (url === 'pdf-local-file') return url; // Whitelist local pdf mock URL
+      // Whitelist our generated local article IDs
+      if (url.startsWith('pdf-local-file')) return url; 
       try {
         const parsed = new URL(url);
         return (parsed.protocol === 'http:' || parsed.protocol === 'https:') ? url : '#';
@@ -884,7 +885,7 @@
       html = html.replace(/\*(.*?)\*/g,  '<em>$1</em>');
       html = html.replace(/^- (.*)$/gm, '<ul><li>$1</li></ul>');
       html = html.replace(/<\/ul>\n<ul>/g, '\n');
-      html = html.replace(/\n/g, '<br>'); // Simple line break handling for PDF Summaries
+      html = html.replace(/\n/g, '<br>'); 
       html = html.replace(/<br><br>/g, '</p><p>');
       return `<p>${html}</p>`;
     }
@@ -950,10 +951,10 @@
         const feedUrl    = DOM.dropdown.value;
         const feedName   = DOM.dropdown.options[DOM.dropdown.selectedIndex].text;
         
-        // Custom trap for Local PDF routing
+        // Trap for Local PDF array routing
         if (feedUrl === 'uploaded-pdf') {
           if (feedCache[feedUrl]) {
-            renderFeedItems(feedCache[feedUrl].items, 'Uploaded PDF Summary', true);
+            renderFeedItems(feedCache[feedUrl].items, 'SUMMARY OF PDF UPLOADED', true);
             DOM.nextRefresh.textContent = 'Auto-refresh paused for local files';
           } else {
             setFeedStatus('📭 No PDF uploaded yet. Click "Upload PDF" to analyze a file.');
@@ -1018,7 +1019,7 @@
           `</div>`
         );
       }).join('');
-      DOM.itemCount.textContent = `${items.length} documents`;
+      DOM.itemCount.textContent = `${items.length} sections found`;
     }
 
     function setFeedStatus(msg) {
@@ -1060,15 +1061,18 @@
       DOM.aiChatArea.innerHTML = `<div class="ai-message system">Ask me anything — about this document, or any topic.</div>`;
       currentArticleText = "";
 
-      // Handle custom Local PDF pseudo-routing without hitting external proxies
-      if (validatedUrl === 'pdf-local-file') {
+      // Intercept local PDF sections based on array index embedded in link
+      if (validatedUrl.startsWith('pdf-local-file')) {
+        const indexStr = validatedUrl.split('-').pop();
+        const arrayIndex = parseInt(indexStr, 10);
+        
         DOM.readerUrlLabel.textContent  = "Local PDF Document";
         DOM.readerExtLink.style.display = "none";
         DOM.readerScroll.scrollTop      = 0;
         setReaderProgress(0);
 
-        const pdfDesc      = feedCache['uploaded-pdf'].items[0].description;
-        currentArticleText = pdfDesc; // Retain full text context for follow up chat
+        const pdfDesc = feedCache['uploaded-pdf'].items[arrayIndex].description;
+        currentArticleText = pdfDesc; // Retain full section text context for AI chat
         
         renderArticle(parseMarkdown(pdfDesc), title, feedName, pubDate);
         return;
@@ -1486,7 +1490,7 @@
       DOM.localFilesGroup.style.display = '';
       DOM.dropdown.value = 'uploaded-pdf';
 
-      setFeedStatus('📄 Extracting and analyzing PDF with Gemini API...');
+      setFeedStatus('📄 Extracting and dissecting PDF into articles with Gemini API...');
       DOM.itemCount.textContent = '';
       setRefreshing(true);
 
@@ -1497,6 +1501,7 @@
         const base64 = await readFileAsBase64(file);
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
 
+        // Prompt requests an array of distinct articles
         const payload = {
           contents: [{
             parts: [
@@ -1507,7 +1512,7 @@
                 }
               },
               { 
-                text: "Analyze this document thoroughly. Return a valid JSON object with exactly two string keys: 'title' (a concise, accurate title for the document) and 'summary' (a very detailed, comprehensive multi-paragraph summary covering all primary takeaways and technical findings of the document's contents). Do NOT wrap your response in markdown blocks like ```json." 
+                text: "Analyze this document thoroughly. Extract EACH distinct article, chapter, or major topic section found in the document. Return a valid JSON array of objects. Each object must represent a distinct section and contain exactly two string keys: 'title' (a concise, accurate headline for that specific section) and 'summary' (a highly detailed multi-paragraph summary covering all primary takeaways and technical findings for that section). Do NOT wrap your response in markdown blocks like ```json." 
               }
             ]
           }]
@@ -1523,24 +1528,31 @@
         const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
         const cleanedText = cleanAiResponse(rawText);
 
-        let parsed;
+        let parsedArray;
         try {
-          parsed = JSON.parse(cleanedText);
+          parsedArray = JSON.parse(cleanedText);
+          // Fallback if AI wraps the array in an object key
+          if (!Array.isArray(parsedArray) && parsedArray.items) {
+             parsedArray = parsedArray.items;
+          } else if (!Array.isArray(parsedArray) && parsedArray.title) {
+             // Fallback if AI returns a single object instead of an array
+             parsedArray = [parsedArray];
+          }
         } catch (err) {
-          // Graceful fallback if AI fails to return pure JSON
-          parsed = { title: file.name, summary: cleanedText };
+          // Graceful fallback if AI fails to return pure JSON array
+          parsedArray = [{ title: "Extracted Content from " + file.name, summary: cleanedText }];
         }
 
-        // Generate synthetic feed item bridging offline file into feed state
-        const items = [{
-          title: parsed.title || file.name,
-          description: parsed.summary || "No summary could be extracted.",
-          link: 'pdf-local-file', // Pseudo-URL intercept trigger for Reader panel
+        // Generate synthetic feed items bridging offline file chunks into the feed state
+        const items = parsedArray.map((article, index) => ({
+          title: article.title || `Article ${index + 1}`,
+          description: article.summary || "No summary could be extracted.",
+          link: `pdf-local-file-${index}`, // Unique index trigger for Reader panel
           pubDate: new Date().toISOString()
-        }];
+        }));
 
-        feedCache['uploaded-pdf'] = { timestamp: Date.now(), items, feedName: 'Uploaded PDF Summary' };
-        renderFeedItems(items, 'Uploaded PDF Summary', false);
+        feedCache['uploaded-pdf'] = { timestamp: Date.now(), items, feedName: 'SUMMARY OF PDF UPLOADED' };
+        renderFeedItems(items, 'SUMMARY OF PDF UPLOADED', false);
 
       } catch (err) {
         setFeedStatus(`❌ PDF processing failed: ${err.message}`);
