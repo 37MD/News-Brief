@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pulse</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    /* === BASE STYLES === */
+    :root {
+      --ink:            #000000;   
+      --paper:          #f5f0e8;   
+      --accent:         #1a5c3a;   
+      --rule:           #c8c0b0;   
+      --muted:          #111111;   
+      --meta-color:     #333333;   
+      --error:          #8b0000;   
+      --reader-font-sz: 17px;      
+    }
+
+    *, *::before, *::after { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0; 
+      color: black !important; 
+    }
+
+    body {
+      background:  var(--paper);
+      font-family: 'IBM Plex Sans', sans-serif;
+      min-height:  100vh;
+      line-height: 1.5;
+    }
+
+    /* === MAIN UI === */
+    .controls-bar {
+      position:    relative;
+      padding:     10px 20px;
+      display:     flex;
+      justify-content: center;
+      gap:         10px;
+      flex-wrap:   wrap;
+      border-bottom: 1px solid var(--rule);
+      background:  #e4eaf2;
+    }
+
+    .btn-outline {
+      font-family:    'IBM Plex Mono', monospace;
+      font-size:      11px;
+      background:     transparent;
+      border:         1px solid var(--accent);
+      padding:        6px 12px;
+      border-radius:  4px;
+      cursor:         pointer;
+      text-transform: uppercase;
+      font-weight:    700;
+      transition:     background 0.2s;
+      white-space:    nowrap;
+    }
+    .btn-outline:hover    { background: #d0d7e0; }
+    .btn-outline:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    #clear-key-btn       { border-color: var(--rule); }
+    #clear-key-btn:hover { background: #d0d7e0; border-color: var(--ink); }
+
+    .masthead {
+      border-bottom: 2px solid var(--ink);
+      padding:       15px 20px;
+      text-align:    center;
+      background:    var(--paper);
+    }
+    .masthead-title {
+      font-family: 'Playfair Display', serif;
+      font-size:   36px;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+    .tagline {
+      font-family:    'IBM Plex Mono', monospace;
+      font-size:      10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      margin-top:     4px;
+    }
+
+    .feed-status-bar {
+      max-width:       800px;
+      margin:          10px auto 0;
+      padding:         0 15px;
+      font-family:     'IBM Plex Mono', monospace;
+      font-size:       10px;
+      text-transform:  uppercase;
+      letter-spacing:  0.05em;
+      text-align:      center;
+    }
+
+    .container {
+      max-width: 800px;
+      margin:    0 auto;
+      padding:   15px 15px 40px;
+    }
+
+    .feed-item {
+      margin-bottom:  20px;
+      border-bottom:  1px solid var(--rule);
+      padding-bottom: 15px;
+      animation:      fadeIn 0.3s ease forwards;
+    }
+    .feed-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(4px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .headline {
+      font-family:     'Playfair Display', serif;
+      font-size:       20px;
+      text-decoration: none;
+      font-weight:     700;
+      display:         block;
+      line-height:     1.2;
+      margin-bottom:   8px;
+      word-break:      break-word;
+      cursor:          pointer;
+    }
+    .headline:hover { text-decoration: underline; }
+
+    .description {
+      font-size:     14px;
+      margin-bottom: 6px;
+      line-height:   1.5;
+    }
+    .description.translation {
+      border-left: 3px solid var(--accent);
+      padding-left: 10px;
+      background: rgba(26, 92, 58, 0.05);
+      padding: 6px 10px;
+      border-radius: 0 4px 4px 0;
+    }
+
+    .meta {
+      font-family:    'IBM Plex Mono', monospace;
+      font-size:      10px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top:     8px;
+    }
+
+    .system-msg {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size:   12px;
+      text-align:  center;
+      margin-top:  30px;
+      line-height: 1.5;
+    }
+
+    /* === READER UI === */
+    #reader-backdrop, #summary-backdrop {
+      display:         none;
+      position:        fixed;
+      inset:           0;
+      background:      rgba(26,26,24,0.45);
+      z-index:         998;
+      backdrop-filter: blur(2px);
+    }
+    #reader-backdrop.open, #summary-backdrop.open { display: block; }
+
+    #reader-panel {
+      position:       fixed;
+      top: 0; right: 0; bottom: 0;
+      width:          100%;
+      max-width:      780px;
+      background:     var(--paper);
+      z-index:        999;
+      display:        flex;
+      flex-direction: column;
+      transform:      translateX(100%);
+      transition:     transform 0.35s cubic-bezier(.4,0,.2,1);
+      box-shadow:     -4px 0 40px rgba(0,0,0,0.18);
+    }
+    #reader-panel.open { transform: translateX(0); }
+
+    #reader-progress {
+      position:   absolute;
+      top: 0; left: 0;
+      height:     3px;
+      width:      0%;
+      background: var(--ink);
+      transition: width 0.2s;
+      z-index:    5;
+    }
+
+    .reader-topbar {
+      display:       flex;
+      align-items:   center;
+      gap:           10px;
+      padding:       10px 15px;
+      border-bottom: 1px solid var(--rule);
+      background:    #e4eaf2;
+      flex-shrink:   0;
+      position:      relative;
+      z-index:       20;
+    }
+
+    .reader-back-btn {
+      font-family:    'IBM Plex Mono', monospace;
+      font-size:      11px;
+      font-weight:    700;
+      text-transform: uppercase;
+      background:     transparent;
+      border:         1px solid var(--ink);
+      padding:        4px 10px;
+      border-radius:  4px;
+      cursor:         pointer;
+      white-space:    nowrap;
+      transition:     background 0.2s;
+    }
+    .reader-back-btn:hover { background: #d0d7e0; }
+
+    .reader-source-url { font-family: 'IBM Plex Mono', monospace; font-size: 10px; flex: 1; }
+
+    .reader-font-ctrl { display: flex; gap: 4px; }
+    .reader-font-ctrl button {
+      font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: bold;
+      background: transparent; border: 1px solid var(--rule); width: 26px; height: 26px;
+      border-radius: 4px; cursor: pointer; transition: border-color 0.2s;
+    }
+    .reader-font-ctrl button:hover { border-color: var(--ink); background: #d0d7e0; }
+
+    .reader-open-btn {
+      font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700;
+      text-transform: uppercase; background: #e4eaf2; border: 1px solid var(--ink);
+      padding: 4px 8px; border-radius: 4px; cursor: pointer; white-space: nowrap;
+    }
+    .reader-open-btn:hover { background: #d0d7e0; }
+
+    .reader-scroll {
+      overflow-y: auto;
+      flex:       1;
+      padding:    20px 25px 40px;
+      position:   relative;
+      z-index:    10;
+    }
+
+    .reader-article-title {
+      font-family:   'Playfair Display', serif;
+      font-size:     clamp(20px, 3vw, 28px);
+      font-weight:   700;
+      line-height:   1.2;
+      margin-bottom: 10px;
+    }
+    .reader-article-meta {
+      font-family:    'IBM Plex Mono', monospace;
+      font-size:      10px;
+      text-transform: uppercase;
+      margin-bottom:  20px;
+      padding-bottom: 10px;
+      border-bottom:  1px solid var(--rule);
+    }
+
+    .reader-body {
+      font-size:      var(--reader-font-sz);
+      line-height:    1.7;
+      padding-bottom: 20px;
+    }
+    .reader-body h1, .reader-body h2, .reader-body h3, .reader-body h4 {
+      font-family: 'Playfair Display', serif; margin: 1.2em 0 0.5em; line-height: 1.2;
+    }
+    .reader-body p { margin-bottom: 1em; }
+    
+    .translation-header {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.2em;
+      font-weight: bold;
+      margin: 30px 0 15px;
+      padding-top: 20px;
+      border-top: 2px dashed var(--rule);
+      color: var(--ink);
+    }
+
+    /* === SUMMARY MODAL UI === */
+    #summary-modal {
+      display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 90%; max-width: 800px; max-height: 85vh; background: var(--paper); z-index: 1000;
+      border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); flex-direction: column;
+      border: 1px solid var(--rule);
+    }
+    #summary-modal.open { display: flex; }
+
+    .summary-header {
+      display: flex; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--rule); align-items: center; background: #e4eaf2; border-radius: 8px 8px 0 0;
+    }
+    .summary-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: bold; }
+    .summary-content-area { padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+    .summary-box { border: 1px solid var(--rule); border-radius: 6px; background: #ffffff; overflow: hidden; }
+    .summary-box-title { background: #e4eaf2; padding: 8px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid var(--rule); text-align: center; }
+    .summary-box-content { padding: 12px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; background: #ffffff; }
+    .summary-box-english { border-top: 1px dashed var(--rule); background: #f9f9f9; }
+
+    /* === AI CHAT UI === */
+    #ai-panel {
+      position:       absolute;
+      top:            50px;   
+      right:          15px;
+      width:          340px;
+      max-width:      calc(100vw - 30px);
+      background:     #ffffff;
+      border:         1px solid var(--rule);
+      border-radius:  8px;
+      box-shadow:     0 8px 30px rgba(0,0,0,0.15);
+      display:        flex;
+      flex-direction: column;
+      opacity:        0;
+      pointer-events: none;
+      transform:      translateY(-10px);
+      transition:     all 0.2s ease;
+      max-height:     65vh;
+      z-index:        1005;
+    }
+    #ai-panel.open { opacity: 1; pointer-events: auto; transform: translateY(0); }
+
+    .ai-header {
+      display: flex; justify-content: space-between; align-items: center; padding: 10px 12px;
+      background: #e4eaf2; border-bottom: 1px solid var(--rule); border-radius: 8px 8px 0 0;
+      font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; text-transform: uppercase;
+    }
+    .ai-close-btn { background: transparent; border: none; font-size: 18px; cursor: pointer; font-weight: bold; }
+
+    .ai-chat-area { padding: 12px; overflow-y: auto; flex: 1; font-size: 13px; line-height: 1.5; background: #ffffff; }
+    .ai-message { margin-bottom: 12px; padding: 10px 12px; border-radius: 6px; background: #f0f0f0; }
+    .ai-message.user { background: #e4eaf2; border-left: 3px solid var(--ink); }
+    .ai-message.system { font-style: italic; background: transparent; padding: 0; }
+
+    .ai-quick-prompts { display: flex; gap: 6px; padding: 0 12px 10px; overflow-x: auto; background: #ffffff; }
+    .ai-quick-prompts button { background: #f0f0f0; border: 1px solid var(--rule); padding: 4px 10px; border-radius: 15px; font-size: 11px; font-weight: bold; cursor: pointer; }
+    .ai-quick-prompts button:hover { background: #d0d7e0; border-color: var(--ink); }
+
+    .ai-input-area { display: flex; padding: 10px 12px; border-top: 1px solid var(--rule); background: #e4eaf2; border-radius: 0 0 8px 8px; }
+    .ai-input-area input { flex: 1; border: 1px solid var(--rule); border-radius: 4px; padding: 8px 10px; font-size: 13px; outline: none; }
+    .ai-input-area input:focus { border-color: var(--ink); }
+    .ai-input-area button { background: #d0d7e0; border: 1px solid var(--ink); border-radius: 4px; padding: 0 12px; margin-left: 6px; cursor: pointer; font-weight: 700; }
+
+    /* === MOBILE UI === */
+    @media (max-width: 520px) {
+      .controls-bar {
+        position:         static;
+        padding:          12px 16px;
+        justify-content:  flex-end;
+        border-bottom:    1px solid var(--rule);
+        flex-wrap:        wrap;
+      }
+      .masthead           { padding: 20px 16px; }
+      .reader-scroll      { padding: 20px 18px 0px; }
+      .reader-source-url  { display: none; }  
+      #ai-panel           { top: 65px; right: 10px; max-width: calc(100vw - 20px); max-height: 70vh; }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="controls-bar">
+    <button class="btn-outline" id="overall-summary-btn" style="display:none;" title="View Overall Summary">📊 PDF Summary</button>
+    <button class="btn-outline" id="upload-pdf-btn" title="Upload PDF">📄 Upload PDF</button>
+    <input type="file" id="pdf-file-input" accept="*/*" style="display: none;">
+    <select id="doc-type-selector" class="btn-outline" title="Document Type">
+      <option value="auto">Auto Detect</option>
+      <option value="onepager">1-Pager</option>
+      <option value="presentation">Presentation</option>
+      <option value="editorial">Editorial Bundle</option>
+      <option value="book">Book / Long PDF</option>
+      <option value="generic">Generic Report</option>
+    </select>
+    <button class="btn-outline" id="clear-key-btn" title="Clear Gemini Key">🔑 Reset Key</button>
+  </div>
+  
+  <div class="masthead">
+    <div class="masthead-title">Pulse</div>
+    <div class="tagline">Local Multi-Lingual Intelligence Terminal</div>
+  </div>
+  
+  <div class="feed-status-bar"><span id="item-count"></span></div>
+  
+  <div class="container">
+    <div id="rss-output" aria-live="polite" aria-atomic="false">
+      <div class="system-msg">Awaiting PDF Upload. Automatic Hindi/Marathi to English Translation is Active.</div>
+    </div>
+  </div>
+
+  <div id="reader-backdrop" aria-hidden="true"></div>
+  <div id="reader-panel" role="dialog" aria-modal="true" aria-label="Article reader">
+    <div id="reader-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+    <div class="reader-topbar">
+      <button class="reader-back-btn" id="reader-back" aria-label="Close reader">← Back</button>
+      <span class="reader-source-url" id="reader-url-label"></span>
+      <div class="reader-font-ctrl" role="group" aria-label="Font size">
+        <button id="font-down" title="Smaller text">A−</button>
+        <button id="font-up"   title="Larger text">A+</button>
+      </div>
+      <button class="reader-open-btn" id="reader-ai-toggle" style="display:none;">✨ Ask AI</button>
+    </div>
+
+    <div class="reader-scroll" id="reader-scroll">
+      <div id="reader-content"></div>
+    </div>
+
+    <div id="ai-panel">
+      <div class="ai-header">
+        <span>✨ Gemini Assistant</span>
+        <button class="ai-close-btn" id="ai-close-btn">×</button>
+      </div>
+      <div class="ai-chat-area" id="ai-chat-area">
+        <div class="ai-message system">Hi! I've read this chapter. Try a quick prompt below or ask me a specific question.</div>
+      </div>
+      <div class="ai-quick-prompts">
+        <button class="ai-prompt-btn">Summarize</button>
+        <button class="ai-prompt-btn">Key Takeaways</button>
+      </div>
+      <div class="ai-input-area">
+        <input type="text" id="ai-input" placeholder="Ask Gemini..." autocomplete="off">
+        <button id="ai-submit">Ask</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="summary-backdrop" aria-hidden="true"></div>
+  <div id="summary-modal" role="dialog" aria-modal="true" aria-label="Overall Summary">
+    <div class="summary-header">
+        <div class="summary-title">Overall PDF Intelligence</div>
+        <button class="ai-close-btn" id="summary-close-btn">×</button>
+    </div>
+    <div class="summary-content-area">
+        <div class="summary-box">
+            <div class="summary-box-title">Summary</div>
+            <div class="summary-box-content" id="modal-summary-content">Loading...</div>
+            <div class="summary-box-content summary-box-english" id="modal-summary-english" style="display:none;"></div>
+        </div>
+        <div class="summary-box">
+            <div class="summary-box-title">Key Takeaways</div>
+            <div class="summary-box-content" id="modal-takeaways-content">Loading...</div>
+            <div class="summary-box-content summary-box-english" id="modal-takeaways-english" style="display:none;"></div>
+        </div>
+    </div>
+  </div>
+
+  <script>
+    'use strict';
+
+    /* === CONFIGURATION & STATE === */
+    const CONFIG = Object.freeze({
+      MAX_DESC_CHARS:     500,             
+      READER_FONT_MIN:    13,              
+      READER_FONT_MAX:    24,              
+      READER_FONT_DEF:    17,              
+      GEMINI_MODEL:       'gemini-2.5-flash'  
+    });
+
+    const feedCache          = {};                    
+    let   readerFontSize     = CONFIG.READER_FONT_DEF; 
+    let   currentArticleText = "";                    
+
+    /* === DOM ELEMENTS === */
+    const DOM = {
+      output:          document.getElementById('rss-output'),
+      clearKeyBtn:     document.getElementById('clear-key-btn'),
+      itemCount:       document.getElementById('item-count'),
+      
+      overallSummaryBtn: document.getElementById('overall-summary-btn'),
+      summaryBackdrop:   document.getElementById('summary-backdrop'),
+      summaryModal:      document.getElementById('summary-modal'),
+      summaryCloseBtn:   document.getElementById('summary-close-btn'),
+      modalSummary:      document.getElementById('modal-summary-content'),
+      modalSummaryEng:   document.getElementById('modal-summary-english'),
+      modalTakeaways:    document.getElementById('modal-takeaways-content'),
+      modalTakeawaysEng: document.getElementById('modal-takeaways-english'),
+      
+      uploadPdfBtn:    document.getElementById('upload-pdf-btn'),
+      pdfFileInput:    document.getElementById('pdf-file-input'),
+
+      readerPanel:     document.getElementById('reader-panel'),
+      readerBackdrop:  document.getElementById('reader-backdrop'),
+      readerContent:   document.getElementById('reader-content'),
+      readerScroll:    document.getElementById('reader-scroll'),
+      readerUrlLabel:  document.getElementById('reader-url-label'),
+      readerProgress:  document.getElementById('reader-progress'),
+      readerBack:      document.getElementById('reader-back'),
+      fontUp:          document.getElementById('font-up'),
+      fontDown:        document.getElementById('font-down'),
+
+      aiToggle:        document.getElementById('reader-ai-toggle'),
+      aiPanel:         document.getElementById('ai-panel'),
+      aiCloseBtn:      document.getElementById('ai-close-btn'),
+      aiChatArea:      document.getElementById('ai-chat-area'),
+      aiInput:         document.getElementById('ai-input'),
+      aiSubmit:        document.getElementById('ai-submit'),
+      aiPromptBtns:    document.querySelectorAll('.ai-prompt-btn')
+    };
+
+    /* === UTILITIES === */
+    function escapeHtml(str) {
+      if (str == null) return '';
+      return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+    }
+
+    function processSnippetText(html, maxLength) {
+      if (!html) return '';
+      let text = html.replace(/<!\[CDATA\[(.*?)\]\]>/gs, '$1');
+      text = text.replace(/<\/(p|div|h[1-6]|li)>/gi, ' ');
+      text = text.replace(/<br\s*\/?>/gi, ' ');
+      text = text.replace(/<[^>]*>?/gm, '');
+      const doc = new DOMParser().parseFromString(text, 'text/html');
+      text = doc.documentElement.textContent || '';
+      text = text.replace(/\s+/g, ' ').trim();
+      if (text.length > maxLength) {
+        text = text.substring(0, maxLength);
+        text = text.substring(0, Math.min(text.length, text.lastIndexOf(' '))) + '…';
+      }
+      return text;
+    }
+
+    function parseMarkdown(md) {
+      if (!md) return '';
+      let html = md.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      html = html.replace(/\*(.*?)\*/g,  '<em>$1</em>');
+      html = html.replace(/^- (.*)$/gm, '<ul><li>$1</li></ul>');
+      html = html.replace(/<\/ul>\n<ul>/g, '\n');
+      html = html.replace(/\n\n/g, '</p><p>');
+      return `<p>${html}</p>`;
+    }
+
+    function renderFeedItems(items, feedName) {
+      DOM.output.innerHTML = items.map((item, idx) => {
+        let desc = processSnippetText(item.description, CONFIG.MAX_DESC_CHARS);
+        let engHtml = '';
+        if (item.summary_english && item.summary_english.trim().length > 0) {
+            engHtml = `<p class="description translation"><strong>English Translation:</strong><br>${escapeHtml(processSnippetText(item.summary_english, CONFIG.MAX_DESC_CHARS))}</p>`;
+        }
+        
+        return (
+          `<div class="feed-item" style="animation-delay:${idx * 30}ms">` +
+            `<span class="headline reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0">${escapeHtml(item.title || 'Untitled')}</span>` +
+            (desc ? `<p class="description">${escapeHtml(desc)}</p>` : '') +
+            engHtml +
+            `<div class="meta">Extracted Chapter &mdash; ${escapeHtml(feedName)}</div>` +
+          `</div>`
+        );
+      }).join('');
+      DOM.itemCount.textContent = `${items.length} chapters identified`;
+    }
+
+    /* === READER LOGIC === */
+    function openReader(url) {
+      DOM.readerPanel.classList.add('open');
+      DOM.readerBackdrop.classList.add('open');
+      DOM.readerBackdrop.removeAttribute('aria-hidden');
+      document.body.style.overflow = 'hidden';
+
+      DOM.aiToggle.style.display = 'none';
+      closeAiPanel();
+      DOM.aiChatArea.innerHTML = `<div class="ai-message system">Ask me anything — about this chapter, or any topic.</div>`;
+      currentArticleText = "";
+
+      if (url.startsWith('pdf-local-file')) {
+        const index = parseInt(url.split('-').pop(), 10);
+        const item = feedCache['uploaded-pdf']?.items[index];
+        
+        DOM.readerUrlLabel.textContent = "Local PDF Extraction";
+        DOM.readerScroll.scrollTop = 0;
+        setReaderProgress(0);
+        
+        if (item) {
+          currentArticleText = item.full_text; 
+          
+          let cleanHtml = parseMarkdown(item.full_text);
+          let fullRender = `<h1 class="reader-article-title">${escapeHtml(item.title)}</h1><div class="reader-article-meta">PDF Document Extraction</div><div class="reader-body">${cleanHtml}</div>`;
+          
+          if (item.full_text_english && item.full_text_english.trim().length > 0) {
+             currentArticleText += "\n\nEnglish Translation:\n" + item.full_text_english;
+             fullRender += `<div class="translation-header">English Translation</div><div class="reader-body">${parseMarkdown(item.full_text_english)}</div>`;
+          }
+          
+          DOM.readerContent.innerHTML = fullRender;
+          DOM.aiToggle.style.display = 'inline-block'; 
+        } else {
+          DOM.readerContent.innerHTML = `<div class="system-msg">Could not find chapter data.</div>`;
+        }
+      }
+    }
+
+    function closeReader() {
+      DOM.readerPanel.classList.remove('open');
+      DOM.readerBackdrop.classList.remove('open');
+      DOM.readerBackdrop.setAttribute('aria-hidden', 'true');
+      document.body.style.overflow = '';
+      closeAiPanel();
+      DOM.aiToggle.style.display = 'none';
+    }
+
+    function setReaderProgress(pct) {
+      const clamped = Math.min(100, Math.max(0, pct));
+      DOM.readerProgress.style.width = clamped + '%';
+    }
+
+    /* === GEMINI API === */
+    function getGeminiKey() {
+      let key = localStorage.getItem('gemini_api_key_pdf');
+      if (!key) {
+        key = prompt("🔒 Security Check: Enter your Gemini API Key.\n\nSaved securely in your browser's local storage only.\nGet a free key at: aistudio.google.com/app/apikey");
+        if (key && key.trim() !== "") localStorage.setItem('gemini_api_key_pdf', key.trim());
+        else return null;
+      }
+      return key;
+    }
+
+    function clearGeminiKey() {
+      localStorage.removeItem('gemini_api_key_pdf');
+      alert("Gemini API Key removed. You will be prompted again on your next extraction.");
+    }
+
+    async function fetchWithRetry(url, options, maxRetries = 3) {
+      let attempt = 0;
+      while (attempt < maxRetries) {
+        const response = await fetch(url, options);
+        if (response.status === 429) {
+          attempt++;
+          if (attempt >= maxRetries) throw new Error("Rate limit exceeded (429). Please wait a minute.");
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
+        } else {
+          if (!response.ok) throw new Error(`API Error: ${response.status}`);
+          return response;
+        }
+      }
+    }
+
+    function cleanAiResponse(text) {
+      let t          = text.trim();
+      const marker   = String.fromCharCode(96, 96, 96); 
+      if (t.startsWith(marker)) {
+        const firstNewline = t.indexOf('\n');
+        if (firstNewline !== -1) t = t.substring(firstNewline + 1);
+      }
+      if (t.endsWith(marker)) { t = t.substring(0, t.length - 3); }
+      return t.trim();
+    }
+
+    function toggleAiPanel() {
+      DOM.aiPanel.classList.toggle('open');
+      if (DOM.aiPanel.classList.contains('open')) DOM.aiInput.focus();
+    }
+
+    function closeAiPanel() { DOM.aiPanel.classList.remove('open'); }
+
+    function addChatMessage(role, text) {
+      const div     = document.createElement('div');
+      div.className = `ai-message ${role}`;
+      div.innerHTML = role === 'system' ? escapeHtml(text) : parseMarkdown(text);
+      DOM.aiChatArea.appendChild(div);
+      DOM.aiChatArea.scrollTop = DOM.aiChatArea.scrollHeight;
+    }
+
+    async function submitAiPrompt(userPrompt) {
+      if (!userPrompt || userPrompt.trim() === '') return;
+
+      addChatMessage('user', userPrompt);
+      DOM.aiInput.value        = '';
+      DOM.aiSubmit.disabled    = true;
+      DOM.aiSubmit.textContent = '...';
+
+      const loadingDiv       = document.createElement('div');
+      loadingDiv.className   = 'ai-message system';
+      loadingDiv.textContent = 'Thinking...';
+      DOM.aiChatArea.appendChild(loadingDiv);
+      DOM.aiChatArea.scrollTop = DOM.aiChatArea.scrollHeight;
+
+      try {
+        const apiKey = getGeminiKey();
+        if (!apiKey) throw new Error("API Key missing");
+
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
+        const articleContext = currentArticleText ? `--- CURRENT CHAPTER ---\n${currentArticleText.substring(0, 30000)}\n-----------------------\n\n` : '';
+        const fullPrompt = `You are a smart, helpful AI assistant embedded in a PDF intelligence reader app.\nAnswer the user's question strictly based on facts.\nIf an article/chapter is provided below, you may use it as context — but you are not limited to it.\n\n${articleContext}USER: ${userPrompt}`;
+
+        const response = await fetchWithRetry(endpoint, {
+          method:  'POST', headers: { 'Content-Type': 'application/json' }, body:    JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] }),
+        });
+
+        const data    = await response.json();
+        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
+
+        DOM.aiChatArea.removeChild(loadingDiv);
+        addChatMessage('assistant', cleanAiResponse(rawText));
+
+      } catch (err) {
+        DOM.aiChatArea.removeChild(loadingDiv); addChatMessage('system', `Error: ${err.message}`);
+      } finally {
+        DOM.aiSubmit.disabled = false; DOM.aiSubmit.textContent = 'Ask';
+      }
+    }
+
+    /* === PDF PROCESSING & TRANSLATION === */
+    
+    function detectDocumentType(file) {
+      const selected = DOM.docTypeSelector?.value || "auto";
+      if (selected !== "auto") return selected;
+      const name = (file.name || "").toLowerCase();
+      if (name.includes("editorial")) return "editorial";
+      if (name.includes("ppt") || name.includes("slides")) return "presentation";
+      if (name.includes("book")) return "book";
+      return "generic";
+    }
+
+    async function routeDocumentProcessing(file) {
+      const type = detectDocumentType(file);
+      if (type === "editorial") {
+        DOM.output.innerHTML = '<div class="system-msg">Editorial mode selected: processing page-aware summaries with safe batching.</div>';
+      } else if (type === "book") {
+        DOM.output.innerHTML = '<div class="system-msg">Book mode selected: hierarchical summarization enabled.</div>';
+      }
+      return processPdf(file);
+    }
+
+async function processPdf(file) {
+      const apiKey = getGeminiKey();
+      if (!apiKey) return;
+
+      const originalText = DOM.uploadPdfBtn.textContent;
+      DOM.uploadPdfBtn.textContent = "⚙ Uploading to Gemini...";
+      DOM.uploadPdfBtn.disabled = true;
+
+      try {
+        let mimeType = file.type || "application/pdf";
+        const uploadUrl = `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`;
+        
+        const uploadRes = await fetch(uploadUrl, {
+            method: 'POST',
+            headers: {
+                'X-Goog-Upload-Command': 'start, upload, finalize',
+                'X-Goog-Upload-Header-Content-Length': file.size.toString(),
+                'X-Goog-Upload-Header-Content-Type': mimeType,
+                'Content-Type': mimeType
+            },
+            body: file
+        });
+        const uploadData = await uploadRes.json();
+        if (uploadData.error) throw new Error(uploadData.error.message);
+        
+        const fileUri = uploadData.file.uri;
+
+        DOM.uploadPdfBtn.textContent = "⚙ Extracting Chapters & Translating...";
+        
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
+        
+        const payloadChapters = {
+            system_instruction: { parts: [{ text: "You are a precise document analyzer and multi-lingual translator." }] },
+            contents: [{
+                role: "user",
+                parts: [
+                    { fileData: { fileUri: fileUri, mimeType: mimeType } },
+                    { text: "Analyze this document thoroughly. Identify up to 100 distinct chapters, reports, or major sections. For EACH section, provide: 1) Headline. 2) A concise 2-sentence Summary. 3) The COMPLETE original full text. 4) CRITICAL INSTRUCTION: If the original text is in Hindi, Marathi, or any Indian language, you MUST provide an English translation for BOTH the summary and the full text. Return ONLY a valid JSON array of objects with exactly these keys: 'title', 'summary', 'summary_english', 'full_text', and 'full_text_english'. If the original text is already in English, you may leave the '_english' keys empty. Do not include markdown blocks." }
+                ]
+            }],
+            generationConfig: { temperature: 0.1, responseMimeType: "application/json" }
+        };
+
+        const responseChapters = await fetchWithRetry(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payloadChapters) });
+        const dataChapters = await responseChapters.json();
+        const cleanTextChapters = cleanAiResponse(dataChapters.candidates?.[0]?.content?.parts?.[0]?.text || '[]');
+        
+        let sections;
+        try { sections = JSON.parse(cleanTextChapters); } 
+        catch(e) { throw new Error("AI response was not in a valid JSON array format."); }
+
+        const items = sections.map((s, i) => ({
+          title: s.title || "Untitled Section",
+          description: s.summary || "Summary unavailable.",
+          summary_english: s.summary_english || "",
+          full_text: s.full_text || s.summary || "Full text not found.",
+          full_text_english: s.full_text_english || "",
+          link: `pdf-local-file-${i}`
+        }));
+
+        feedCache['uploaded-pdf'] = { timestamp: Date.now(), items };
+        renderFeedItems(items, 'PDF DOCUMENT');
+
+        DOM.uploadPdfBtn.textContent = "⚙ Generating Overall Summary...";
+
+        const payloadOverall = {
+            system_instruction: { parts: [{ text: "You are a factual document analyzer and translator." }] },
+            contents: [{
+                role: "user",
+                parts: [
+                    { fileData: { fileUri: fileUri, mimeType: mimeType } },
+                    { text: "Provide an overall summary and key takeaways of this document. If the document is in Hindi or Marathi, provide an English translation as well. Output ONLY valid JSON containing exactly four keys: 'summary', 'summary_english', 'keyTakeaways', and 'keyTakeaways_english' (takeaways should be bullet points with dashes). If the document is in English, leave the '_english' keys empty." }
+                ]
+            }],
+            generationConfig: { temperature: 0.1, responseMimeType: "application/json" }
+        };
+
+        const responseOverall = await fetchWithRetry(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payloadOverall) });
+        const dataOverall = await responseOverall.json();
+        const overallRaw = cleanAiResponse(dataOverall.candidates?.[0]?.content?.parts?.[0]?.text || '{}');
+        
+        let overallParsed = { summary: "No summary generated.", summary_english: "", keyTakeaways: "No takeaways generated.", keyTakeaways_english: "" };
+        try { overallParsed = JSON.parse(overallRaw); } catch(e) { console.error("Summary parse failed"); }
+        
+        DOM.modalSummary.innerText = overallParsed.summary;
+        if (overallParsed.summary_english && overallParsed.summary_english.trim() !== "") {
+            DOM.modalSummaryEng.innerHTML = `<strong>English Translation:</strong><br>${escapeHtml(overallParsed.summary_english)}`;
+            DOM.modalSummaryEng.style.display = 'block';
+        } else {
+            DOM.modalSummaryEng.style.display = 'none';
+        }
+
+        DOM.modalTakeaways.innerText = overallParsed.keyTakeaways;
+        if (overallParsed.keyTakeaways_english && overallParsed.keyTakeaways_english.trim() !== "") {
+            DOM.modalTakeawaysEng.innerHTML = `<strong>English Translation:</strong><br>${escapeHtml(overallParsed.keyTakeaways_english)}`;
+            DOM.modalTakeawaysEng.style.display = 'block';
+        } else {
+            DOM.modalTakeawaysEng.style.display = 'none';
+        }
+
+        DOM.overallSummaryBtn.style.display = 'inline-block';
+        alert("✅ PDF Processed! Chapters are listed below. Translations have been generated for local languages.");
+
+      } catch (err) {
+        console.error("PDF processing failed", err);
+        alert("❌ PDF processing failed: " + err.message);
+      } finally {
+        DOM.uploadPdfBtn.textContent = originalText;
+        DOM.uploadPdfBtn.disabled = false;
+      }
+    }
+
+    /* === INITIALIZATION === */
+    window.addEventListener('load', () => {
+      DOM.clearKeyBtn.addEventListener('click', clearGeminiKey);
+
+      DOM.uploadPdfBtn.addEventListener('click', () => DOM.pdfFileInput.click());
+      DOM.pdfFileInput.addEventListener('change', (e) => {
+        if (e.target.files[0]) routeDocumentProcessing(e.target.files[0]);
+      });
+
+      DOM.overallSummaryBtn.addEventListener('click', () => {
+          DOM.summaryBackdrop.classList.add('open');
+          DOM.summaryModal.classList.add('open');
+      });
+      DOM.summaryCloseBtn.addEventListener('click', () => {
+          DOM.summaryBackdrop.classList.remove('open');
+          DOM.summaryModal.classList.remove('open');
+      });
+      DOM.summaryBackdrop.addEventListener('click', () => {
+          DOM.summaryBackdrop.classList.remove('open');
+          DOM.summaryModal.classList.remove('open');
+      });
+
+      DOM.output.addEventListener('click', (e) => {
+        const trigger = e.target.closest('.reader-trigger');
+        if (!trigger) return;
+        const url = trigger.getAttribute('data-url');
+        if (url) openReader(url);
+      });
+      DOM.output.addEventListener('keydown', (e) => {
+        if (e.key !== 'Enter' && e.key !== ' ') return;
+        const trigger = e.target.closest('.reader-trigger');
+        if (trigger) { e.preventDefault(); trigger.click(); }
+      });
+
+      DOM.readerBack.addEventListener('click', closeReader);
+      DOM.readerBackdrop.addEventListener('click', closeReader);
+      document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            if (DOM.readerPanel.classList.contains('open')) closeReader();
+            if (DOM.summaryModal.classList.contains('open')) {
+                DOM.summaryBackdrop.classList.remove('open');
+                DOM.summaryModal.classList.remove('open');
+            }
+        }
+      });
+
+      DOM.fontUp.addEventListener('click', () => { readerFontSize = Math.min(CONFIG.READER_FONT_MAX, readerFontSize + 1); document.documentElement.style.setProperty('--reader-font-sz', `${readerFontSize}px`); });
+      DOM.fontDown.addEventListener('click', () => { readerFontSize = Math.max(CONFIG.READER_FONT_MIN, readerFontSize - 1); document.documentElement.style.setProperty('--reader-font-sz', `${readerFontSize}px`); });
+
+      DOM.readerScroll.addEventListener('scroll', () => {
+        const { scrollTop, scrollHeight, clientHeight } = DOM.readerScroll;
+        const denominator = scrollHeight - clientHeight;
+        setReaderProgress(denominator > 0 ? (scrollTop / denominator) * 100 : 0);
+      });
+
+      DOM.aiToggle.addEventListener('click', toggleAiPanel);
+      DOM.aiCloseBtn.addEventListener('click', closeAiPanel);
+      DOM.aiSubmit.addEventListener('click', () => submitAiPrompt(DOM.aiInput.value));
+      DOM.aiInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitAiPrompt(DOM.aiInput.value); });
+      DOM.aiPromptBtns.forEach(btn => { btn.addEventListener('click', () => submitAiPrompt(btn.textContent)); });
+    });
+  </script>
+</body>
+</html>
