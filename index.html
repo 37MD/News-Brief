@@ -6,7 +6,6 @@
     <title>AI Pdf Analysis Version PDF1</title>
     <link id="pwa-manifest" rel="manifest" href="">
     <style>
-        /* ── STRICT BLACK FONT CONSTRAINT ── */
         :root {
             --bg-color: #f4f6f9;
             --box-bg: #ffffff;
@@ -17,7 +16,7 @@
 
         * {
             box-sizing: border-box;
-            color: black !important; /* STRICTLY NO WHITE FONTS */
+            color: black !important;
             font-family: monospace;
         }
 
@@ -55,7 +54,6 @@
             width: 40px;
             height: 40px;
             margin-right: 15px;
-            /* SVG elements controlled by stroke/fill attributes inline, but enforcing stroke via CSS as well */
             stroke: black !important;
         }
 
@@ -104,7 +102,6 @@
             flex-wrap: wrap;
         }
 
-        /* ── Two Boxes: Summary and Key Takeaways ── */
         .analysis-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
@@ -149,7 +146,6 @@
             background: white;
         }
 
-        /* ── Pure AI Chat Box ── */
         .chat-area {
             flex-grow: 1;
             height: 350px;
@@ -253,7 +249,6 @@
 
     <script>
     (function() {
-        // ── PWA SINGLE FILE DEPLOYMENT (INLINE MANIFEST & SERVICE WORKER) ──
         const openBookSvgUri = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>`);
         
         const manifest = {
@@ -284,7 +279,6 @@
             navigator.serviceWorker.register(URL.createObjectURL(swBlob)).catch(console.error);
         }
 
-        // ── CORE APPLICATION LOGIC ──
         const apiKeyIn = document.getElementById('api-key');
         const saveKeyBtn = document.getElementById('save-key');
         const fileInput = document.getElementById('file-input');
@@ -322,7 +316,6 @@
             chatArea.scrollTop = chatArea.scrollHeight;
         }
 
-        // ── UPLOAD DOCUMENT TO GEMINI API (Unrestricted Size via File API) ──
         uploadBtn.onclick = async () => {
             if (!apiKey) return updateStatus("Error: Save API Key first.");
             const file = fileInput.files[0];
@@ -333,7 +326,6 @@
             try {
                 let mimeType = file.type || "application/pdf";
                 
-                // Using the Gemini File API for unrestricted document uploads
                 const uploadUrl = `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`;
                 const response = await fetch(uploadUrl, {
                     method: 'POST',
@@ -359,7 +351,6 @@
 
                 updateStatus(`File [${currentFileName}] ingested successfully. Extracting intelligence...`);
                 
-                // Immediately pull Summary and Key Takeaways
                 await fetchDocumentIntelligence();
 
             } catch (err) {
@@ -367,125 +358,6 @@
             }
         };
 
-        // ── EXTRACT SUMMARY AND KEY TAKEAWAYS (JSON FORCED) ──
         async function fetchDocumentIntelligence() {
             try {
-                summaryContent.innerText = "Analyzing...";
-                takeawaysContent.innerText = "Analyzing...";
-
-                const payload = {
-                    system_instruction: { 
-                        parts: [{ text: "You are a factual document analyzer. Analyze the provided file. Output ONLY valid JSON containing exactly two keys: 'summary' (a comprehensive paragraph detailing the document's core subject) and 'keyTakeaways' (a string of distinct bullet points marked with dashes). Do not include markdown codeblocks." }]
-                    },
-                    contents: [
-                        {
-                            role: "user",
-                            parts: [
-                                { fileData: { fileUri: currentFileUri, mimeType: currentFileMime } },
-                                { text: "Perform intelligence extraction and output the JSON structure." }
-                            ]
-                        }
-                    ],
-                    generationConfig: { 
-                        temperature: 0.1,
-                        responseMimeType: "application/json"
-                    }
-                };
-
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(payload)
-                });
-
-                const result = await response.json();
-
-                if (result.error) {
-                    updateStatus("Extraction Error: " + result.error.message);
-                    summaryContent.innerText = "Extraction Failed.";
-                    takeawaysContent.innerText = "Extraction Failed.";
-                    return;
-                }
-
-                if (result.candidates && result.candidates[0].content) {
-                    const rawText = result.candidates[0].content.parts[0].text;
-                    try {
-                        const parsedData = JSON.parse(rawText);
-                        summaryContent.innerText = parsedData.summary || "Summary generation empty.";
-                        takeawaysContent.innerText = parsedData.keyTakeaways || "Takeaways generation empty.";
-                        updateStatus("Extraction complete. Chat Interface Active.");
-                        appendMessage('system', `Intelligence locked for **${currentFileName}**. You may now begin querying the document directly.`);
-                    } catch (parseError) {
-                        summaryContent.innerText = "JSON Parse Failure.";
-                        takeawaysContent.innerText = rawText;
-                        updateStatus("Extraction complete with parsing anomaly.");
-                    }
-                } else {
-                    updateStatus("Extraction Error: Empty response from AI.");
-                }
-
-            } catch (err) {
-                updateStatus("Extraction Exception: " + err.message);
-            }
-        }
-
-        // ── PURE AI CHAT EXECUTION ──
-        async function executeChatQuery() {
-            const query = chatInput.value.trim();
-            if (!query || !apiKey) return;
-
-            appendMessage('user', query);
-            chatInput.value = '';
-
-            const loadingId = 'loading-' + Date.now();
-            const loadingNode = document.createElement('div');
-            loadingNode.className = 'message system';
-            loadingNode.id = loadingId;
-            loadingNode.innerText = 'Interrogating document...';
-            chatArea.appendChild(loadingNode);
-            chatArea.scrollTop = chatArea.scrollHeight;
-
-            try {
-                let parts = [{ text: query }];
-                if (currentFileUri) {
-                    parts.unshift({ fileData: { fileUri: currentFileUri, mimeType: currentFileMime } });
-                }
-
-                const payload = {
-                    system_instruction: {
-                        parts: [{ text: "You are the Intelligence Oracle for this document. Answer questions strictly based on the provided file facts and data. Do not hallucinate." }]
-                    },
-                    contents: [{ role: 'user', parts: parts }],
-                    generationConfig: { temperature: 0.1 }
-                };
-
-                const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(payload)
-                });
-
-                const result = await response.json();
-                document.getElementById(loadingId).remove();
-
-                if (result.error) {
-                    appendMessage('system', "Query Error: " + result.error.message);
-                } else if (result.candidates && result.candidates[0].content) {
-                    appendMessage('system', result.candidates[0].content.parts[0].text);
-                } else {
-                    appendMessage('system', 'System returned a void response.');
-                }
-
-            } catch (err) {
-                document.getElementById(loadingId).remove();
-                appendMessage('system', 'Network Exception: ' + err.message);
-            }
-        }
-
-        sendBtn.onclick = executeChatQuery;
-        chatInput.onkeydown = (e) => { if (e.key === 'Enter') executeChatQuery(); };
-
-    })();
-    </script>
-</body>
-</html>
+                summaryContent.innerText
