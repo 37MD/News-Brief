@@ -6,22 +6,27 @@
   <title>Pulse v26B - PDF Intelligence</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
+    /* ── STRICT NO WHITE FONTS ENFORCEMENT ── */
     :root {
-      --ink:            #1a1a18;   
+      --ink:            #000000;   
       --paper:          #f5f0e8;   
       --accent:         #1a5c3a;   
       --rule:           #c8c0b0;   
-      --muted:          #5a554c;   
-      --meta-color:     #8c867a;   
-      --error:          #c0392b;   
+      --muted:          #111111;   
+      --meta-color:     #333333;   
+      --error:          #8b0000;   
       --reader-font-sz: 17px;      
     }
 
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    *, *::before, *::after { 
+      box-sizing: border-box; 
+      margin: 0; 
+      padding: 0; 
+      color: black !important; 
+    }
 
     body {
       background:  var(--paper);
-      color:       var(--ink);
       font-family: 'IBM Plex Sans', sans-serif;
       min-height:  100vh;
       line-height: 1.6;
@@ -38,44 +43,24 @@
       flex-wrap:   wrap;
     }
 
-    select {
-      font-family:      'IBM Plex Mono', monospace;
-      font-size:        11px;
-      background-color: transparent;
-      color:            var(--ink);
-      border:           1px solid var(--rule);
-      padding:          6px 10px;
-      border-radius:    4px;
-      cursor:           pointer;
-      outline:          none;
-      text-transform:   uppercase;
-      font-weight:      500;
-      max-width:        200px;
-    }
-    select:hover { border-color: var(--accent); }
-
     .btn-outline {
       font-family:    'IBM Plex Mono', monospace;
       font-size:      11px;
       background:     transparent;
-      color:          var(--accent);
       border:         1px solid var(--accent);
       padding:        6px 10px;
       border-radius:  4px;
       cursor:         pointer;
       text-transform: uppercase;
-      font-weight:    500;
+      font-weight:    700;
       transition:     background 0.2s, color 0.2s;
       white-space:    nowrap;
     }
-    .btn-outline:hover    { background: var(--accent); color: var(--paper); }
+    .btn-outline:hover    { background: #d0d7e0; }
     .btn-outline:disabled { opacity: 0.4; cursor: not-allowed; }
 
-    #clear-key-btn       { color: var(--muted); border-color: var(--rule); }
-    #clear-key-btn:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
-
-    #refresh-btn.spinning { animation: spin 1s linear infinite; }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    #clear-key-btn       { border-color: var(--rule); }
+    #clear-key-btn:hover { background: #d0d7e0; border-color: var(--ink); }
 
     .masthead {
       border-bottom: 3px double var(--ink);
@@ -94,7 +79,6 @@
       font-size:      10px;
       letter-spacing: 0.2em;
       text-transform: uppercase;
-      color:          var(--meta-color);
       margin-top:     8px;
     }
 
@@ -107,7 +91,6 @@
       align-items:     center;
       font-family:     'IBM Plex Mono', monospace;
       font-size:       10px;
-      color:           var(--meta-color);
       text-transform:  uppercase;
       letter-spacing:  0.05em;
     }
@@ -135,7 +118,6 @@
     .headline {
       font-family:     'Playfair Display', serif;
       font-size:       22px;
-      color:           var(--ink);
       text-decoration: none;
       font-weight:     700;
       display:         block;
@@ -144,11 +126,10 @@
       word-break:      break-word;
       cursor:          pointer;
     }
-    .headline:hover { color: var(--accent); text-decoration: underline; }
+    .headline:hover { text-decoration: underline; }
 
     .description {
       font-size:     15px;
-      color:         var(--muted);
       margin-bottom: 12px;
       line-height:   1.6;
     }
@@ -156,7 +137,6 @@
     .meta {
       font-family:    'IBM Plex Mono', monospace;
       font-size:      10px;
-      color:          var(--meta-color);
       text-transform: uppercase;
       letter-spacing: 0.05em;
     }
@@ -164,24 +144,9 @@
     .system-msg {
       font-family: 'IBM Plex Mono', monospace;
       font-size:   12px;
-      color:       var(--meta-color);
       text-align:  center;
       margin-top:  60px;
       line-height: 2;
-    }
-    .system-msg.error { color: var(--error); }
-
-    .cached-badge {
-      display:        inline-block;
-      font-family:    'IBM Plex Mono', monospace;
-      font-size:      9px;
-      background:     var(--rule);
-      color:          var(--muted);
-      padding:        1px 5px;
-      border-radius:  2px;
-      text-transform: uppercase;
-      margin-left:    6px;
-      vertical-align: middle;
     }
 
     #reader-backdrop, #summary-backdrop {
@@ -220,18 +185,18 @@
     .summary-header {
       display: flex; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid var(--rule); align-items: center; background: #e4eaf2; border-radius: 12px 12px 0 0;
     }
-    .summary-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: bold; color: var(--ink); }
+    .summary-title { font-family: 'Playfair Display', serif; font-size: 20px; font-weight: bold; }
     .summary-content-area { padding: 20px; overflow-y: auto; display: flex; flex-direction: column; gap: 20px; }
     .summary-box { border: 1px solid var(--rule); border-radius: 8px; background: #ffffff; overflow: hidden; }
-    .summary-box-title { background: #e4eaf2; padding: 12px 16px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid var(--rule); color: var(--ink); text-align: center; }
-    .summary-box-content { padding: 16px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; color: var(--ink); }
+    .summary-box-title { background: #e4eaf2; padding: 12px 16px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid var(--rule); text-align: center; }
+    .summary-box-content { padding: 16px; font-size: 14px; line-height: 1.6; white-space: pre-wrap; background: #ffffff; }
 
     #reader-progress {
       position:   absolute;
       top: 0; left: 0;
       height:     3px;
       width:      0%;
-      background: var(--accent);
+      background: var(--ink);
       transition: width 0.2s;
       z-index:    5;
     }
@@ -251,24 +216,22 @@
     .reader-back-btn {
       font-family:    'IBM Plex Mono', monospace;
       font-size:      11px;
-      font-weight:    500;
+      font-weight:    700;
       text-transform: uppercase;
       background:     transparent;
-      color:          var(--accent);
-      border:         1px solid var(--accent);
+      border:         1px solid var(--ink);
       padding:        5px 12px;
       border-radius:  4px;
       cursor:         pointer;
       white-space:    nowrap;
-      transition:     background 0.2s, color 0.2s;
+      transition:     background 0.2s;
       flex-shrink:    0;
     }
-    .reader-back-btn:hover { background: var(--accent); color: var(--paper); }
+    .reader-back-btn:hover { background: #d0d7e0; }
 
     .reader-source-url {
       font-family:   'IBM Plex Mono', monospace;
       font-size:     10px;
-      color:         var(--meta-color);
       white-space:   nowrap;
       overflow:      hidden;
       text-overflow: ellipsis;
@@ -279,9 +242,9 @@
     .reader-font-ctrl button {
       font-family:     'IBM Plex Mono', monospace;
       font-size:       13px;
+      font-weight:     bold;
       background:      transparent;
       border:          1px solid var(--rule);
-      color:           var(--muted);
       width: 28px; height: 28px;
       border-radius:   4px;
       cursor:          pointer;
@@ -290,15 +253,14 @@
       justify-content: center;
       transition:      border-color 0.2s;
     }
-    .reader-font-ctrl button:hover { border-color: var(--ink); color: var(--ink); }
+    .reader-font-ctrl button:hover { border-color: var(--ink); background: #d0d7e0; }
 
     .reader-open-btn {
       font-family:     'IBM Plex Mono', monospace;
       font-size:       10px;
-      font-weight:     500;
+      font-weight:     700;
       text-transform:  uppercase;
       background:      transparent;
-      color:           var(--muted);
       border:          1px solid var(--rule);
       padding:         5px 10px;
       border-radius:   4px;
@@ -308,15 +270,12 @@
       transition:      all 0.2s;
       flex-shrink:     0;
     }
-    .reader-open-btn:hover { border-color: var(--ink); color: var(--ink); }
+    .reader-open-btn:hover { border-color: var(--ink); background: #d0d7e0; }
 
     .reader-ai-btn {
-      color:        var(--accent);
-      border-color: var(--accent);
-      background:   rgba(26, 92, 58, 0.05);
-      font-weight:  600;
+      border-color: var(--ink);
+      background:   #e4eaf2;
     }
-    .reader-ai-btn:hover { background: var(--accent); color: var(--paper); }
 
     .reader-scroll {
       overflow-y: auto;
@@ -331,13 +290,11 @@
       font-size:     clamp(22px, 3.5vw, 32px);
       font-weight:   700;
       line-height:   1.25;
-      color:         var(--ink);
       margin-bottom: 16px;
     }
     .reader-article-meta {
       font-family:    'IBM Plex Mono', monospace;
       font-size:      11px;
-      color:          var(--meta-color);
       text-transform: uppercase;
       letter-spacing: 0.05em;
       margin-bottom:  28px;
@@ -348,7 +305,6 @@
     .reader-body {
       font-size:      var(--reader-font-sz);
       line-height:    1.85;
-      color:          var(--ink);
       padding-bottom: 40px;
     }
     .reader-body p:empty,
@@ -377,25 +333,21 @@
       display:       block;
     }
     .reader-body blockquote {
-      border-left: 3px solid var(--accent);
+      border-left: 3px solid var(--ink);
       padding:     4px 0 4px 16px;
       margin:      1.4em 0;
-      color:       var(--muted);
       font-style:  italic;
     }
-    .reader-body a    { color: var(--accent); word-break: break-word; }
     .reader-body ul, .reader-body ol { padding-left: 1.6em; margin-bottom: 1.2em; }
     .reader-body li   { margin-bottom: 0.4em; }
 
     .reader-status {
       font-family: 'IBM Plex Mono', monospace;
       font-size:   12px;
-      color:       var(--meta-color);
       text-align:  center;
       margin-top:  80px;
       line-height: 2.5;
     }
-    .reader-status.error { color: var(--error); }
 
     #ai-panel {
       position:       absolute;
@@ -427,14 +379,13 @@
       justify-content: space-between;
       align-items:     center;
       padding:         12px 16px;
-      background:      var(--paper);
+      background:      #e4eaf2;
       border-bottom:   1px solid var(--rule);
       border-radius:   12px 12px 0 0;
       font-family:     'IBM Plex Mono', monospace;
       font-size:       11px;
-      font-weight:     500;
+      font-weight:     700;
       text-transform:  uppercase;
-      color:           var(--accent);
     }
     .ai-close-btn {
       background:  transparent;
@@ -442,9 +393,8 @@
       font-size:   20px;
       line-height: 1;
       cursor:      pointer;
-      color:       var(--muted);
+      font-weight: bold;
     }
-    .ai-close-btn:hover { color: var(--ink); }
 
     .ai-chat-area {
       padding:     16px;
@@ -452,18 +402,18 @@
       flex:        1;
       font-size:   14px;
       line-height: 1.6;
+      background:  #ffffff;
     }
 
     .ai-message {
       margin-bottom: 16px;
       padding:       12px 16px;
       border-radius: 8px;
-      background:    var(--paper);
-      color:         var(--ink);
+      background:    #f0f0f0;
     }
-    .ai-message.user   { background: rgba(26, 92, 58, 0.08); border-left: 3px solid var(--accent); }
-    .ai-message.system { color: var(--muted); font-style: italic; font-size: 13px; background: transparent; padding: 0; }
-    .ai-message strong { font-weight: 600; }
+    .ai-message.user   { background: #e4eaf2; border-left: 3px solid var(--ink); }
+    .ai-message.system { font-style: italic; font-size: 13px; background: transparent; padding: 0; }
+    .ai-message strong { font-weight: 700; }
     .ai-message ul     { margin-left: 20px; margin-top: 8px; }
     .ai-message p      { margin-bottom: 8px; }
     .ai-message p:last-child { margin-bottom: 0; }
@@ -475,25 +425,26 @@
       overflow-x:      auto;
       white-space:     nowrap;
       scrollbar-width: none;
+      background:      #ffffff;
     }
     .ai-quick-prompts::-webkit-scrollbar { display: none; }
     .ai-quick-prompts button {
-      background:    var(--paper);
+      background:    #f0f0f0;
       border:        1px solid var(--rule);
       padding:       6px 12px;
       border-radius: 20px;
       font-size:     12px;
-      color:         var(--muted);
+      font-weight:   bold;
       cursor:        pointer;
       transition:    all 0.2s;
     }
-    .ai-quick-prompts button:hover { background: var(--ink); color: var(--paper); border-color: var(--ink); }
+    .ai-quick-prompts button:hover { background: #d0d7e0; border-color: var(--ink); }
 
     .ai-input-area {
       display:       flex;
       padding:       12px 16px;
       border-top:    1px solid var(--rule);
-      background:    #fff;
+      background:    #e4eaf2;
       border-radius: 0 0 12px 12px;
     }
     .ai-input-area input {
@@ -504,20 +455,19 @@
       font-family:   'IBM Plex Sans', sans-serif;
       font-size:     14px;
       outline:       none;
-      color:         var(--ink);
+      background:    #ffffff;
     }
-    .ai-input-area input:focus { border-color: var(--accent); }
+    .ai-input-area input:focus { border-color: var(--ink); }
     .ai-input-area button {
-      background:    var(--accent);
-      color:         var(--paper);
-      border:        none;
+      background:    #d0d7e0;
+      border:        1px solid var(--ink);
       border-radius: 4px;
       padding:       0 16px;
       margin-left:   8px;
       cursor:        pointer;
-      font-weight:   500;
+      font-weight:   700;
     }
-    .ai-input-area button:disabled { background: var(--rule); cursor: not-allowed; }
+    .ai-input-area button:disabled { opacity: 0.5; cursor: not-allowed; }
 
     @media (max-width: 520px) {
       .controls-bar {
@@ -527,7 +477,6 @@
         border-bottom:    1px solid var(--rule);
         flex-wrap:        wrap;
       }
-      select              { max-width: 140px; font-size: 10px; }
       .masthead           { padding: 20px 16px; }
       .reader-scroll      { padding: 20px 18px 0px; }
       .reader-source-url  { display: none; }  
@@ -539,42 +488,25 @@
 <body>
 
   <div class="controls-bar">
-
-    <select id="feed-dropdown" aria-label="Select news feed">
-      <optgroup label="── Times of India ──">
-        <option value="https://timesofindia.indiatimes.com/rssfeedstopstories.cms" selected>TOI · Top News</option>
-        <option value="https://timesofindia.indiatimes.com/business/economy/rssfeedstopstories.cms">TOI · Economy</option>
-      </optgroup>
-      <optgroup label="── The Hindu ──">
-        <option value="https://www.thehindu.com/feeder/default.rss">Hindu · Top News</option>
-      </optgroup>
-      <optgroup label="── Indian Express ──">
-        <option value="https://indianexpress.com/feed/">IE · Top News</option>
-      </optgroup>
-    </select>
-    
     <button class="btn-outline" id="overall-summary-btn" style="display:none;" title="View Overall Summary">📊 PDF Summary</button>
     <button class="btn-outline" id="upload-pdf-btn" title="Upload PDF">📄 Upload PDF</button>
     <input type="file" id="pdf-file-input" accept="*/*" style="display: none;">
-    
-    <button class="btn-outline" id="refresh-btn" title="Refresh feed">⟳ Refresh</button>
     <button class="btn-outline" id="clear-key-btn" title="Clear Gemini Key">🔑 Reset Key</button>
   </div>
   
   <div class="masthead">
     <div class="tagline" id="header-date">Financial Intelligence Terminal</div>
     <div class="masthead-title">Pulse v26B</div>
-    <div class="tagline">Standard RSS Protocol</div>
+    <div class="tagline">Local PDF Processing Protocol</div>
   </div>
   
   <div class="feed-status-bar">
     <span id="item-count"></span>
-    <span id="next-refresh"></span>
   </div>
   
   <div class="container">
     <div id="rss-output" aria-live="polite" aria-atomic="false">
-      <div class="system-msg">Initialising secure terminal…</div>
+      <div class="system-msg">Awaiting PDF Upload. Please upload a document to begin processing and intelligence extraction.</div>
     </div>
   </div>
 
@@ -590,7 +522,7 @@
         <button id="font-up"   title="Larger text">A+</button>
       </div>
       <button class="reader-open-btn reader-ai-btn" id="reader-ai-toggle" style="display:none;">✨ Ask AI</button>
-      <a class="reader-open-btn" id="reader-ext-link" href="#" target="_blank" rel="noopener noreferrer">↗ Original</a>
+      <a class="reader-open-btn" id="reader-ext-link" href="#" target="_blank" rel="noopener noreferrer" style="display:none;">↗ Original</a>
     </div>
 
     <div class="reader-scroll" id="reader-scroll">
@@ -603,7 +535,7 @@
         <button class="ai-close-btn" id="ai-close-btn">×</button>
       </div>
       <div class="ai-chat-area" id="ai-chat-area">
-        <div class="ai-message system">Hi! I've read this article. Try a quick prompt below or ask me a specific question.</div>
+        <div class="ai-message system">Hi! I've read this chapter. Try a quick prompt below or ask me a specific question.</div>
       </div>
       <div class="ai-quick-prompts">
         <button class="ai-prompt-btn">Summarize</button>
@@ -638,10 +570,7 @@
     'use strict';
 
     const CONFIG = Object.freeze({
-      CACHE_TTL_MS:       5 * 60 * 1000,  
-      FEED_TIMEOUT_MS:    15_000,          
       ARTICLE_TIMEOUT_MS: 7_000,           
-      AUTO_REFRESH_S:     600,             
       MAX_DESC_CHARS:     500,             
       READER_FONT_MIN:    13,              
       READER_FONT_MAX:    24,              
@@ -650,19 +579,13 @@
     });
 
     const feedCache          = {};                    
-    let   requestCounter     = 0;                     
-    let   debounceTimer      = null;                  
-    let   countdownTimer     = null;                  
     let   readerFontSize     = CONFIG.READER_FONT_DEF; 
     let   currentArticleText = "";                    
 
     const DOM = {
       output:          document.getElementById('rss-output'),
-      dropdown:        document.getElementById('feed-dropdown'),
-      refreshBtn:      document.getElementById('refresh-btn'),
       clearKeyBtn:     document.getElementById('clear-key-btn'),
       itemCount:       document.getElementById('item-count'),
-      nextRefresh:     document.getElementById('next-refresh'),
       headerDate:      document.getElementById('header-date'),
       
       overallSummaryBtn: document.getElementById('overall-summary-btn'),
@@ -729,24 +652,7 @@
       } catch { return '#'; }
     }
 
-    function timeSince(dateString) {
-      if (!dateString) return 'Just now';
-      const date = new Date(dateString);
-      if (isNaN(date.getTime())) return 'Just now';
-      const seconds = Math.floor((Date.now() - date) / 1000);
-      if (seconds < 60)    return 'Just now';
-      const mins  = Math.floor(seconds / 60);
-      const hours = Math.floor(seconds / 3600);
-      const days  = Math.floor(seconds / 86400);
-      if (days  > 1)  return `${days} days ago`;
-      if (days === 1) return '1 day ago';
-      if (hours > 1)  return `${hours} hours ago`;
-      if (hours === 1)return '1 hour ago';
-      if (mins  > 1)  return `${mins} mins ago`;
-      return '1 min ago';
-    }
-
-    function processRssText(html, maxLength) {
+    function processSnippetText(html, maxLength) {
       if (!html) return '';
       let text = html.replace(/<!\[CDATA\[(.*?)\]\]>/gs, '$1');
       text = text.replace(/<\/(p|div|h[1-6]|li)>/gi, ' ');
@@ -772,128 +678,23 @@
       return `<p>${html}</p>`;
     }
 
-    function jsonpFetch(scriptUrl, fnName, timeoutMs) {
-      return new Promise((resolve, reject) => {
-        const script = document.createElement('script');
-        let settled  = false;
-        const timer  = setTimeout(() => {
-          if (settled) return;
-          settled = true; cleanup(); reject(new Error('TIMEOUT'));
-        }, timeoutMs);
-        function cleanup() {
-          clearTimeout(timer); delete window[fnName];
-          if (script.parentNode) script.parentNode.removeChild(script);
-        }
-        window[fnName] = (data) => {
-          if (settled) return;
-          settled = true; cleanup(); resolve(data);
-        };
-        script.src    = scriptUrl;
-        script.async  = true;
-        script.onerror = () => {
-          if (settled) return;
-          settled = true; cleanup(); reject(new Error('Script blocked'));
-        };
-        document.head.appendChild(script);
-      });
-    }
-
-    async function fetchViaJsonp(feedUrl) {
-      const fnName = '_gp_' + Math.random().toString(36).slice(2, 9);
-      const data = await jsonpFetch(
-        `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}&callback=${fnName}`,
-        fnName,
-        CONFIG.FEED_TIMEOUT_MS
-      );
-      if (!data || data.status !== 'ok') throw new Error(data?.message || 'rss2json: non-ok');
-      return data.items;
-    }
-
-    async function fetchFeed(feedUrl, onStatus) {
-      try { return await fetchViaJsonp(feedUrl); } 
-      catch (err) { throw new Error('Standard proxy failed: ' + err.message); }
-    }
-
-    function loadFeed(forceRefresh = false) {
-      clearTimeout(debounceTimer);
-      debounceTimer = setTimeout(async () => {
-        const feedUrl  = DOM.dropdown.value;
-        const feedName = DOM.dropdown.options[DOM.dropdown.selectedIndex].text;
-        
-        if (feedUrl === 'uploaded-pdf') {
-          if (feedCache[feedUrl]) {
-            renderFeedItems(feedCache[feedUrl].items, 'PDF SUMMARY', true);
-            DOM.nextRefresh.textContent = 'Auto-refresh paused for local files';
-          } else {
-            setFeedStatus('📭 No PDF summaries available. Upload a file to begin.');
-            DOM.itemCount.textContent = '';
-          }
-          return;
-        }
-
-        const cached     = feedCache[feedUrl];
-        const isCacheHit = cached && (Date.now() - cached.timestamp < CONFIG.CACHE_TTL_MS);
-        const thisId     = ++requestCounter; 
-
-        if (!forceRefresh && isCacheHit) {
-          renderFeedItems(cached.items, cached.feedName, true);
-          startCountdown(); return;
-        }
-
-        setFeedStatus('📡 Fetching standard RSS feed…');
-        DOM.itemCount.textContent = '';
-        setRefreshing(true);
-
-        try {
-          const items = await fetchFeed(feedUrl, (msg) => { if (thisId === requestCounter) setFeedStatus(msg); });
-          if (thisId !== requestCounter) return; 
-
-          if (!items || !items.length) { setFeedStatus('📭 No articles found.'); return; }
-          feedCache[feedUrl] = { timestamp: Date.now(), items, feedName };
-          renderFeedItems(items, feedName, false);
-          startCountdown();
-        } catch (err) {
-          if (thisId !== requestCounter) return;
-          DOM.output.innerHTML = `<div class="system-msg error">❌ Feed unavailable.<br><small style="font-size:10px;opacity:.7;line-height:2;white-space:pre-line">${escapeHtml(err.message)}</small></div>`;
-        } finally {
-          if (thisId === requestCounter) setRefreshing(false);
-        }
-      }, 200);
-    }
-
-    function renderFeedItems(items, feedName, fromCache) {
-      const cacheBadge = fromCache ? `<span class="cached-badge">Cached</span>` : '';
+    function renderFeedItems(items, feedName) {
       DOM.output.innerHTML = items.map((item, idx) => {
-        let desc = processRssText(item.description, CONFIG.MAX_DESC_CHARS);
+        let desc = processSnippetText(item.description, CONFIG.MAX_DESC_CHARS);
         return (
           `<div class="feed-item" style="animation-delay:${idx * 40}ms">` +
-            `<span class="headline reader-trigger" data-url="${escapeHtml(safeUrl(item.link))}" data-title="${escapeHtml(item.title || 'Untitled')}" data-feed="${escapeHtml(feedName)}" data-date="${escapeHtml(item.pubDate || '')}" role="button" tabindex="0">${escapeHtml(item.title || 'Untitled')}</span>` +
+            `<span class="headline reader-trigger" data-url="${escapeHtml(safeUrl(item.link))}" data-title="${escapeHtml(item.title || 'Untitled')}" data-feed="${escapeHtml(feedName)}" role="button" tabindex="0">${escapeHtml(item.title || 'Untitled')}</span>` +
             (desc ? `<p class="description">${escapeHtml(desc)}</p>` : '') +
-            `<div class="meta">${timeSince(item.pubDate)} &mdash; ${escapeHtml(feedName)}${idx === 0 ? cacheBadge : ''}</div>` +
+            `<div class="meta">Extracted Chapter &mdash; ${escapeHtml(feedName)}</div>` +
           `</div>`
         );
       }).join('');
-      DOM.itemCount.textContent = `${items.length} articles found`;
+      DOM.itemCount.textContent = `${items.length} chapters identified`;
     }
 
     function setFeedStatus(msg) { DOM.output.innerHTML = `<div class="system-msg">${msg}</div>`; }
 
-    function setRefreshing(isLoading) {
-      DOM.refreshBtn.disabled = isLoading;
-      DOM.refreshBtn.classList.toggle('spinning', isLoading);
-    }
-
-    function startCountdown() {
-      clearInterval(countdownTimer);
-      let secondsLeft = CONFIG.AUTO_REFRESH_S;
-      countdownTimer = setInterval(() => {
-        secondsLeft--;
-        DOM.nextRefresh.textContent = `Auto-refresh in ${Math.floor(secondsLeft / 60)}:${String(secondsLeft % 60).padStart(2, '0')}`;
-        if (secondsLeft <= 0) { clearInterval(countdownTimer); loadFeed(true); }
-      }, 1000);
-    }
-
-    function openReader(url, title, feedName, pubDate) {
+    function openReader(url, title, feedName) {
       const validatedUrl = safeUrl(url);
       if (validatedUrl === '#') return;
 
@@ -904,7 +705,7 @@
 
       DOM.aiToggle.style.display = 'none';
       closeAiPanel();
-      DOM.aiChatArea.innerHTML = `<div class="ai-message system">Ask me anything — about this article, or any topic.</div>`;
+      DOM.aiChatArea.innerHTML = `<div class="ai-message system">Ask me anything — about this chapter, or any topic.</div>`;
       currentArticleText = "";
 
       if (validatedUrl.startsWith('pdf-local-file')) {
@@ -918,9 +719,9 @@
         
         if (item) {
           currentArticleText = item.full_text; 
-          renderArticle(parseMarkdown(item.full_text), title, 'PDF SUMMARY', pubDate);
+          renderArticle(parseMarkdown(item.full_text), title, 'PDF Document Extraction');
         } else {
-          renderReaderError(url, "Could not find local PDF article data.");
+          renderReaderError(url, "Could not find local PDF chapter data.");
         }
         return;
       }
@@ -931,9 +732,9 @@
       DOM.readerExtLink.href       = validatedUrl;
       DOM.readerScroll.scrollTop   = 0;
       setReaderProgress(0);
-      DOM.readerContent.innerHTML  = `<div class="reader-status">📰 Fetching article...</div>`;
+      DOM.readerContent.innerHTML  = `<div class="reader-status">📰 Fetching content...</div>`;
 
-      fetchArticle(validatedUrl, title, feedName, pubDate);
+      fetchArticle(validatedUrl, title, feedName);
     }
 
     function closeReader() {
@@ -978,7 +779,7 @@
       return sanitizeHtml(mainEl.innerHTML);
     }
 
-    async function fetchArticle(url, title, feedName, pubDate) {
+    async function fetchArticle(url, title, feedName) {
       setReaderProgress(15);
       let rawHtml = null;
       const proxyUrls = [`https://corsproxy.io/?${encodeURIComponent(url)}`, `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`];
@@ -995,13 +796,13 @@
       if (rawHtml) {
         const cleanHtml = extractMainContent(rawHtml, url);
         if (cleanHtml && cleanHtml.length > 200) {
-          setReaderProgress(100); renderArticle(cleanHtml, title, feedName, pubDate); return;
+          setReaderProgress(100); renderArticle(cleanHtml, title, feedName); return;
         }
       }
 
       setReaderProgress(60);
       try {
-        await fetchArticleViaApi(url, title, feedName, pubDate);
+        await fetchArticleViaApi(url, title, feedName);
         return;
       } catch (e) {
         if (e.message.includes('429')) { renderReaderError(url, "Google API Rate limit exceeded. Please wait a minute."); return; }
@@ -1010,15 +811,15 @@
       setReaderProgress(100); setTimeout(() => setReaderProgress(0), 500); renderReaderError(url);
     }
 
-    function renderArticle(cleanHtml, title, feedName, pubDate) {
-      DOM.readerContent.innerHTML = `<h1 class="reader-article-title">${escapeHtml(title)}</h1><div class="reader-article-meta">${pubDate ? `${timeSince(pubDate)} &nbsp;·&nbsp; ` : ''}${escapeHtml(feedName)}</div><div class="reader-body">${cleanHtml}</div>`;
+    function renderArticle(cleanHtml, title, feedName) {
+      DOM.readerContent.innerHTML = `<h1 class="reader-article-title">${escapeHtml(title)}</h1><div class="reader-article-meta">${escapeHtml(feedName)}</div><div class="reader-body">${cleanHtml}</div>`;
       DOM.aiToggle.style.display = 'inline-block'; 
       setReaderProgress(100); setTimeout(() => setReaderProgress(0), 800);
     }
 
     function renderReaderError(url, customMsg) {
-      const msg = customMsg || "This news site strictly blocks external readers. Please continue reading directly on their website.";
-      DOM.readerContent.innerHTML = `<div class="reader-status error" style="margin-top:40px;border:1px solid var(--rule);padding:30px;border-radius:8px;background:var(--paper);"><h3 style="color:var(--ink);font-family:'Playfair Display',serif;font-size:24px;margin-bottom:10px;">Article Unavailable</h3><p style="color:var(--muted);line-height:1.5;font-size:14px;margin-bottom:25px;text-transform:none;letter-spacing:normal;">${escapeHtml(msg)}</p><div style="display:flex;justify-content:center;"><a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" style="background:var(--ink);color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:500;text-transform:uppercase;padding:10px 20px;border-radius:4px;text-decoration:none;transition:opacity 0.2s;">↗ Read Original Article</a></div></div>`;
+      const msg = customMsg || "Content strictly blocked. Please view original link.";
+      DOM.readerContent.innerHTML = `<div class="reader-status error" style="margin-top:40px;border:1px solid var(--rule);padding:30px;border-radius:8px;background:var(--paper);"><h3 style="color:var(--ink);font-family:'Playfair Display',serif;font-size:24px;margin-bottom:10px;">Content Unavailable</h3><p style="color:var(--ink);line-height:1.5;font-size:14px;margin-bottom:25px;text-transform:none;letter-spacing:normal;">${escapeHtml(msg)}</p><div style="display:flex;justify-content:center;"><a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" style="background:var(--ink);color:var(--paper);font-family:'IBM Plex Mono',monospace;font-size:12px;font-weight:bold;text-transform:uppercase;padding:10px 20px;border-radius:4px;text-decoration:none;transition:opacity 0.2s;">↗ View Original Link</a></div></div>`;
     }
 
     const ALLOWED_TAGS = new Set(['p', 'br', 'strong', 'b', 'em', 'i', 'u', 'h1', 'h2', 'h3', 'h4', 'ul', 'ol', 'li', 'blockquote', 'figure', 'figcaption', 'img', 'a', 'span', 'div', 'section']);
@@ -1068,7 +869,7 @@
 
     function clearGeminiKey() {
       localStorage.removeItem('gemini_api_key_pdf');
-      alert("Gemini API Key removed. You will be prompted again on your next fetch.");
+      alert("Gemini API Key removed. You will be prompted again on your next extraction.");
     }
 
     async function fetchWithRetry(url, options, maxRetries = 3) {
@@ -1086,7 +887,7 @@
       }
     }
 
-    async function fetchArticleViaApi(url, title, feedName, pubDate) {
+    async function fetchArticleViaApi(url, title, feedName) {
       const apiKey = getGeminiKey();
       if (!apiKey) throw new Error("GEMINI_KEY_MISSING");
 
@@ -1115,7 +916,7 @@
       currentArticleText = tempDiv.innerText;
 
       setReaderProgress(90);
-      renderArticle(cleanHtml, title, feedName, pubDate);
+      renderArticle(cleanHtml, title, feedName);
     }
 
     function cleanAiResponse(text) {
@@ -1163,8 +964,8 @@
         if (!apiKey) throw new Error("API Key missing");
 
         const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
-        const articleContext = currentArticleText ? `--- CURRENT ARTICLE ---\n${currentArticleText.substring(0, 30000)}\n-----------------------\n\n` : '';
-        const fullPrompt = `You are a smart, helpful AI assistant embedded in Pulse, an Indian news reader app.\nAnswer the user's question clearly and helpfully.\nIf an article is provided below, you may use it as context — but you are not limited to it.\n\n${articleContext}USER: ${userPrompt}`;
+        const articleContext = currentArticleText ? `--- CURRENT CHAPTER ---\n${currentArticleText.substring(0, 30000)}\n-----------------------\n\n` : '';
+        const fullPrompt = `You are a smart, helpful AI assistant embedded in a PDF intelligence reader app.\nAnswer the user's question strictly based on facts.\nIf an article/chapter is provided below, you may use it as context — but you are not limited to it.\n\n${articleContext}USER: ${userPrompt}`;
 
         const response = await fetchWithRetry(endpoint, {
           method:  'POST', headers: { 'Content-Type': 'application/json' }, body:    JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] }),
@@ -1188,7 +989,7 @@
       if (!apiKey) return;
 
       const originalText = DOM.uploadPdfBtn.textContent;
-      DOM.uploadPdfBtn.textContent = "⚙ Uploading...";
+      DOM.uploadPdfBtn.textContent = "⚙ Uploading to Gemini...";
       DOM.uploadPdfBtn.disabled = true;
 
       try {
@@ -1220,7 +1021,7 @@
                 role: "user",
                 parts: [
                     { fileData: { fileUri: fileUri, mimeType: mimeType } },
-                    { text: "Analyze this document thoroughly. Identify up to 100 distinct chapters, reports, or major news-like sections. For EACH section, provide: 1) A clear Headline. 2) A concise 2-sentence Summary (for news list view). 3) The COMPLETE, UNEDITED full original text. Return ONLY a valid JSON array of objects with keys 'title', 'summary', and 'full_text'. Do not include markdown code blocks." }
+                    { text: "Analyze this document thoroughly. Identify up to 100 distinct chapters, reports, or major logical sections. For EACH section, provide: 1) A clear Headline. 2) A concise 2-sentence Summary (for list view). 3) The COMPLETE, UNEDITED full original text. Return ONLY a valid JSON array of objects with keys 'title', 'summary', and 'full_text'. Do not include markdown code blocks." }
                 ]
             }],
             generationConfig: { temperature: 0.1, responseMimeType: "application/json" }
@@ -1232,30 +1033,18 @@
         
         let sections;
         try { sections = JSON.parse(cleanTextChapters); } 
-        catch(e) { throw new Error("AI response was not valid format."); }
+        catch(e) { throw new Error("AI response was not in a valid JSON array format."); }
 
         const items = sections.map((s, i) => ({
           title: s.title || "Untitled Section",
           description: s.summary || "Summary unavailable.",
           full_text: s.full_text || s.summary || "Full text not found.",
-          link: `pdf-local-file-${i}`,
-          pubDate: new Date().toISOString()
+          link: `pdf-local-file-${i}`
         }));
 
-        feedCache['uploaded-pdf'] = { timestamp: Date.now(), items, feedName: 'PDF SUMMARY' };
-
-        let pdfOption = Array.from(DOM.dropdown.options).find(opt => opt.value === 'uploaded-pdf');
-        if (!pdfOption) {
-          const optGroup = document.createElement('optgroup');
-          optGroup.label = "── Local Documents ──";
-          pdfOption = document.createElement('option');
-          pdfOption.value = 'uploaded-pdf';
-          pdfOption.textContent = 'PDF SUMMARY';
-          optGroup.appendChild(pdfOption);
-          DOM.dropdown.prepend(optGroup);
-        }
-        DOM.dropdown.value = 'uploaded-pdf';
-        loadFeed(true);
+        feedCache['uploaded-pdf'] = { timestamp: Date.now(), items, feedName: 'PDF DOCUMENT' };
+        
+        renderFeedItems(items, 'PDF DOCUMENT');
 
         DOM.uploadPdfBtn.textContent = "⚙ Generating Summary...";
 
@@ -1282,7 +1071,7 @@
         DOM.modalTakeaways.innerText = overallParsed.keyTakeaways;
         DOM.overallSummaryBtn.style.display = 'inline-block';
 
-        alert("✅ PDF processed! Chapters are listed below. Click 'PDF Summary' at the top for the overall overview.");
+        alert("✅ PDF Processed! Chapters are listed below. Click 'PDF Summary' at the top for the overall overview.");
 
       } catch (err) {
         console.error("PDF processing failed", err);
@@ -1296,8 +1085,6 @@
     window.addEventListener('load', () => {
       DOM.headerDate.textContent = new Date().toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long' });
 
-      DOM.dropdown.addEventListener('change', () => loadFeed(false));
-      DOM.refreshBtn.addEventListener('click', () => { delete feedCache[DOM.dropdown.value]; loadFeed(true); });
       DOM.clearKeyBtn.addEventListener('click', clearGeminiKey);
 
       DOM.uploadPdfBtn.addEventListener('click', () => DOM.pdfFileInput.click());
@@ -1322,7 +1109,7 @@
         const trigger = e.target.closest('.reader-trigger');
         if (!trigger) return;
         const url = trigger.getAttribute('data-url');
-        if (url && url !== '#') openReader(url, trigger.getAttribute('data-title'), trigger.getAttribute('data-feed'), trigger.getAttribute('data-date'));
+        if (url && url !== '#') openReader(url, trigger.getAttribute('data-title'), trigger.getAttribute('data-feed'));
       });
       DOM.output.addEventListener('keydown', (e) => {
         if (e.key !== 'Enter' && e.key !== ' ') return;
@@ -1356,8 +1143,6 @@
       DOM.aiSubmit.addEventListener('click', () => submitAiPrompt(DOM.aiInput.value));
       DOM.aiInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitAiPrompt(DOM.aiInput.value); });
       DOM.aiPromptBtns.forEach(btn => { btn.addEventListener('click', () => submitAiPrompt(btn.textContent)); });
-
-      loadFeed();
     });
 
   </script>
