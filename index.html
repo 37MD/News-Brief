@@ -364,6 +364,14 @@
     <button class="btn-outline" id="overall-summary-btn" style="display:none;" title="View Overall Summary">📊 PDF Summary</button>
     <button class="btn-outline" id="upload-pdf-btn" title="Upload PDF">📄 Upload PDF</button>
     <input type="file" id="pdf-file-input" accept="*/*" style="display: none;">
+    <select id="document-type" class="btn-outline" title="Select Document Type">
+      <option value="auto">Auto Detect</option>
+      <option value="onepager">1-Pager / Memo</option>
+      <option value="presentation">PDF / PPT</option>
+      <option value="editorial">Editorial Bundle</option>
+      <option value="book">Book / Long-form</option>
+      <option value="generic">Generic Report</option>
+    </select>
     <button class="btn-outline" id="clear-key-btn" title="Clear Gemini Key">🔑 Reset Key</button>
   </div>
   
@@ -469,6 +477,7 @@
       
       uploadPdfBtn:    document.getElementById('upload-pdf-btn'),
       pdfFileInput:    document.getElementById('pdf-file-input'),
+      documentType:    document.getElementById('document-type'),
 
       readerPanel:     document.getElementById('reader-panel'),
       readerBackdrop:  document.getElementById('reader-backdrop'),
@@ -691,7 +700,7 @@
     }
 
     /* === PDF PROCESSING & TRANSLATION === */
-    async function processPdf(file) {
+    async function processPdfLegacy(file) {
       const apiKey = getGeminiKey();
       if (!apiKey) return;
 
@@ -866,4 +875,134 @@
     });
   </script>
 </body>
-</html>
+</html
+
+
+async function loadPdfJs() {
+  if (window.pdfjsLib) return window.pdfjsLib;
+  await new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.min.js';
+    s.onload = resolve; s.onerror = reject;
+    document.head.appendChild(s);
+  });
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.4.168/pdf.worker.min.js';
+  return window.pdfjsLib;
+}
+
+async function extractPdfPages(file) {
+  const pdfjs = await loadPdfJs();
+  const bytes = await file.arrayBuffer();
+  const pdf = await pdfjs.getDocument({ data: bytes }).promise;
+  const pages = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    const txt = content.items.map(x => x.str).join(' ').replace(/\s+/g,' ').trim();
+    pages.push(txt);
+  }
+  return pages;
+}
+
+function detectDocType(pages) {
+  const sample = pages.slice(0,3).join(' ');
+  if (pages.length <= 2) return 'onepager';
+  if (/chapter|introduction|conclusion/i.test(sample)) return 'book';
+  if (pages.every(p => p.length < 2500)) return 'editorial';
+  return 'generic';
+}
+
+async function callGeminiStructured(prompt, apiKey) {
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`;
+  const payload = { contents: [{ role:'user', parts:[{ text: prompt }] }] };
+  const res = await fetch(endpoint, {
+    method:'POST',
+    headers:{'Content-Type':'application/json'},
+    body: JSON.stringify(payload)
+  });
+  if (res.status === 429) throw new Error('RATE_LIMIT');
+  const data = await res.json();
+  return data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+}
+
+async function summarizeWithThrottle(units, promptBuilder, apiKey, concurrency = 3) {
+  const out = new Array(units.length);
+  let idx = 0;
+  async function worker() {
+    while (idx < units.length) {
+      const current = idx++;
+      let tries = 0;
+      while (tries < 3) {
+        try {
+          out[current] = await callGeminiStructured(promptBuilder(units[current], current), apiKey);
+          await new Promise(r => setTimeout(r, 1200));
+          break;
+        } catch (e) {
+          tries++;
+          await new Promise(r => setTimeout(r, 2000 * tries));
+        }
+      }
+    }
+  }
+  await Promise.all(Array.from({length: Math.min(concurrency, units.length)}, worker));
+  return out;
+}
+
+async function processPdf(file) {
+  const selectedType = DOM.documentType?.value || 'auto';
+  if (selectedType === 'generic') return processPdfLegacy(file);
+
+  const apiKey = getGeminiKey();
+  if (!apiKey) return;
+
+  DOM.uploadPdfBtn.disabled = true;
+  const originalText = DOM.uploadPdfBtn.textContent;
+  DOM.uploadPdfBtn.textContent = '⚙ Processing...';
+
+  try {
+    const pages = await extractPdfPages(file);
+    const docType = selectedType === 'auto' ? detectDocType(pages) : selectedType;
+    let units = pages;
+
+    if (docType === 'book') {
+      const chunks = [];
+      let buf = '';
+      for (const p of pages) {
+        if ((buf + ' ' + p).length > 8000) { chunks.push(buf); buf = p; }
+        else buf += ' ' + p;
+      }
+      if (buf) chunks.push(buf);
+      units = chunks;
+    }
+
+    const promptBuilder = (unit, i) => {
+      const base = {
+        onepager: 'Create an executive summary with action points.',
+        presentation: 'Summarize slide intent and strategic insights.',
+        editorial: 'Summarize this standalone editorial page with thesis, arguments, and stance.',
+        book: 'Summarize this section while preserving concepts and continuity.',
+        generic: 'Summarize this document section clearly.'
+      }[docType] || 'Summarize clearly.';
+      return `${base}\n\nSection ${i+1}:\n${unit}`;
+    };
+
+    const summaries = await summarizeWithThrottle(units, promptBuilder, apiKey, docType === 'editorial' ? 3 : 2);
+
+    DOM.output.innerHTML = summaries.map((s,i)=>`<article class="feed-item"><h3>Section ${i+1}</h3><div>${parseMarkdown(s)}</div></article>`).join('');
+
+    DOM.modalSummary.innerText = summaries.join('\n\n');
+    DOM.modalSummaryEng.style.display = 'none';
+    DOM.modalTakeaways.innerText = `Processed as: ${docType}. Sections: ${summaries.length}`;
+    DOM.modalTakeawaysEng.style.display = 'none';
+    DOM.overallSummaryBtn.style.display = 'inline-block';
+    alert('✅ Processed with adaptive routing.');
+  } catch (err) {
+    console.error(err);
+    alert('Processing failed. Falling back may be needed.');
+  } finally {
+    DOM.uploadPdfBtn.disabled = false;
+    DOM.uploadPdfBtn.textContent = originalText;
+  }
+}
+
+>
