@@ -356,6 +356,7 @@
       #ai-panel           { top: 65px; right: 10px; max-width: calc(100vw - 20px); max-height: 70vh; }
     }
   </style>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.3.136/pdf.min.js" type="module"></script>
 </head>
 
 <body>
@@ -720,117 +721,81 @@
       return processPdf(file);
     }
 
+
+async function extractPdfTextLocal(file) {
+  if (!window['pdfjsLib']) throw new Error('PDF engine not loaded');
+  const arrayBuffer = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  const pages = [];
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    const txt = content.items.map(it => it.str).join(' ').replace(/\s+/g,' ').trim();
+    pages.push(txt);
+  }
+  return pages;
+}
+
+function buildChunksFromPages(pages, type) {
+  if (type === 'editorial') return pages.filter(Boolean);
+  const maxChars = type === 'book' ? 12000 : 18000;
+  const joined = pages.join("\n\n");
+  const chunks = [];
+  for (let i=0; i<joined.length; i += maxChars) chunks.push(joined.slice(i, i+maxChars));
+  return chunks;
+}
+
+async function summarizeTextChunks(chunks, type, apiKey) {
+  const results = [];
+  for (const [idx, chunk] of chunks.entries()) {
+    const prompt = `Document type: ${type}. Summarize clearly with title, key points, and concise insight. Chunk ${idx+1}/${chunks.length}. Text:\n${chunk}`;
+    const payload = {
+      contents: [{ parts: [{ text: prompt }] }],
+      generationConfig: { temperature: 0.1, responseMimeType: "application/json" }
+    };
+    const res = await fetchWithRetry(endpoint, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(payload)});
+    const data = await res.json();
+    results.push(cleanAiResponse(data.candidates?.[0]?.content?.parts?.[0]?.text || '{}'));
+    await new Promise(r => setTimeout(r, 1200));
+  }
+  return results;
+}
+
+
 async function processPdf(file) {
       const apiKey = getGeminiKey();
       if (!apiKey) return;
 
       const originalText = DOM.uploadPdfBtn.textContent;
-      DOM.uploadPdfBtn.textContent = "⚙ Uploading to Gemini...";
+      DOM.uploadPdfBtn.textContent = "⚙ Extracting Locally...";
       DOM.uploadPdfBtn.disabled = true;
 
       try {
-        let mimeType = file.type || "application/pdf";
-        const uploadUrl = `https://generativelanguage.googleapis.com/upload/v1beta/files?key=${apiKey}`;
-        
-        const uploadRes = await fetch(uploadUrl, {
-            method: 'POST',
-            headers: {
-                'X-Goog-Upload-Command': 'start, upload, finalize',
-                'X-Goog-Upload-Header-Content-Length': file.size.toString(),
-                'X-Goog-Upload-Header-Content-Type': mimeType,
-                'Content-Type': mimeType
-            },
-            body: file
-        });
-        const uploadData = await uploadRes.json();
-        if (uploadData.error) throw new Error(uploadData.error.message);
-        
-        const fileUri = uploadData.file.uri;
+        const docType = DOM.docTypeSelector?.value || "auto";
+        const pages = await extractPdfTextLocal(file);
+        if (!pages.length || pages.every(p => p.length < 20)) throw new Error("No readable text found in PDF.");
+        const inferredType = docType === "auto" ? (pages.length > 20 ? "book" : "generic") : docType;
+        const chunks = buildChunksFromPages(pages, inferredType);
 
-        DOM.uploadPdfBtn.textContent = "⚙ Extracting Chapters & Translating...";
-        
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
-        
-        const payloadChapters = {
-            system_instruction: { parts: [{ text: "You are a precise document analyzer and multi-lingual translator." }] },
-            contents: [{
-                role: "user",
-                parts: [
-                    { fileData: { fileUri: fileUri, mimeType: mimeType } },
-                    { text: "Analyze this document thoroughly. Identify up to 100 distinct chapters, reports, or major sections. For EACH section, provide: 1) Headline. 2) A concise 2-sentence Summary. 3) The COMPLETE original full text. 4) CRITICAL INSTRUCTION: If the original text is in Hindi, Marathi, or any Indian language, you MUST provide an English translation for BOTH the summary and the full text. Return ONLY a valid JSON array of objects with exactly these keys: 'title', 'summary', 'summary_english', 'full_text', and 'full_text_english'. If the original text is already in English, you may leave the '_english' keys empty. Do not include markdown blocks." }
-                ]
-            }],
-            generationConfig: { temperature: 0.1, responseMimeType: "application/json" }
-        };
+        DOM.uploadPdfBtn.textContent = "🧠 Summarizing...";
+        const summaries = await summarizeTextChunks(chunks, inferredType, apiKey);
 
-        const responseChapters = await fetchWithRetry(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payloadChapters) });
-        const dataChapters = await responseChapters.json();
-        const cleanTextChapters = cleanAiResponse(dataChapters.candidates?.[0]?.content?.parts?.[0]?.text || '[]');
-        
-        let sections;
-        try { sections = JSON.parse(cleanTextChapters); } 
-        catch(e) { throw new Error("AI response was not in a valid JSON array format."); }
+        DOM.modalSummary.innerText = summaries.join("
 
-        const items = sections.map((s, i) => ({
-          title: s.title || "Untitled Section",
-          description: s.summary || "Summary unavailable.",
-          summary_english: s.summary_english || "",
-          full_text: s.full_text || s.summary || "Full text not found.",
-          full_text_english: s.full_text_english || "",
-          link: `pdf-local-file-${i}`
-        }));
+---
 
-        feedCache['uploaded-pdf'] = { timestamp: Date.now(), items };
-        renderFeedItems(items, 'PDF DOCUMENT');
-
-        DOM.uploadPdfBtn.textContent = "⚙ Generating Overall Summary...";
-
-        const payloadOverall = {
-            system_instruction: { parts: [{ text: "You are a factual document analyzer and translator." }] },
-            contents: [{
-                role: "user",
-                parts: [
-                    { fileData: { fileUri: fileUri, mimeType: mimeType } },
-                    { text: "Provide an overall summary and key takeaways of this document. If the document is in Hindi or Marathi, provide an English translation as well. Output ONLY valid JSON containing exactly four keys: 'summary', 'summary_english', 'keyTakeaways', and 'keyTakeaways_english' (takeaways should be bullet points with dashes). If the document is in English, leave the '_english' keys empty." }
-                ]
-            }],
-            generationConfig: { temperature: 0.1, responseMimeType: "application/json" }
-        };
-
-        const responseOverall = await fetchWithRetry(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payloadOverall) });
-        const dataOverall = await responseOverall.json();
-        const overallRaw = cleanAiResponse(dataOverall.candidates?.[0]?.content?.parts?.[0]?.text || '{}');
-        
-        let overallParsed = { summary: "No summary generated.", summary_english: "", keyTakeaways: "No takeaways generated.", keyTakeaways_english: "" };
-        try { overallParsed = JSON.parse(overallRaw); } catch(e) { console.error("Summary parse failed"); }
-        
-        DOM.modalSummary.innerText = overallParsed.summary;
-        if (overallParsed.summary_english && overallParsed.summary_english.trim() !== "") {
-            DOM.modalSummaryEng.innerHTML = `<strong>English Translation:</strong><br>${escapeHtml(overallParsed.summary_english)}`;
-            DOM.modalSummaryEng.style.display = 'block';
-        } else {
-            DOM.modalSummaryEng.style.display = 'none';
-        }
-
-        DOM.modalTakeaways.innerText = overallParsed.keyTakeaways;
-        if (overallParsed.keyTakeaways_english && overallParsed.keyTakeaways_english.trim() !== "") {
-            DOM.modalTakeawaysEng.innerHTML = `<strong>English Translation:</strong><br>${escapeHtml(overallParsed.keyTakeaways_english)}`;
-            DOM.modalTakeawaysEng.style.display = 'block';
-        } else {
-            DOM.modalTakeawaysEng.style.display = 'none';
-        }
-
-        DOM.overallSummaryBtn.style.display = 'inline-block';
-        alert("✅ PDF Processed! Chapters are listed below. Translations have been generated for local languages.");
-
+");
+        DOM.summaryModal.style.display = "block";
+        DOM.overallSummaryBtn.style.display = "inline-flex";
       } catch (err) {
-        console.error("PDF processing failed", err);
-        alert("❌ PDF processing failed: " + err.message);
+        console.error(err);
+        DOM.output.innerHTML = `<div class="system-msg">PDF processing failed: ${err.message}</div>`;
       } finally {
         DOM.uploadPdfBtn.textContent = originalText;
         DOM.uploadPdfBtn.disabled = false;
       }
     }
+
 
     /* === INITIALIZATION === */
     window.addEventListener('load', () => {
