@@ -6,7 +6,7 @@
   <title>Pulse</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
-    /* ── STRICT NO WHITE FONTS ENFORCEMENT ── */
+    /* === BASE STYLES === */
     :root {
       --ink:            #000000;   
       --paper:          #f5f0e8;   
@@ -32,7 +32,7 @@
       line-height: 1.5;
     }
 
-    /* ── COMPACT UI TO REMOVE BLANK SPACES ── */
+    /* === MAIN UI === */
     .controls-bar {
       position:    relative;
       padding:     10px 20px;
@@ -155,7 +155,7 @@
       line-height: 1.5;
     }
 
-    /* ── READER PANEL ── */
+    /* === READER UI === */
     #reader-backdrop, #summary-backdrop {
       display:         none;
       position:        fixed;
@@ -176,29 +176,10 @@
       display:        flex;
       flex-direction: column;
       transform:      translateX(100%);
-      transition:     transform 0.3s cubic-bezier(.4,0,.2,1);
+      transition:     transform 0.35s cubic-bezier(.4,0,.2,1);
       box-shadow:     -4px 0 40px rgba(0,0,0,0.18);
     }
     #reader-panel.open { transform: translateX(0); }
-
-    /* ── OVERALL SUMMARY MODAL ── */
-    #summary-modal {
-      display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      width: 90%; max-width: 800px; max-height: 85vh; background: var(--paper); z-index: 1000;
-      border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); flex-direction: column;
-      border: 1px solid var(--rule);
-    }
-    #summary-modal.open { display: flex; }
-
-    .summary-header {
-      display: flex; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--rule); align-items: center; background: #e4eaf2; border-radius: 8px 8px 0 0;
-    }
-    .summary-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: bold; }
-    .summary-content-area { padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
-    .summary-box { border: 1px solid var(--rule); border-radius: 6px; background: #ffffff; overflow: hidden; }
-    .summary-box-title { background: #e4eaf2; padding: 8px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid var(--rule); text-align: center; }
-    .summary-box-content { padding: 12px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; background: #ffffff; }
-    .summary-box-english { border-top: 1px dashed var(--rule); background: #f9f9f9; }
 
     #reader-progress {
       position:   absolute;
@@ -298,7 +279,26 @@
       color: var(--ink);
     }
 
-    /* ── AI CHAT PANEL ── */
+    /* === SUMMARY MODAL UI === */
+    #summary-modal {
+      display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      width: 90%; max-width: 800px; max-height: 85vh; background: var(--paper); z-index: 1000;
+      border-radius: 8px; box-shadow: 0 10px 40px rgba(0,0,0,0.3); flex-direction: column;
+      border: 1px solid var(--rule);
+    }
+    #summary-modal.open { display: flex; }
+
+    .summary-header {
+      display: flex; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--rule); align-items: center; background: #e4eaf2; border-radius: 8px 8px 0 0;
+    }
+    .summary-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: bold; }
+    .summary-content-area { padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+    .summary-box { border: 1px solid var(--rule); border-radius: 6px; background: #ffffff; overflow: hidden; }
+    .summary-box-title { background: #e4eaf2; padding: 8px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid var(--rule); text-align: center; }
+    .summary-box-content { padding: 12px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; background: #ffffff; }
+    .summary-box-english { border-top: 1px dashed var(--rule); background: #f9f9f9; }
+
+    /* === AI CHAT UI === */
     #ai-panel {
       position:       absolute;
       top:            50px;   
@@ -340,6 +340,21 @@
     .ai-input-area input { flex: 1; border: 1px solid var(--rule); border-radius: 4px; padding: 8px 10px; font-size: 13px; outline: none; }
     .ai-input-area input:focus { border-color: var(--ink); }
     .ai-input-area button { background: #d0d7e0; border: 1px solid var(--ink); border-radius: 4px; padding: 0 12px; margin-left: 6px; cursor: pointer; font-weight: 700; }
+
+    /* === MOBILE UI === */
+    @media (max-width: 520px) {
+      .controls-bar {
+        position:         static;
+        padding:          12px 16px;
+        justify-content:  flex-end;
+        border-bottom:    1px solid var(--rule);
+        flex-wrap:        wrap;
+      }
+      .masthead           { padding: 20px 16px; }
+      .reader-scroll      { padding: 20px 18px 0px; }
+      .reader-source-url  { display: none; }  
+      #ai-panel           { top: 65px; right: 10px; max-width: calc(100vw - 20px); max-height: 70vh; }
+    }
   </style>
 </head>
 
@@ -366,7 +381,6 @@
   </div>
 
   <div id="reader-backdrop" aria-hidden="true"></div>
-
   <div id="reader-panel" role="dialog" aria-modal="true" aria-label="Article reader">
     <div id="reader-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
     <div class="reader-topbar">
@@ -425,6 +439,7 @@
   <script>
     'use strict';
 
+    /* === CONFIGURATION & STATE === */
     const CONFIG = Object.freeze({
       MAX_DESC_CHARS:     500,             
       READER_FONT_MIN:    13,              
@@ -437,6 +452,7 @@
     let   readerFontSize     = CONFIG.READER_FONT_DEF; 
     let   currentArticleText = "";                    
 
+    /* === DOM ELEMENTS === */
     const DOM = {
       output:          document.getElementById('rss-output'),
       clearKeyBtn:     document.getElementById('clear-key-btn'),
@@ -473,6 +489,7 @@
       aiPromptBtns:    document.querySelectorAll('.ai-prompt-btn')
     };
 
+    /* === UTILITIES === */
     function escapeHtml(str) {
       if (str == null) return '';
       return String(str).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
@@ -524,6 +541,7 @@
       DOM.itemCount.textContent = `${items.length} chapters identified`;
     }
 
+    /* === READER LOGIC === */
     function openReader(url) {
       DOM.readerPanel.classList.add('open');
       DOM.readerBackdrop.classList.add('open');
@@ -576,6 +594,7 @@
       DOM.readerProgress.style.width = clamped + '%';
     }
 
+    /* === GEMINI API === */
     function getGeminiKey() {
       let key = localStorage.getItem('gemini_api_key_pdf');
       if (!key) {
@@ -671,6 +690,7 @@
       }
     }
 
+    /* === PDF PROCESSING & TRANSLATION === */
     async function processPdf(file) {
       const apiKey = getGeminiKey();
       if (!apiKey) return;
@@ -783,6 +803,7 @@
       }
     }
 
+    /* === INITIALIZATION === */
     window.addEventListener('load', () => {
       DOM.clearKeyBtn.addEventListener('click', clearGeminiKey);
 
