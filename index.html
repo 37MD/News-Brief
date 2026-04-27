@@ -29,12 +29,15 @@
       width: 100%; display: flex; justify-content: center; align-items: center;
       gap: 8px; flex-wrap: wrap; padding-bottom: 8px;
     }
+    /* Row 2 — hidden by default, shown only when key manager is open */
     .controls-row2 {
       width: 100%; text-align: center;
       font-family: 'IBM Plex Mono', monospace; font-size: 9px;
       letter-spacing: 0.04em; padding: 5px 0 7px;
       border-top: 1px solid var(--rule);
+      display: none;
     }
+    .controls-row2.visible { display: block; }
     .btn-outline {
       font-family: 'IBM Plex Mono', monospace; font-size: 11px;
       background: transparent; border: 1px solid var(--accent);
@@ -582,34 +585,36 @@
       slot;
   }
 
-  // Small badge under masthead showing live key status
+  // Updates the status text in row2 — visibility controlled by openKeyManager/closeKeyManager
   function _updateKeyStatusBadge() {
     if (!DOM.keyStatusBadge) return;
     const k1 = _getRawKey(1), k2 = _getRawKey(2);
 
-    // Welcome message: only show "tap Keys" hint when NO keys are stored
+    // Welcome message on main page — only prompt for key when none saved
     if (DOM.welcomeMsg && DOM.welcomeMsg.parentElement === DOM.output) {
       if (!k1 && !k2) {
         DOM.welcomeMsg.innerHTML =
           'Awaiting PDF Upload.<br>' +
-          'Tap <strong>🔑 Keys</strong> above to add your Gemini API key before uploading.';
+          'Tap <strong>🔑</strong> above to add your Gemini API key before uploading.';
       } else {
         DOM.welcomeMsg.innerHTML =
-          'Keys saved. Tap <strong>📄 Upload PDF</strong> to begin.';
+          'Keys saved &mdash; tap <strong>📄 Upload PDF</strong> to begin.';
       }
     }
 
+    // Build status text shown inside row2 (only visible when key panel is open)
     if (!k1 && !k2) {
-      DOM.keyStatusBadge.innerHTML = '<span style="color:#c8102e">⚠ No API keys saved — tap 🔑 Keys</span>';
+      DOM.keyStatusBadge.innerHTML = '<span style="color:#c8102e">⚠ No keys saved</span>';
       return;
     }
     const slotLabel = _activeKeySlot === 2
-      ? '<span style="color:#f59e0b">⚡ Using K2 (K1 quota)</span>'
+      ? '<span style="color:#f59e0b">⚡ Using K2 (K1 quota hit)</span>'
       : '<span style="color:#009e70">✓ K1 Active</span>';
     const k2label = k2
       ? '<span style="color:#009e70"> · K2 Backup Ready</span>'
       : '<span style="color:#7090b0"> · K2 not set</span>';
-    DOM.keyStatusBadge.innerHTML = `Gemini: ${slotLabel}${k2label} · Model: <strong>${getGeminiModel()}</strong>`;
+    DOM.keyStatusBadge.innerHTML =
+      `Gemini: ${slotLabel}${k2label} &nbsp;·&nbsp; Model: <strong>${getGeminiModel()}</strong>`;
   }
 
   function openKeyManager() {
@@ -618,6 +623,8 @@
     DOM.kmK2Input.value = '';
     _refreshKmButtonStates();
     _updateKmStatus();
+    // Show the status row when key panel is open
+    if (DOM.keyStatusBadge) DOM.keyStatusBadge.classList.add('visible');
     setTimeout(() => DOM.kmK1Input.focus(), 80);
   }
 
@@ -625,6 +632,8 @@
     DOM.keyManagerBox.classList.remove('open');
     DOM.kmK1Input.value = '';
     DOM.kmK2Input.value = '';
+    // Hide status row when key panel closes
+    if (DOM.keyStatusBadge) DOM.keyStatusBadge.classList.remove('visible');
   }
 
   function _saveKey(slot, val) {
@@ -1131,10 +1140,11 @@
     // ── PDF Upload ────────────────────────────────────────────────
     DOM.uploadPdfBtn.addEventListener('click', () => DOM.pdfFileInput.click());
     DOM.pdfFileInput.addEventListener('change', (e) => {
-      if (e.target.files[0]) {
-        e.target.value = ''; // allow re-upload
-        routeDocumentProcessing(e.target.files[0]);
-      }
+      const file = e.target.files[0];
+      if (!file) return;
+      // Capture file reference FIRST, then clear input so same file can be re-selected later
+      setTimeout(() => { e.target.value = ''; }, 100);
+      routeDocumentProcessing(file);
     });
 
     // ── Summary modal ─────────────────────────────────────────────
