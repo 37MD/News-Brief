@@ -773,24 +773,29 @@
           _markSlotCooling(slot);
           const other    = slot === 1 ? 2 : 1;
           const otherKey = _getRawKey(other);
+
+          // Other key is healthy → switch and retry immediately
           if (otherKey && !_isSlotCooling(other)) {
             const msg = `K${slot} quota → switching to K${other}`;
             if (statusEl) statusEl.textContent = msg;
             if (DOM.itemCount) DOM.itemCount.textContent = msg;
             continue;
           }
-          if (mi < cascade.length - 1) {
-            const msg = `Both keys quota on ${model} → trying ${cascade[mi+1]}`;
-            if (statusEl) statusEl.textContent = msg;
-            break;
-          }
+
+          // Both keys cooling (or only one key) → wait for cooldown first
           const c1rem = KEY_COOLDOWN_MS - (Date.now() - _slotCooldown[1]);
           const c2rem = KEY_COOLDOWN_MS - (Date.now() - _slotCooldown[2]);
           const waitS = Math.ceil(Math.max(5, Math.min(
             c1rem > 0 ? c1rem : KEY_COOLDOWN_MS,
             c2rem > 0 ? c2rem : KEY_COOLDOWN_MS
           ) / 1000));
-          await _waitCountdown(waitS, 'All quota exhausted', statusEl);
+          const label = mi < cascade.length - 1
+            ? `Quota hit — waiting before trying ${cascade[mi + 1]}`
+            : 'All quota exhausted — waiting';
+          await _waitCountdown(waitS, label, statusEl);
+
+          // After wait, move to next model if available, otherwise retry same
+          if (mi < cascade.length - 1) break;
           continue;
         }
 
