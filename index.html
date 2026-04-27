@@ -3,411 +3,215 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pulse</title>
+  <title>Pulse — PDF Intelligence</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
-    /* === BASE STYLES === */
+    /* ═══ BASE ═══ */
     :root {
       --ink:            #000000;
       --paper:          #f5f0e8;
       --accent:         #1a5c3a;
       --rule:           #c8c0b0;
       --muted:          #111111;
-      --meta-color:     #333333;
       --error:          #8b0000;
       --reader-font-sz: 17px;
     }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; color: black !important; }
+    body { background: var(--paper); font-family: 'IBM Plex Sans', sans-serif; min-height: 100vh; line-height: 1.5; }
 
-    *, *::before, *::after {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      color: black !important;
-    }
-
-    body {
-      background:  var(--paper);
-      font-family: 'IBM Plex Sans', sans-serif;
-      min-height:  100vh;
-      line-height: 1.5;
-    }
-
-    /* === MAIN UI === */
+    /* ═══ CONTROLS BAR ═══ */
     .controls-bar {
-      position:        relative;
-      padding:         10px 20px;
-      display:         flex;
-      justify-content: center;
-      gap:             10px;
-      flex-wrap:       wrap;
-      border-bottom:   1px solid var(--rule);
-      background:      #e4eaf2;
+      position: relative; padding: 10px 20px;
+      display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;
+      border-bottom: 1px solid var(--rule); background: #e4eaf2;
     }
-
     .btn-outline {
-      font-family:    'IBM Plex Mono', monospace;
-      font-size:      11px;
-      background:     transparent;
-      border:         1px solid var(--accent);
-      padding:        6px 12px;
-      border-radius:  4px;
-      cursor:         pointer;
-      text-transform: uppercase;
-      font-weight:    700;
-      transition:     background 0.2s;
-      white-space:    nowrap;
+      font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+      background: transparent; border: 1px solid var(--accent);
+      padding: 6px 12px; border-radius: 4px; cursor: pointer;
+      text-transform: uppercase; font-weight: 700; transition: background 0.2s; white-space: nowrap;
     }
     .btn-outline:hover    { background: #d0d7e0; }
     .btn-outline:disabled { opacity: 0.4; cursor: not-allowed; }
+    #key-mgr-btn          { border-color: #009e70; }
+    #key-mgr-btn:hover    { background: #d0ede3; }
 
-    #clear-key-btn       { border-color: var(--rule); }
-    #clear-key-btn:hover { background: #d0d7e0; border-color: var(--ink); }
+    /* ═══ KEY MANAGER PANEL ═══ */
+    #key-manager-box {
+      display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
+      width: 340px; max-width: calc(100vw - 20px);
+      background: #fff; border: 2px solid #009e70; border-radius: 8px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.18); z-index: 2000;
+      padding: 14px 16px 12px; font-family: 'IBM Plex Mono', monospace;
+    }
+    #key-manager-box.open { display: block; }
+    .km-title  { font-size: 10px; font-weight: 700; color: #009e70; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px; }
+    .km-label  { font-size: 9px; font-weight: 600; color: #404060; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }
+    .km-row    { display: flex; gap: 6px; align-items: center; margin-bottom: 9px; }
+    .km-input  {
+      flex: 1; font-size: 11px; padding: 6px 9px; border-radius: 5px;
+      border: 1.5px solid #b0bece; background: #f2f5f9;
+      outline: none; font-family: monospace;
+    }
+    .km-input:focus { border-color: #009e70; }
+    .km-save {
+      background: #fff; border: 1.5px solid #b0bece; border-radius: 5px;
+      padding: 6px 10px; font-size: 9px; cursor: pointer; white-space: nowrap;
+      font-family: 'IBM Plex Mono', monospace; font-weight: 600; min-width: 72px; transition: all 0.2s;
+    }
+    .km-save.active { background: #009e70 !important; color: #fff !important; border-color: #009e70 !important; }
+    .km-status { font-size: 8.5px; color: #404060; line-height: 1.6; margin-bottom: 6px; }
+    .km-footer { font-size: 7.5px; color: #7090b0; margin-top: 4px; }
+    .km-footer span { color: #009e70; font-weight: 600; }
+    .km-bottom { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; }
+    .km-model-select {
+      font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+      border: 1px solid #b0bece; border-radius: 4px; padding: 4px 6px;
+      background: #f2f5f9; cursor: pointer; outline: none;
+    }
+    .km-close {
+      background: #f2f5f9; border: 1.5px solid #b0bece; border-radius: 5px;
+      padding: 4px 12px; font-size: 9px; cursor: pointer; font-family: 'IBM Plex Mono', monospace;
+    }
+    .km-close:hover { background: #e0e6ef; }
 
-    .masthead {
-      border-bottom: 2px solid var(--ink);
-      padding:       15px 20px;
-      text-align:    center;
-      background:    var(--paper);
-    }
-    .masthead-title {
-      font-family: 'Playfair Display', serif;
-      font-size:   36px;
-      font-weight: 700;
-      line-height: 1.1;
-    }
-    .tagline {
-      font-family:    'IBM Plex Mono', monospace;
-      font-size:      10px;
-      letter-spacing: 0.15em;
-      text-transform: uppercase;
-      margin-top:     4px;
+    /* ═══ MASTHEAD ═══ */
+    .masthead { border-bottom: 2px solid var(--ink); padding: 15px 20px; text-align: center; background: var(--paper); }
+    .masthead-title { font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 700; line-height: 1.1; }
+    .tagline { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; margin-top: 4px; }
+
+    /* ═══ KEY STATUS BADGE (under masthead) ═══ */
+    #key-status-badge {
+      font-family: 'IBM Plex Mono', monospace; font-size: 9px; text-align: center;
+      padding: 4px 0 2px; letter-spacing: 0.05em;
     }
 
     .feed-status-bar {
-      max-width:      800px;
-      margin:         10px auto 0;
-      padding:        0 15px;
-      font-family:    'IBM Plex Mono', monospace;
-      font-size:      10px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      text-align:     center;
+      max-width: 800px; margin: 8px auto 0; padding: 0 15px;
+      font-family: 'IBM Plex Mono', monospace; font-size: 10px;
+      text-transform: uppercase; letter-spacing: 0.05em; text-align: center;
     }
 
-    .container {
-      max-width: 800px;
-      margin:    0 auto;
-      padding:   15px 15px 40px;
-    }
+    .container { max-width: 800px; margin: 0 auto; padding: 15px 15px 40px; }
 
-    .feed-item {
-      margin-bottom:  20px;
-      border-bottom:  1px solid var(--rule);
-      padding-bottom: 15px;
-      animation:      fadeIn 0.3s ease forwards;
-    }
+    /* ═══ FEED ITEMS ═══ */
+    .feed-item { margin-bottom: 20px; border-bottom: 1px solid var(--rule); padding-bottom: 15px; animation: fadeIn 0.3s ease forwards; }
     .feed-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(4px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .headline {
-      font-family:     'Playfair Display', serif;
-      font-size:       20px;
-      text-decoration: none;
-      font-weight:     700;
-      display:         block;
-      line-height:     1.2;
-      margin-bottom:   8px;
-      word-break:      break-word;
-      cursor:          pointer;
-    }
+    .headline { font-family: 'Playfair Display', serif; font-size: 20px; text-decoration: none; font-weight: 700; display: block; line-height: 1.2; margin-bottom: 8px; word-break: break-word; cursor: pointer; }
     .headline:hover { text-decoration: underline; }
+    .description { font-size: 14px; margin-bottom: 6px; line-height: 1.5; }
+    .description.translation { border-left: 3px solid var(--accent); background: rgba(26,92,58,0.05); padding: 6px 10px; border-radius: 0 4px 4px 0; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 8px; }
+    .system-msg { font-family: 'IBM Plex Mono', monospace; font-size: 12px; text-align: center; margin-top: 30px; line-height: 1.5; }
 
-    .description {
-      font-size:     14px;
-      margin-bottom: 6px;
-      line-height:   1.5;
-    }
-    /* FIX: removed duplicate padding-left — kept shorthand padding only */
-    .description.translation {
-      border-left:   3px solid var(--accent);
-      background:    rgba(26, 92, 58, 0.05);
-      padding:       6px 10px;
-      border-radius: 0 4px 4px 0;
-    }
-
-    .meta {
-      font-family:    'IBM Plex Mono', monospace;
-      font-size:      10px;
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-      margin-top:     8px;
-    }
-
-    .system-msg {
-      font-family: 'IBM Plex Mono', monospace;
-      font-size:   12px;
-      text-align:  center;
-      margin-top:  30px;
-      line-height: 1.5;
-    }
-
-    /* === READER UI === */
+    /* ═══ READER PANEL ═══ */
     #reader-backdrop, #summary-backdrop {
-      display:         none;
-      position:        fixed;
-      inset:           0;
-      background:      rgba(26,26,24,0.45);
-      z-index:         998;
-      backdrop-filter: blur(2px);
+      display: none; position: fixed; inset: 0;
+      background: rgba(26,26,24,0.45); z-index: 998; backdrop-filter: blur(2px);
     }
     #reader-backdrop.open, #summary-backdrop.open { display: block; }
 
     #reader-panel {
-      position:       fixed;
-      top: 0; right: 0; bottom: 0;
-      width:          100%;
-      max-width:      780px;
-      background:     var(--paper);
-      z-index:        999;
-      display:        flex;
-      flex-direction: column;
-      transform:      translateX(100%);
-      transition:     transform 0.35s cubic-bezier(.4,0,.2,1);
-      box-shadow:     -4px 0 40px rgba(0,0,0,0.18);
+      position: fixed; top: 0; right: 0; bottom: 0; width: 100%; max-width: 780px;
+      background: var(--paper); z-index: 999; display: flex; flex-direction: column;
+      transform: translateX(100%); transition: transform 0.35s cubic-bezier(.4,0,.2,1);
+      box-shadow: -4px 0 40px rgba(0,0,0,0.18);
     }
     #reader-panel.open { transform: translateX(0); }
 
-    #reader-progress {
-      position:   absolute;
-      top: 0; left: 0;
-      height:     3px;
-      width:      0%;
-      background: var(--ink);
-      transition: width 0.2s;
-      z-index:    5;
-    }
+    #reader-progress { position: absolute; top: 0; left: 0; height: 3px; width: 0%; background: var(--ink); transition: width 0.2s; z-index: 5; }
 
-    .reader-topbar {
-      display:       flex;
-      align-items:   center;
-      gap:           10px;
-      padding:       10px 15px;
-      border-bottom: 1px solid var(--rule);
-      background:    #e4eaf2;
-      flex-shrink:   0;
-      position:      relative;
-      z-index:       20;
-    }
-
-    .reader-back-btn {
-      font-family:    'IBM Plex Mono', monospace;
-      font-size:      11px;
-      font-weight:    700;
-      text-transform: uppercase;
-      background:     transparent;
-      border:         1px solid var(--ink);
-      padding:        4px 10px;
-      border-radius:  4px;
-      cursor:         pointer;
-      white-space:    nowrap;
-      transition:     background 0.2s;
-    }
+    .reader-topbar { display: flex; align-items: center; gap: 10px; padding: 10px 15px; border-bottom: 1px solid var(--rule); background: #e4eaf2; flex-shrink: 0; position: relative; z-index: 20; }
+    .reader-back-btn { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; text-transform: uppercase; background: transparent; border: 1px solid var(--ink); padding: 4px 10px; border-radius: 4px; cursor: pointer; white-space: nowrap; transition: background 0.2s; }
     .reader-back-btn:hover { background: #d0d7e0; }
-
     .reader-source-url { font-family: 'IBM Plex Mono', monospace; font-size: 10px; flex: 1; }
-
     .reader-font-ctrl { display: flex; gap: 4px; }
-    .reader-font-ctrl button {
-      font-family:   'IBM Plex Mono', monospace;
-      font-size:     12px;
-      font-weight:   bold;
-      background:    transparent;
-      border:        1px solid var(--rule);
-      width:         26px;
-      height:        26px;
-      border-radius: 4px;
-      cursor:        pointer;
-      transition:    border-color 0.2s;
-    }
+    .reader-font-ctrl button { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: bold; background: transparent; border: 1px solid var(--rule); width: 26px; height: 26px; border-radius: 4px; cursor: pointer; transition: border-color 0.2s; }
     .reader-font-ctrl button:hover { border-color: var(--ink); background: #d0d7e0; }
-
-    .reader-open-btn {
-      font-family:    'IBM Plex Mono', monospace;
-      font-size:      10px;
-      font-weight:    700;
-      text-transform: uppercase;
-      background:     #e4eaf2;
-      border:         1px solid var(--ink);
-      padding:        4px 8px;
-      border-radius:  4px;
-      cursor:         pointer;
-      white-space:    nowrap;
-    }
+    .reader-open-btn { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700; text-transform: uppercase; background: #e4eaf2; border: 1px solid var(--ink); padding: 4px 8px; border-radius: 4px; cursor: pointer; white-space: nowrap; }
     .reader-open-btn:hover { background: #d0d7e0; }
 
-    .reader-scroll {
-      overflow-y: auto;
-      flex:       1;
-      padding:    20px 25px 40px;
-      position:   relative;
-      z-index:    10;
-    }
-
-    .reader-article-title {
-      font-family:   'Playfair Display', serif;
-      font-size:     clamp(20px, 3vw, 28px);
-      font-weight:   700;
-      line-height:   1.2;
-      margin-bottom: 10px;
-    }
-    .reader-article-meta {
-      font-family:    'IBM Plex Mono', monospace;
-      font-size:      10px;
-      text-transform: uppercase;
-      margin-bottom:  20px;
-      padding-bottom: 10px;
-      border-bottom:  1px solid var(--rule);
-    }
-
-    .reader-body {
-      font-size:      var(--reader-font-sz);
-      line-height:    1.7;
-      padding-bottom: 20px;
-    }
-    .reader-body h1, .reader-body h2, .reader-body h3, .reader-body h4 {
-      font-family: 'Playfair Display', serif;
-      margin:      1.2em 0 0.5em;
-      line-height: 1.2;
-    }
+    .reader-scroll { overflow-y: auto; flex: 1; padding: 20px 25px 40px; position: relative; z-index: 10; }
+    .reader-article-title { font-family: 'Playfair Display', serif; font-size: clamp(20px,3vw,28px); font-weight: 700; line-height: 1.2; margin-bottom: 10px; }
+    .reader-article-meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--rule); }
+    .reader-body { font-size: var(--reader-font-sz); line-height: 1.7; padding-bottom: 20px; }
+    .reader-body h1,.reader-body h2,.reader-body h3,.reader-body h4 { font-family: 'Playfair Display', serif; margin: 1.2em 0 0.5em; line-height: 1.2; }
     .reader-body p { margin-bottom: 1em; }
+    .translation-header { font-family: 'Playfair Display', serif; font-size: 1.2em; font-weight: bold; margin: 30px 0 15px; padding-top: 20px; border-top: 2px dashed var(--rule); }
 
-    .translation-header {
-      font-family:  'Playfair Display', serif;
-      font-size:    1.2em;
-      font-weight:  bold;
-      margin:       30px 0 15px;
-      padding-top:  20px;
-      border-top:   2px dashed var(--rule);
-    }
-
-    /* === SUMMARY MODAL UI === */
-    /* FIX: use visibility+display:flex always to avoid flex/none conflict */
+    /* ═══ SUMMARY MODAL ═══ */
     #summary-modal {
-      display:        flex;
-      visibility:     hidden;
-      position:       fixed;
-      top: 50%; left: 50%;
-      transform:      translate(-50%, -50%);
-      width:          90%;
-      max-width:      800px;
-      max-height:     85vh;
-      background:     var(--paper);
-      z-index:        1000;
-      border-radius:  8px;
-      box-shadow:     0 10px 40px rgba(0,0,0,0.3);
-      flex-direction: column;
-      border:         1px solid var(--rule);
+      display: flex; visibility: hidden;
+      position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
+      width: 90%; max-width: 800px; max-height: 85vh;
+      background: var(--paper); z-index: 1000; border-radius: 8px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3); flex-direction: column; border: 1px solid var(--rule);
     }
     #summary-modal.open { visibility: visible; }
-
-    .summary-header {
-      display:         flex;
-      justify-content: space-between;
-      padding:         12px 16px;
-      border-bottom:   1px solid var(--rule);
-      align-items:     center;
-      background:      #e4eaf2;
-      border-radius:   8px 8px 0 0;
-    }
-    .summary-title        { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: bold; }
+    .summary-header { display: flex; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--rule); align-items: center; background: #e4eaf2; border-radius: 8px 8px 0 0; }
+    .summary-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: bold; }
     .summary-content-area { padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
-    .summary-box          { border: 1px solid var(--rule); border-radius: 6px; background: #ffffff; overflow: hidden; }
-    .summary-box-title    { background: #e4eaf2; padding: 8px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid var(--rule); text-align: center; }
-    .summary-box-content  { padding: 12px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; background: #ffffff; }
-    .summary-box-english  { border-top: 1px dashed var(--rule); background: #f9f9f9; }
+    .summary-box { border: 1px solid var(--rule); border-radius: 6px; background: #fff; overflow: hidden; }
+    .summary-box-title { background: #e4eaf2; padding: 8px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid var(--rule); text-align: center; }
+    .summary-box-content { padding: 12px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; background: #fff; }
 
-    /* === AI CHAT UI === */
+    /* ═══ AI CHAT PANEL ═══ */
     #ai-panel {
-      position:       absolute;
-      top:            50px;
-      right:          15px;
-      width:          340px;
-      max-width:      calc(100vw - 30px);
-      background:     #ffffff;
-      border:         1px solid var(--rule);
-      border-radius:  8px;
-      box-shadow:     0 8px 30px rgba(0,0,0,0.15);
-      display:        flex;
-      flex-direction: column;
-      opacity:        0;
-      pointer-events: none;
-      transform:      translateY(-10px);
-      transition:     all 0.2s ease;
-      max-height:     65vh;
-      z-index:        1005;
+      position: absolute; top: 50px; right: 15px; width: 340px; max-width: calc(100vw - 30px);
+      background: #fff; border: 1px solid var(--rule); border-radius: 8px;
+      box-shadow: 0 8px 30px rgba(0,0,0,0.15); display: flex; flex-direction: column;
+      opacity: 0; pointer-events: none; transform: translateY(-10px);
+      transition: all 0.2s ease; max-height: 65vh; z-index: 1005;
     }
     #ai-panel.open { opacity: 1; pointer-events: auto; transform: translateY(0); }
+    .ai-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #e4eaf2; border-bottom: 1px solid var(--rule); border-radius: 8px 8px 0 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; text-transform: uppercase; }
 
-    .ai-header {
-      display:         flex;
-      justify-content: space-between;
-      align-items:     center;
-      padding:         10px 12px;
-      background:      #e4eaf2;
-      border-bottom:   1px solid var(--rule);
-      border-radius:   8px 8px 0 0;
-      font-family:     'IBM Plex Mono', monospace;
-      font-size:       11px;
-      font-weight:     700;
-      text-transform:  uppercase;
-    }
+    /* ═══ AI QUOTA STATUS BAR (inside AI panel header) ═══ */
+    #ai-quota-status { font-size: 8px; font-family: 'IBM Plex Mono', monospace; font-weight: 400; text-transform: none; letter-spacing: 0; color: #404060; flex: 1; text-align: right; padding-right: 6px; }
+
     .ai-close-btn { background: transparent; border: none; font-size: 18px; cursor: pointer; font-weight: bold; }
-
-    .ai-chat-area  { padding: 12px; overflow-y: auto; flex: 1; font-size: 13px; line-height: 1.5; background: #ffffff; }
-    .ai-message    { margin-bottom: 12px; padding: 10px 12px; border-radius: 6px; background: #f0f0f0; }
+    .ai-chat-area { padding: 12px; overflow-y: auto; flex: 1; font-size: 13px; line-height: 1.5; background: #fff; }
+    .ai-message { margin-bottom: 12px; padding: 10px 12px; border-radius: 6px; background: #f0f0f0; }
     .ai-message.user   { background: #e4eaf2; border-left: 3px solid var(--ink); }
     .ai-message.system { font-style: italic; background: transparent; padding: 0; }
-
-    .ai-quick-prompts        { display: flex; gap: 6px; padding: 0 12px 10px; overflow-x: auto; background: #ffffff; }
+    .ai-message.status { font-size: 11px; color: #f59e0b; background: #fffbeb; border-left: 3px solid #f59e0b; padding: 6px 10px; font-style: italic; }
+    .ai-quick-prompts { display: flex; gap: 6px; padding: 0 12px 10px; overflow-x: auto; background: #fff; }
     .ai-quick-prompts button { background: #f0f0f0; border: 1px solid var(--rule); padding: 4px 10px; border-radius: 15px; font-size: 11px; font-weight: bold; cursor: pointer; }
     .ai-quick-prompts button:hover { background: #d0d7e0; border-color: var(--ink); }
-
-    .ai-input-area        { display: flex; padding: 10px 12px; border-top: 1px solid var(--rule); background: #e4eaf2; border-radius: 0 0 8px 8px; }
-    .ai-input-area input  { flex: 1; border: 1px solid var(--rule); border-radius: 4px; padding: 8px 10px; font-size: 13px; outline: none; }
-    .ai-input-area input:focus  { border-color: var(--ink); }
+    .ai-input-area { display: flex; padding: 10px 12px; border-top: 1px solid var(--rule); background: #e4eaf2; border-radius: 0 0 8px 8px; }
+    .ai-input-area input { flex: 1; border: 1px solid var(--rule); border-radius: 4px; padding: 8px 10px; font-size: 13px; outline: none; }
+    .ai-input-area input:focus { border-color: var(--ink); }
     .ai-input-area button { background: #d0d7e0; border: 1px solid var(--ink); border-radius: 4px; padding: 0 12px; margin-left: 6px; cursor: pointer; font-weight: 700; }
 
-    /* === MOBILE UI === */
+    /* ═══ MOBILE ═══ */
     @media (max-width: 520px) {
-      .controls-bar {
-        position:        static;
-        padding:         12px 16px;
-        justify-content: flex-end;
-        border-bottom:   1px solid var(--rule);
-        flex-wrap:       wrap;
-      }
-      .masthead          { padding: 20px 16px; }
-      .reader-scroll     { padding: 20px 18px 0px; }
+      .controls-bar { padding: 12px 16px; justify-content: flex-end; flex-wrap: wrap; }
+      .masthead { padding: 20px 16px; }
+      .reader-scroll { padding: 20px 18px 0px; }
       .reader-source-url { display: none; }
-      #ai-panel          { top: 65px; right: 10px; max-width: calc(100vw - 20px); max-height: 70vh; }
+      #ai-panel { top: 65px; right: 10px; max-width: calc(100vw - 20px); max-height: 70vh; }
     }
   </style>
 
-  <!-- FIX 1: Load pdf.js as a regular script (NOT type="module") so pdfjsLib is a global -->
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.3.136/pdf.min.js"></script>
+  <!-- pdf.js v3.11.174 — UMD build, exposes pdfjsLib as a global reliably -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script>
+    if (window.pdfjsLib) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+  </script>
 </head>
 
 <body>
 
+  <!-- ═══ CONTROLS BAR ═══ -->
   <div class="controls-bar">
-    <button class="btn-outline" id="overall-summary-btn" style="display:none;" title="View Overall Summary">📊 PDF Summary</button>
-    <button class="btn-outline" id="upload-pdf-btn" title="Upload PDF">📄 Upload PDF</button>
-    <!-- FIX 2: Accept only PDFs -->
-    <input type="file" id="pdf-file-input" accept=".pdf,application/pdf" style="display: none;">
+    <button class="btn-outline" id="overall-summary-btn" style="display:none;">📊 PDF Summary</button>
+    <button class="btn-outline" id="upload-pdf-btn">📄 Upload PDF</button>
+    <input type="file" id="pdf-file-input" accept=".pdf,application/pdf" style="display:none;">
     <select id="doc-type-selector" class="btn-outline" title="Document Type">
       <option value="auto">Auto Detect</option>
       <option value="onepager">1-Pager</option>
@@ -416,31 +220,75 @@
       <option value="book">Book / Long PDF</option>
       <option value="generic">Generic Report</option>
     </select>
-    <button class="btn-outline" id="clear-key-btn" title="Clear Gemini Key">🔑 Reset Key</button>
-  </div>
+    <!-- 🔑 KEY MANAGER BUTTON -->
+    <button class="btn-outline" id="key-mgr-btn" title="Manage Gemini API Keys">🔑 API Keys</button>
 
-  <div class="masthead">
-    <div class="masthead-title">Pulse</div>
-    <div class="tagline">Local Multi-Lingual Intelligence Terminal</div>
-  </div>
+    <!-- ═══ INLINE KEY MANAGER PANEL (drops down from controls bar) ═══ -->
+    <div id="key-manager-box">
+      <div class="km-title">🔑 Gemini API Key Manager — K1 &amp; K2</div>
 
-  <div class="feed-status-bar"><span id="item-count"></span></div>
+      <div class="km-label">Primary Key (K1)</div>
+      <div class="km-row">
+        <input id="km-k1-input" class="km-input" type="password" placeholder="AIza… (paste Key 1 here)" autocomplete="off">
+        <button id="km-k1-save" class="km-save">💾 Save K1</button>
+      </div>
 
-  <div class="container">
-    <div id="rss-output" aria-live="polite" aria-atomic="false">
-      <div class="system-msg">Awaiting PDF Upload. Automatic Hindi/Marathi to English Translation is Active.</div>
+      <div class="km-label">Backup Key (K2 — auto-activates on K1 quota / 429)</div>
+      <div class="km-row">
+        <input id="km-k2-input" class="km-input" type="password" placeholder="AIza… (paste Key 2 here)" autocomplete="off">
+        <button id="km-k2-save" class="km-save">💾 Save K2</button>
+      </div>
+
+      <div id="km-status" class="km-status"></div>
+
+      <div class="km-bottom">
+        <div>
+          <div class="km-label" style="margin-bottom:3px;">Gemini Model</div>
+          <select id="km-model-select" class="km-model-select">
+            <option value="gemini-2.5-flash">2.5 Flash (recommended)</option>
+            <option value="gemini-2.0-flash">2.0 Flash</option>
+            <option value="gemini-2.0-flash-lite">2.0 Flash Lite</option>
+          </select>
+        </div>
+        <button id="km-close-btn" class="km-close">✕ Close</button>
+      </div>
+
+      <div class="km-footer">
+        Get free keys at <span>aistudio.google.com/apikey</span> · Buttons turn green when key is saved
+      </div>
     </div>
   </div>
 
+  <!-- ═══ MASTHEAD ═══ -->
+  <div class="masthead">
+    <div class="masthead-title">Pulse</div>
+    <div class="tagline">PDF Intelligence Terminal</div>
+  </div>
+
+  <!-- Key status badge under masthead -->
+  <div id="key-status-badge"></div>
+  <div class="feed-status-bar"><span id="item-count"></span></div>
+
+  <div class="container">
+    <div id="rss-output" aria-live="polite">
+      <div class="system-msg">
+        Awaiting PDF Upload.<br>
+        Tap <strong>🔑 API Keys</strong> to add your Gemini keys (K1 primary + K2 backup).<br>
+        On quota limit (429), system auto-switches to K2 — no interruption.
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ READER PANEL ═══ -->
   <div id="reader-backdrop" aria-hidden="true"></div>
-  <div id="reader-panel" role="dialog" aria-modal="true" aria-label="Article reader">
-    <div id="reader-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
+  <div id="reader-panel" role="dialog" aria-modal="true">
+    <div id="reader-progress"></div>
     <div class="reader-topbar">
-      <button class="reader-back-btn" id="reader-back" aria-label="Close reader">← Back</button>
+      <button class="reader-back-btn" id="reader-back">← Back</button>
       <span class="reader-source-url" id="reader-url-label"></span>
-      <div class="reader-font-ctrl" role="group" aria-label="Font size">
-        <button id="font-down" title="Smaller text">A−</button>
-        <button id="font-up"   title="Larger text">A+</button>
+      <div class="reader-font-ctrl">
+        <button id="font-down">A−</button>
+        <button id="font-up">A+</button>
       </div>
       <button class="reader-open-btn" id="reader-ai-toggle" style="display:none;">✨ Ask AI</button>
     </div>
@@ -449,13 +297,15 @@
       <div id="reader-content"></div>
     </div>
 
+    <!-- ═══ AI CHAT PANEL (inside reader) ═══ -->
     <div id="ai-panel">
       <div class="ai-header">
         <span>✨ Gemini Assistant</span>
+        <span id="ai-quota-status"></span>
         <button class="ai-close-btn" id="ai-close-btn">×</button>
       </div>
       <div class="ai-chat-area" id="ai-chat-area">
-        <div class="ai-message system">Hi! I've read this chapter. Try a quick prompt below or ask me a specific question.</div>
+        <div class="ai-message system">Ask me anything about this chapter.</div>
       </div>
       <div class="ai-quick-prompts">
         <button class="ai-prompt-btn">Summarize</button>
@@ -468,8 +318,9 @@
     </div>
   </div>
 
+  <!-- ═══ SUMMARY MODAL ═══ -->
   <div id="summary-backdrop" aria-hidden="true"></div>
-  <div id="summary-modal" role="dialog" aria-modal="true" aria-label="Overall Summary">
+  <div id="summary-modal" role="dialog" aria-modal="true">
     <div class="summary-header">
       <div class="summary-title">Overall PDF Intelligence</div>
       <button class="ai-close-btn" id="summary-close-btn">×</button>
@@ -477,469 +328,756 @@
     <div class="summary-content-area">
       <div class="summary-box">
         <div class="summary-box-title">Summary</div>
-        <div class="summary-box-content" id="modal-summary-content">Loading...</div>
-        <div class="summary-box-content summary-box-english" id="modal-summary-english" style="display:none;"></div>
+        <div class="summary-box-content" id="modal-summary-content">Loading…</div>
       </div>
       <div class="summary-box">
         <div class="summary-box-title">Key Takeaways</div>
-        <div class="summary-box-content" id="modal-takeaways-content">Loading...</div>
-        <div class="summary-box-content summary-box-english" id="modal-takeaways-english" style="display:none;"></div>
+        <div class="summary-box-content" id="modal-takeaways-content">Loading…</div>
       </div>
     </div>
   </div>
 
   <script>
-    'use strict';
+  'use strict';
 
-    /* === CONFIGURATION & STATE === */
-    const CONFIG = Object.freeze({
-      MAX_DESC_CHARS:  500,
-      READER_FONT_MIN: 13,
-      READER_FONT_MAX: 24,
-      READER_FONT_DEF: 17,
-      GEMINI_MODEL:    'gemini-2.5-flash'
-    });
+  /* ═══════════════════════════════════════════════════════════════════
+     SECTION 1 — CONFIGURATION
+  ═══════════════════════════════════════════════════════════════════ */
+  const CONFIG = Object.freeze({
+    MAX_DESC_CHARS:  500,
+    READER_FONT_MIN: 13,
+    READER_FONT_MAX: 24,
+    READER_FONT_DEF: 17,
+    // Gemini model cascade: primary → first fallback → second fallback
+    // On 429 from any model, system tries next automatically
+    GEMINI_CASCADE: ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite']
+  });
 
-    const feedCache          = {};
-    let   readerFontSize     = CONFIG.READER_FONT_DEF;
-    let   currentArticleText = "";
+  /* ═══════════════════════════════════════════════════════════════════
+     SECTION 2 — DOM REFS
+  ═══════════════════════════════════════════════════════════════════ */
+  const DOM = {
+    output:            document.getElementById('rss-output'),
+    itemCount:         document.getElementById('item-count'),
+    keyStatusBadge:    document.getElementById('key-status-badge'),
 
-    /* === DOM ELEMENTS === */
-    const DOM = {
-      output:          document.getElementById('rss-output'),
-      clearKeyBtn:     document.getElementById('clear-key-btn'),
-      itemCount:       document.getElementById('item-count'),
+    overallSummaryBtn: document.getElementById('overall-summary-btn'),
+    summaryBackdrop:   document.getElementById('summary-backdrop'),
+    summaryModal:      document.getElementById('summary-modal'),
+    summaryCloseBtn:   document.getElementById('summary-close-btn'),
+    modalSummary:      document.getElementById('modal-summary-content'),
+    modalTakeaways:    document.getElementById('modal-takeaways-content'),
 
-      overallSummaryBtn:   document.getElementById('overall-summary-btn'),
-      summaryBackdrop:     document.getElementById('summary-backdrop'),
-      summaryModal:        document.getElementById('summary-modal'),
-      summaryCloseBtn:     document.getElementById('summary-close-btn'),
-      modalSummary:        document.getElementById('modal-summary-content'),
-      modalSummaryEng:     document.getElementById('modal-summary-english'),
-      modalTakeaways:      document.getElementById('modal-takeaways-content'),
-      modalTakeawaysEng:   document.getElementById('modal-takeaways-english'),
+    uploadPdfBtn:      document.getElementById('upload-pdf-btn'),
+    pdfFileInput:      document.getElementById('pdf-file-input'),
+    docTypeSelector:   document.getElementById('doc-type-selector'),
 
-      uploadPdfBtn:    document.getElementById('upload-pdf-btn'),
-      pdfFileInput:    document.getElementById('pdf-file-input'),
-      docTypeSelector: document.getElementById('doc-type-selector'),
+    // Key manager
+    keyMgrBtn:         document.getElementById('key-mgr-btn'),
+    keyManagerBox:     document.getElementById('key-manager-box'),
+    kmK1Input:         document.getElementById('km-k1-input'),
+    kmK2Input:         document.getElementById('km-k2-input'),
+    kmK1Save:          document.getElementById('km-k1-save'),
+    kmK2Save:          document.getElementById('km-k2-save'),
+    kmStatus:          document.getElementById('km-status'),
+    kmModelSelect:     document.getElementById('km-model-select'),
+    kmCloseBtn:        document.getElementById('km-close-btn'),
 
-      readerPanel:    document.getElementById('reader-panel'),
-      readerBackdrop: document.getElementById('reader-backdrop'),
-      readerContent:  document.getElementById('reader-content'),
-      readerScroll:   document.getElementById('reader-scroll'),
-      readerUrlLabel: document.getElementById('reader-url-label'),
-      readerProgress: document.getElementById('reader-progress'),
-      readerBack:     document.getElementById('reader-back'),
-      fontUp:         document.getElementById('font-up'),
-      fontDown:       document.getElementById('font-down'),
+    // Reader
+    readerPanel:       document.getElementById('reader-panel'),
+    readerBackdrop:    document.getElementById('reader-backdrop'),
+    readerContent:     document.getElementById('reader-content'),
+    readerScroll:      document.getElementById('reader-scroll'),
+    readerUrlLabel:    document.getElementById('reader-url-label'),
+    readerProgress:    document.getElementById('reader-progress'),
+    readerBack:        document.getElementById('reader-back'),
+    fontUp:            document.getElementById('font-up'),
+    fontDown:          document.getElementById('font-down'),
 
-      aiToggle:    document.getElementById('reader-ai-toggle'),
-      aiPanel:     document.getElementById('ai-panel'),
-      aiCloseBtn:  document.getElementById('ai-close-btn'),
-      aiChatArea:  document.getElementById('ai-chat-area'),
-      aiInput:     document.getElementById('ai-input'),
-      aiSubmit:    document.getElementById('ai-submit'),
-      aiPromptBtns: document.querySelectorAll('.ai-prompt-btn')
-    };
+    // AI panel
+    aiToggle:          document.getElementById('reader-ai-toggle'),
+    aiPanel:           document.getElementById('ai-panel'),
+    aiCloseBtn:        document.getElementById('ai-close-btn'),
+    aiChatArea:        document.getElementById('ai-chat-area'),
+    aiInput:           document.getElementById('ai-input'),
+    aiSubmit:          document.getElementById('ai-submit'),
+    aiQuotaStatus:     document.getElementById('ai-quota-status'),
+    aiPromptBtns:      document.querySelectorAll('.ai-prompt-btn')
+  };
 
-    /* === UTILITIES === */
-    function escapeHtml(str) {
-      if (str == null) return '';
-      return String(str)
-        .replace(/&/g,  '&amp;')
-        .replace(/</g,  '&lt;')
-        .replace(/>/g,  '&gt;')
-        .replace(/"/g,  '&quot;')
-        .replace(/'/g,  '&#039;');
+  /* ═══════════════════════════════════════════════════════════════════
+     SECTION 3 — STATE
+  ═══════════════════════════════════════════════════════════════════ */
+  const feedCache          = {};
+  let   readerFontSize     = CONFIG.READER_FONT_DEF;
+  let   currentArticleText = '';
+
+  // ── Dual-Key State ──────────────────────────────────────────────
+  // K1 = Primary  → localStorage key: 'pulse_gemini_key1'
+  // K2 = Backup   → localStorage key: 'pulse_gemini_key2'
+  // On 429, _activeKeySlot shifts 1 → 2 automatically mid-session
+  let _activeKeySlot = 1;
+
+  /* ═══════════════════════════════════════════════════════════════════
+     SECTION 4 — DUAL-KEY MANAGER
+     Exact pattern from reference (LD246RAI): store K1+K2 separately,
+     auto-shift slot on 429, expose via window.* so all call-sites share
+  ═══════════════════════════════════════════════════════════════════ */
+
+  function _getRawKey(slot) {
+    const k = slot === 2
+      ? localStorage.getItem('pulse_gemini_key2')
+      : localStorage.getItem('pulse_gemini_key1');
+    return k ? k.trim() : null;
+  }
+
+  function getGeminiKey() {
+    // Return whichever slot is active; gracefully fall back to the other
+    const k1 = _getRawKey(1);
+    const k2 = _getRawKey(2);
+    if (_activeKeySlot === 2 && k2) return k2;
+    if (k1) return k1;
+    if (k2) return k2;
+    return null; // no key stored — UI will prompt
+  }
+
+  function getGeminiModel() {
+    return localStorage.getItem('pulse_gemini_model') || CONFIG.GEMINI_CASCADE[0];
+  }
+
+  // Called automatically when K1 returns 429 — shifts to K2 for the session
+  function shiftToBackupKey() {
+    const k2 = _getRawKey(2);
+    if (k2 && _activeKeySlot === 1) {
+      _activeKeySlot = 2;
+      _updateKeyStatusBadge();
+      return true; // shifted successfully
     }
+    return false; // no K2 available
+  }
 
-    function parseMarkdown(md) {
-      if (!md) return '';
-      let html = md.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-      html = html.replace(/\*(.*?)\*/g,  '<em>$1</em>');
-      html = html.replace(/^- (.*)$/gm,  '<ul><li>$1</li></ul>');
-      html = html.replace(/<\/ul>\n<ul>/g, '\n');
-      html = html.replace(/\n\n/g, '</p><p>');
-      return `<p>${html}</p>`;
+  function resetToPrimaryKey() {
+    _activeKeySlot = 1;
+    _updateKeyStatusBadge();
+  }
+
+  function clearGeminiKeys() {
+    localStorage.removeItem('pulse_gemini_key1');
+    localStorage.removeItem('pulse_gemini_key2');
+    _activeKeySlot = 1;
+    _refreshKmButtonStates();
+    _updateKmStatus();
+    _updateKeyStatusBadge();
+  }
+
+  function _maskKey(k) {
+    return k ? `${k.slice(0,6)}…${k.slice(-4)} (${k.length}c)` : '— not saved';
+  }
+
+  // Green/default colouring on Save buttons based on stored state
+  function _refreshKmButtonStates() {
+    const k1 = _getRawKey(1), k2 = _getRawKey(2);
+    if (DOM.kmK1Save) {
+      if (k1) { DOM.kmK1Save.textContent = '✅ K1 Active'; DOM.kmK1Save.classList.add('active'); }
+      else    { DOM.kmK1Save.textContent = '💾 Save K1';   DOM.kmK1Save.classList.remove('active'); }
     }
-
-    /* FIX 3: renderFeedItems is now called after PDF processing completes */
-    function renderFeedItems(items, feedName) {
-      DOM.output.innerHTML = items.map((item, idx) => {
-        const desc   = item.description ? escapeHtml(item.description.substring(0, CONFIG.MAX_DESC_CHARS)) : '';
-        const engHtml = (item.summary_english && item.summary_english.trim().length > 0)
-          ? `<p class="description translation"><strong>English Summary:</strong><br>${escapeHtml(item.summary_english.substring(0, CONFIG.MAX_DESC_CHARS))}</p>`
-          : '';
-
-        return (
-          `<div class="feed-item" style="animation-delay:${idx * 30}ms">` +
-            `<span class="headline reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0">${escapeHtml(item.title || 'Untitled')}</span>` +
-            (desc ? `<p class="description">${desc}</p>` : '') +
-            engHtml +
-            `<div class="meta">Extracted Chapter &mdash; ${escapeHtml(feedName)}</div>` +
-          `</div>`
-        );
-      }).join('');
-      DOM.itemCount.textContent = `${items.length} chapter${items.length !== 1 ? 's' : ''} identified`;
+    if (DOM.kmK2Save) {
+      if (k2) { DOM.kmK2Save.textContent = '✅ K2 Active'; DOM.kmK2Save.classList.add('active'); }
+      else    { DOM.kmK2Save.textContent = '💾 Save K2';   DOM.kmK2Save.classList.remove('active'); }
     }
+  }
 
-    /* === READER LOGIC === */
-    function openReader(url) {
-      DOM.readerPanel.classList.add('open');
-      DOM.readerBackdrop.classList.add('open');
-      DOM.readerBackdrop.removeAttribute('aria-hidden');
-      document.body.style.overflow = 'hidden';
+  function _updateKmStatus() {
+    if (!DOM.kmStatus) return;
+    const k1 = _getRawKey(1), k2 = _getRawKey(2);
+    const slot = _activeKeySlot === 2 ? ' &nbsp;<strong style="color:#f59e0b">⚡ K2 active (K1 quota hit)</strong>' : '';
+    DOM.kmStatus.innerHTML =
+      `<span style="color:${k1?'#009e70':'#c8102e'};font-weight:700">K1: ${_maskKey(k1)}</span>` +
+      `&nbsp;&nbsp;<span style="color:${k2?'#009e70':'#7090b0'};font-weight:700">K2: ${_maskKey(k2)}</span>` +
+      (k2 ? `&nbsp;<span style="color:#009e70"> ✓ fallback ready</span>` : '') +
+      slot;
+  }
 
-      DOM.aiToggle.style.display = 'none';
-      closeAiPanel();
-      DOM.aiChatArea.innerHTML = `<div class="ai-message system">Ask me anything — about this chapter, or any topic.</div>`;
-      currentArticleText = "";
-
-      if (url.startsWith('pdf-local-file')) {
-        const index = parseInt(url.split('-').pop(), 10);
-        /* FIX 4: feedCache is now properly written in processPdf */
-        const item  = feedCache['uploaded-pdf']?.items[index];
-
-        DOM.readerUrlLabel.textContent = "Local PDF Extraction";
-        DOM.readerScroll.scrollTop = 0;
-        setReaderProgress(0);
-
-        if (item) {
-          currentArticleText = item.full_text || '';
-
-          let cleanHtml  = parseMarkdown(item.full_text || '');
-          let fullRender = `<h1 class="reader-article-title">${escapeHtml(item.title)}</h1>` +
-                           `<div class="reader-article-meta">PDF Document Extraction</div>` +
-                           `<div class="reader-body">${cleanHtml}</div>`;
-
-          if (item.full_text_english && item.full_text_english.trim().length > 0) {
-            currentArticleText += "\n\nEnglish Translation:\n" + item.full_text_english;
-            fullRender += `<div class="translation-header">English Translation</div>` +
-                          `<div class="reader-body">${parseMarkdown(item.full_text_english)}</div>`;
-          }
-
-          DOM.readerContent.innerHTML = fullRender;
-          DOM.aiToggle.style.display  = 'inline-block';
-        } else {
-          DOM.readerContent.innerHTML = `<div class="system-msg">Could not find chapter data.</div>`;
-        }
-      }
+  // Small badge under masthead showing live key status
+  function _updateKeyStatusBadge() {
+    if (!DOM.keyStatusBadge) return;
+    const k1 = _getRawKey(1), k2 = _getRawKey(2);
+    if (!k1 && !k2) {
+      DOM.keyStatusBadge.innerHTML = '<span style="color:#c8102e">⚠ No API keys saved — tap 🔑 API Keys</span>';
+      return;
     }
+    const slotLabel = _activeKeySlot === 2
+      ? '<span style="color:#f59e0b">⚡ Using K2 (K1 quota)</span>'
+      : '<span style="color:#009e70">✓ K1 Active</span>';
+    const k2label = k2
+      ? '<span style="color:#009e70"> · K2 Backup Ready</span>'
+      : '<span style="color:#7090b0"> · K2 not set</span>';
+    DOM.keyStatusBadge.innerHTML = `Gemini: ${slotLabel}${k2label} · Model: <strong>${getGeminiModel()}</strong>`;
+  }
 
-    function closeReader() {
-      DOM.readerPanel.classList.remove('open');
-      DOM.readerBackdrop.classList.remove('open');
-      DOM.readerBackdrop.setAttribute('aria-hidden', 'true');
-      document.body.style.overflow = '';
-      closeAiPanel();
-      DOM.aiToggle.style.display = 'none';
+  function openKeyManager() {
+    DOM.keyManagerBox.classList.add('open');
+    DOM.kmK1Input.value = '';
+    DOM.kmK2Input.value = '';
+    _refreshKmButtonStates();
+    _updateKmStatus();
+    setTimeout(() => DOM.kmK1Input.focus(), 80);
+  }
+
+  function closeKeyManager() {
+    DOM.keyManagerBox.classList.remove('open');
+    DOM.kmK1Input.value = '';
+    DOM.kmK2Input.value = '';
+  }
+
+  function _saveKey(slot, val) {
+    if (!val || val.length < 20) {
+      DOM.kmStatus.innerHTML = '<span style="color:#c8102e;font-weight:700">⚠ Key too short — paste the full AIza… key.</span>';
+      return;
     }
+    const storageKey = slot === 2 ? 'pulse_gemini_key2' : 'pulse_gemini_key1';
+    localStorage.setItem(storageKey, val);
+    const btn = slot === 1 ? DOM.kmK1Save : DOM.kmK2Save;
+    const inp = slot === 1 ? DOM.kmK1Input : DOM.kmK2Input;
+    if (btn) { btn.textContent = `✅ K${slot} Active`; btn.classList.add('active'); }
+    if (inp) inp.value = '';
+    _updateKmStatus();
+    _updateKeyStatusBadge();
+    // Auto-close after K1 save; stay open so user can also enter K2
+    if (slot === 1) setTimeout(() => { closeKeyManager(); _refreshKmButtonStates(); }, 1400);
+  }
 
-    function setReaderProgress(pct) {
-      const clamped = Math.min(100, Math.max(0, pct));
-      DOM.readerProgress.style.width = clamped + '%';
-    }
+  // Expose as globals (referenced by any future sub-scripts, pattern from reference)
+  window.getGeminiKey      = getGeminiKey;
+  window.getGeminiModel    = getGeminiModel;
+  window.shiftToBackupKey  = shiftToBackupKey;
+  window.resetToPrimaryKey = resetToPrimaryKey;
+  window.openKeyManager    = openKeyManager;
 
-    /* === GEMINI API === */
-    function getGeminiKey() {
-      let key = localStorage.getItem('gemini_api_key_pdf');
-      if (!key) {
-        key = prompt("🔒 Security Check: Enter your Gemini API Key.\n\nSaved securely in your browser's local storage only.\nGet a free key at: aistudio.google.com/app/apikey");
-        if (key && key.trim() !== "") localStorage.setItem('gemini_api_key_pdf', key.trim());
-        else return null;
-      }
-      return key;
-    }
+  /* ═══════════════════════════════════════════════════════════════════
+     SECTION 5 — GEMINI API ENGINE
+     Three-layer cascade (exact reference pattern):
+       Layer 1: Model cascade — 2.5-flash → 2.0-flash → 2.0-flash-lite
+       Layer 2: Key cascade   — K1 → K2 (on 429)
+       Layer 3: Countdown + auto-retry (if both keys exhausted on all models)
+  ═══════════════════════════════════════════════════════════════════ */
 
-    function clearGeminiKey() {
-      localStorage.removeItem('gemini_api_key_pdf');
-      alert("Gemini API Key removed. You will be prompted again on your next extraction.");
-    }
+  // Build the model cascade starting from the user's chosen model
+  function _buildCascade() {
+    const chosen  = getGeminiModel();
+    const cascade = [chosen, ...CONFIG.GEMINI_CASCADE.filter(m => m !== chosen)];
+    return cascade;
+  }
 
-    async function fetchWithRetry(url, options, maxRetries = 3) {
-      let attempt = 0;
-      while (attempt < maxRetries) {
-        const response = await fetch(url, options);
-        if (response.status === 429) {
-          attempt++;
-          if (attempt >= maxRetries) throw new Error("Rate limit exceeded (429). Please wait a minute.");
-          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 1000));
-        } else {
-          if (!response.ok) throw new Error(`API Error: ${response.status}`);
-          return response;
-        }
-      }
-    }
+  // Core Gemini call with full cascade: model + key fallback
+  async function callGemini(promptText, statusEl) {
+    const cascade = _buildCascade();
 
-    function cleanAiResponse(text) {
-      let t        = text.trim();
-      const marker = String.fromCharCode(96, 96, 96);
-      if (t.startsWith(marker)) {
-        const firstNewline = t.indexOf('\n');
-        if (firstNewline !== -1) t = t.substring(firstNewline + 1);
-      }
-      if (t.endsWith(marker)) { t = t.substring(0, t.length - 3); }
-      return t.trim();
-    }
+    // Try each model in cascade
+    for (let i = 0; i < cascade.length; i++) {
+      const model      = cascade[i];
+      const isFallback = i > 0;
 
-    function toggleAiPanel() {
-      DOM.aiPanel.classList.toggle('open');
-      if (DOM.aiPanel.classList.contains('open')) DOM.aiInput.focus();
-    }
-
-    function closeAiPanel() { DOM.aiPanel.classList.remove('open'); }
-
-    function addChatMessage(role, text) {
-      const div     = document.createElement('div');
-      div.className = `ai-message ${role}`;
-      div.innerHTML = role === 'system' ? escapeHtml(text) : parseMarkdown(text);
-      DOM.aiChatArea.appendChild(div);
-      DOM.aiChatArea.scrollTop = DOM.aiChatArea.scrollHeight;
-    }
-
-    async function submitAiPrompt(userPrompt) {
-      if (!userPrompt || userPrompt.trim() === '') return;
-
-      addChatMessage('user', userPrompt);
-      DOM.aiInput.value        = '';
-      DOM.aiSubmit.disabled    = true;
-      DOM.aiSubmit.textContent = '...';
-
-      const loadingDiv       = document.createElement('div');
-      loadingDiv.className   = 'ai-message system';
-      loadingDiv.textContent = 'Thinking...';
-      DOM.aiChatArea.appendChild(loadingDiv);
-      DOM.aiChatArea.scrollTop = DOM.aiChatArea.scrollHeight;
-
-      try {
+      // Try K1 then K2 for each model
+      for (let keyTry = 0; keyTry < 2; keyTry++) {
         const apiKey = getGeminiKey();
-        if (!apiKey) throw new Error("API Key missing");
+        if (!apiKey) throw new Error('No API key saved. Tap 🔑 API Keys to add one.');
 
-        const endpoint       = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
-        const articleContext = currentArticleText
-          ? `--- CURRENT CHAPTER ---\n${currentArticleText.substring(0, 30000)}\n-----------------------\n\n`
-          : '';
-        const fullPrompt = `You are a smart, helpful AI assistant embedded in a PDF intelligence reader app.\nAnswer the user's question strictly based on facts.\nIf an article/chapter is provided below, you may use it as context — but you are not limited to it.\n\n${articleContext}USER: ${userPrompt}`;
+        if (isFallback && keyTry === 0 && statusEl) {
+          statusEl.textContent = `⚡ Switching to ${model} (higher quota)…`;
+        }
+        if (keyTry === 1 && statusEl) {
+          statusEl.textContent = `⚡ K1 quota hit — switching to K2 on ${model}…`;
+        }
 
-        const response = await fetchWithRetry(endpoint, {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ contents: [{ parts: [{ text: fullPrompt }] }] })
-        });
+        const ep  = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        let res;
+        try {
+          res = await fetch(ep, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({
+              contents:         [{ role: 'user', parts: [{ text: promptText }] }],
+              generationConfig: { temperature: 0.1, maxOutputTokens: 8192 }
+            })
+          });
+        } catch (netErr) {
+          throw new Error(`Network error: ${netErr.message}`);
+        }
 
-        const data    = await response.json();
-        const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text || 'Sorry, I could not generate a response.';
+        if (res.status !== 429) {
+          // Not a quota error — return for further handling
+          return res;
+        }
 
-        DOM.aiChatArea.removeChild(loadingDiv);
-        addChatMessage('assistant', cleanAiResponse(rawText));
+        // 429 on this key — try shifting to backup key
+        if (keyTry === 0) {
+          const shifted = shiftToBackupKey();
+          if (shifted) continue; // retry same model with K2
+          // No K2 available — fall through to next model
+        }
+        break; // both keys exhausted on this model — try next model
+      }
 
-      } catch (err) {
-        DOM.aiChatArea.removeChild(loadingDiv);
-        addChatMessage('system', `Error: ${err.message}`);
-      } finally {
-        DOM.aiSubmit.disabled    = false;
-        DOM.aiSubmit.textContent = 'Ask';
+      // Announce model switch in status
+      if (i < cascade.length - 1 && statusEl) {
+        statusEl.textContent = `⚠ ${model} quota hit — trying ${cascade[i+1]}…`;
       }
     }
 
-    /* === PDF PROCESSING === */
-
-    function detectDocumentType(file) {
-      const selected = DOM.docTypeSelector?.value || "auto";
-      if (selected !== "auto") return selected;
-      const name = (file.name || "").toLowerCase();
-      if (name.includes("editorial")) return "editorial";
-      if (name.includes("ppt") || name.includes("slides")) return "presentation";
-      if (name.includes("book")) return "book";
-      return "generic";
-    }
-
-    /* FIX 5: detectDocumentType called once; type passed through to processPdf */
-    async function routeDocumentProcessing(file) {
-      const type = detectDocumentType(file);
-      if (type === "editorial") {
-        DOM.output.innerHTML = '<div class="system-msg">Editorial mode: processing page-aware summaries with safe batching.</div>';
-      } else if (type === "book") {
-        DOM.output.innerHTML = '<div class="system-msg">Book mode: hierarchical summarisation enabled.</div>';
-      }
-      return processPdf(file, type);
-    }
-
-    /* FIX 6: pdf.js worker path required for non-module usage */
-    function initPdfWorker() {
-      if (window.pdfjsLib && !pdfjsLib.GlobalWorkerOptions.workerSrc) {
-        pdfjsLib.GlobalWorkerOptions.workerSrc =
-          'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.3.136/pdf.worker.min.js';
-      }
-    }
-
-    async function extractPdfTextLocal(file) {
-      initPdfWorker();
-      if (!window.pdfjsLib) throw new Error('PDF engine not loaded. Please refresh and try again.');
-      const arrayBuffer = await file.arrayBuffer();
-      const pdf         = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-      const pages       = [];
-      for (let i = 1; i <= pdf.numPages; i++) {
-        const page    = await pdf.getPage(i);
-        const content = await page.getTextContent();
-        const txt     = content.items.map(it => it.str).join(' ').replace(/\s+/g, ' ').trim();
-        pages.push(txt);
-      }
-      return pages;
-    }
-
-    function buildChunksFromPages(pages, type) {
-      if (type === 'editorial') return pages.filter(Boolean);
-      const maxChars = type === 'book' ? 12000 : 18000;
-      const joined   = pages.join("\n\n");
-      const chunks   = [];
-      for (let i = 0; i < joined.length; i += maxChars) chunks.push(joined.slice(i, i + maxChars));
-      return chunks;
-    }
-
-    /* FIX 7: endpoint now defined inside this function; response treated as plain text (not JSON) */
-    async function summarizeTextChunks(chunks, type, apiKey) {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${CONFIG.GEMINI_MODEL}:generateContent?key=${apiKey}`;
-      const results  = [];
-
-      for (const [idx, chunk] of chunks.entries()) {
-        const prompt  = `Document type: ${type}. Summarize clearly with a title, key points, and a concise insight. This is chunk ${idx + 1} of ${chunks.length}.\n\nText:\n${chunk}`;
-        /* FIX 8: removed responseMimeType:"application/json" — we want readable text, not raw JSON */
-        const payload = {
-          contents:         [{ parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.1 }
+    // All models and keys exhausted — show 90s countdown then retry on first fallback model
+    if (statusEl) {
+      await new Promise(resolve => {
+        let remaining = 90;
+        const tick = () => {
+          statusEl.textContent = `⏳ All models quota-hit. Auto-retrying in ${remaining}s on ${cascade[1] || cascade[0]}…`;
+          if (remaining <= 0) { resolve(); return; }
+          remaining--;
+          setTimeout(tick, 1000);
         };
-
-        const res  = await fetchWithRetry(endpoint, {
-          method:  'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify(payload)
-        });
-        const data = await res.json();
-        results.push(cleanAiResponse(data.candidates?.[0]?.content?.parts?.[0]?.text || 'No summary generated.'));
-        await new Promise(r => setTimeout(r, 1200));
-      }
-      return results;
+        tick();
+      });
+      if (statusEl) statusEl.textContent = `🔄 Retrying on ${cascade[1] || cascade[0]}…`;
     }
 
-    async function processPdf(file, inferredType) {
-      const apiKey = getGeminiKey();
-      if (!apiKey) return;
-
-      const originalText           = DOM.uploadPdfBtn.textContent;
-      DOM.uploadPdfBtn.textContent = "⚙ Extracting...";
-      DOM.uploadPdfBtn.disabled    = true;
-
-      try {
-        const pages = await extractPdfTextLocal(file);
-        if (!pages.length || pages.every(p => p.length < 20)) {
-          throw new Error("No readable text found in PDF. It may be scanned/image-only.");
-        }
-
-        /* Use the type passed in from routeDocumentProcessing — no double-detection */
-        const docType = inferredType || (pages.length > 20 ? "book" : "generic");
-        const chunks  = buildChunksFromPages(pages, docType);
-
-        DOM.uploadPdfBtn.textContent = "🧠 Summarising...";
-        const summaries = await summarizeTextChunks(chunks, docType, apiKey);
-
-        /* FIX 9: Populate the summary modal with readable text */
-        const combinedSummary = summaries.join("\n\n---\n\n");
-        DOM.modalSummary.innerText    = combinedSummary;
-        DOM.modalTakeaways.innerText  = "See each section summary above for key takeaways.";
-
-        /* FIX 10: Build feedCache so the reader panel can open chapters */
-        const feedItems = chunks.map((chunk, idx) => ({
-          title:             `Chapter / Section ${idx + 1}`,
-          description:       summaries[idx].substring(0, CONFIG.MAX_DESC_CHARS),
-          full_text:         chunk,
-          full_text_english: '',
-          summary_english:   ''
-        }));
-        feedCache['uploaded-pdf'] = { items: feedItems };
-
-        /* FIX 11: Actually render the feed so articles appear in the list */
-        renderFeedItems(feedItems, file.name);
-
-        /* Show the summary button */
-        DOM.overallSummaryBtn.style.display = 'inline-flex';
-
-      } catch (err) {
-        console.error(err);
-        DOM.output.innerHTML = `<div class="system-msg">PDF processing failed: ${escapeHtml(err.message)}</div>`;
-      } finally {
-        DOM.uploadPdfBtn.textContent = originalText;
-        DOM.uploadPdfBtn.disabled    = false;
-      }
-    }
-
-    /* === INITIALIZATION === */
-    window.addEventListener('load', () => {
-      DOM.clearKeyBtn.addEventListener('click', clearGeminiKey);
-
-      DOM.uploadPdfBtn.addEventListener('click', () => DOM.pdfFileInput.click());
-      DOM.pdfFileInput.addEventListener('change', (e) => {
-        if (e.target.files[0]) routeDocumentProcessing(e.target.files[0]);
-      });
-
-      DOM.overallSummaryBtn.addEventListener('click', () => {
-        DOM.summaryBackdrop.classList.add('open');
-        DOM.summaryModal.classList.add('open');
-      });
-      DOM.summaryCloseBtn.addEventListener('click', () => {
-        DOM.summaryBackdrop.classList.remove('open');
-        DOM.summaryModal.classList.remove('open');
-      });
-      DOM.summaryBackdrop.addEventListener('click', () => {
-        DOM.summaryBackdrop.classList.remove('open');
-        DOM.summaryModal.classList.remove('open');
-      });
-
-      DOM.output.addEventListener('click', (e) => {
-        const trigger = e.target.closest('.reader-trigger');
-        if (!trigger) return;
-        const url = trigger.getAttribute('data-url');
-        if (url) openReader(url);
-      });
-      DOM.output.addEventListener('keydown', (e) => {
-        if (e.key !== 'Enter' && e.key !== ' ') return;
-        const trigger = e.target.closest('.reader-trigger');
-        if (trigger) { e.preventDefault(); trigger.click(); }
-      });
-
-      DOM.readerBack.addEventListener('click', closeReader);
-      DOM.readerBackdrop.addEventListener('click', closeReader);
-      document.addEventListener('keydown', (e) => {
-        if (e.key === 'Escape') {
-          if (DOM.readerPanel.classList.contains('open')) closeReader();
-          if (DOM.summaryModal.classList.contains('open')) {
-            DOM.summaryBackdrop.classList.remove('open');
-            DOM.summaryModal.classList.remove('open');
-          }
-        }
-      });
-
-      DOM.fontUp.addEventListener('click',   () => {
-        readerFontSize = Math.min(CONFIG.READER_FONT_MAX, readerFontSize + 1);
-        document.documentElement.style.setProperty('--reader-font-sz', `${readerFontSize}px`);
-      });
-      DOM.fontDown.addEventListener('click', () => {
-        readerFontSize = Math.max(CONFIG.READER_FONT_MIN, readerFontSize - 1);
-        document.documentElement.style.setProperty('--reader-font-sz', `${readerFontSize}px`);
-      });
-
-      DOM.readerScroll.addEventListener('scroll', () => {
-        const { scrollTop, scrollHeight, clientHeight } = DOM.readerScroll;
-        const denominator = scrollHeight - clientHeight;
-        setReaderProgress(denominator > 0 ? (scrollTop / denominator) * 100 : 0);
-      });
-
-      DOM.aiToggle.addEventListener('click',  toggleAiPanel);
-      DOM.aiCloseBtn.addEventListener('click', closeAiPanel);
-      DOM.aiSubmit.addEventListener('click',  () => submitAiPrompt(DOM.aiInput.value));
-      DOM.aiInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitAiPrompt(DOM.aiInput.value); });
-      DOM.aiPromptBtns.forEach(btn => btn.addEventListener('click', () => submitAiPrompt(btn.textContent)));
+    // Final retry on first fallback model with whichever key is active
+    const finalModel  = cascade[1] || cascade[0];
+    const finalKey    = getGeminiKey();
+    if (!finalKey) throw new Error('No API key. Add one via 🔑 API Keys.');
+    const finalEp = `https://generativelanguage.googleapis.com/v1beta/models/${finalModel}:generateContent?key=${finalKey}`;
+    const finalRes = await fetch(finalEp, {
+      method:  'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({
+        contents:         [{ role: 'user', parts: [{ text: promptText }] }],
+        generationConfig: { temperature: 0.1, maxOutputTokens: 8192 }
+      })
     });
+    if (finalRes.status === 429) throw new Error('All Gemini models quota-exhausted. Wait 2 min and try again.');
+    return finalRes;
+  }
+
+  // Parse and extract text from a Gemini response
+  async function parseGeminiResponse(res) {
+    if (!res.ok && res.status !== 200) {
+      const errData = await res.json().catch(() => ({}));
+      const msg     = errData?.error?.message || `HTTP ${res.status}`;
+      const code    = errData?.error?.code;
+      if (code === 400 || code === 403) {
+        // Bad/invalid key — clear it
+        localStorage.removeItem('pulse_gemini_key1');
+        _refreshKmButtonStates();
+        _updateKeyStatusBadge();
+        throw new Error(`API key error (${code}): ${msg} — Key cleared, please re-enter.`);
+      }
+      throw new Error(`Gemini error: ${msg}`);
+    }
+    const data = await res.json();
+    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
+    if (!text) throw new Error('Gemini returned an empty response.');
+    return text;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     SECTION 6 — UTILITIES
+  ═══════════════════════════════════════════════════════════════════ */
+
+  function escapeHtml(str) {
+    if (str == null) return '';
+    return String(str)
+      .replace(/&/g,  '&amp;')
+      .replace(/</g,  '&lt;')
+      .replace(/>/g,  '&gt;')
+      .replace(/"/g,  '&quot;')
+      .replace(/'/g,  '&#039;');
+  }
+
+  function parseMarkdown(md) {
+    if (!md) return '';
+    let html = md.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    html = html.replace(/\*(.*?)\*/g,  '<em>$1</em>');
+    html = html.replace(/^- (.*)$/gm,  '<ul><li>$1</li></ul>');
+    html = html.replace(/<\/ul>\n<ul>/g, '\n');
+    html = html.replace(/\n\n/g, '</p><p>');
+    return `<p>${html}</p>`;
+  }
+
+  function cleanAiResponse(text) {
+    let t        = (text || '').trim();
+    const marker = '```';
+    if (t.startsWith(marker)) {
+      const firstNewline = t.indexOf('\n');
+      if (firstNewline !== -1) t = t.substring(firstNewline + 1);
+    }
+    if (t.endsWith(marker)) t = t.substring(0, t.length - 3);
+    return t.trim();
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     SECTION 7 — FEED RENDERER
+  ═══════════════════════════════════════════════════════════════════ */
+
+  function renderFeedItems(items, feedName) {
+    DOM.output.innerHTML = items.map((item, idx) => {
+      const desc    = item.description ? escapeHtml(item.description.substring(0, CONFIG.MAX_DESC_CHARS)) : '';
+      const engHtml = (item.summary_english && item.summary_english.trim().length > 0)
+        ? `<p class="description translation"><strong>English Summary:</strong><br>${escapeHtml(item.summary_english.substring(0, CONFIG.MAX_DESC_CHARS))}</p>`
+        : '';
+      return (
+        `<div class="feed-item" style="animation-delay:${idx*30}ms">` +
+          `<span class="headline reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0">${escapeHtml(item.title || 'Untitled')}</span>` +
+          (desc ? `<p class="description">${desc}</p>` : '') +
+          engHtml +
+          `<div class="meta">Section ${idx+1} · ${escapeHtml(feedName)}</div>` +
+        `</div>`
+      );
+    }).join('');
+    DOM.itemCount.textContent = `${items.length} section${items.length !== 1 ? 's' : ''} extracted`;
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     SECTION 8 — READER PANEL
+  ═══════════════════════════════════════════════════════════════════ */
+
+  function openReader(url) {
+    DOM.readerPanel.classList.add('open');
+    DOM.readerBackdrop.classList.add('open');
+    document.body.style.overflow = 'hidden';
+    DOM.aiToggle.style.display   = 'none';
+    closeAiPanel();
+    DOM.aiChatArea.innerHTML = `<div class="ai-message system">Ask me anything about this section.</div>`;
+    currentArticleText = '';
+
+    if (url.startsWith('pdf-local-file')) {
+      const index = parseInt(url.split('-').pop(), 10);
+      const item  = feedCache['uploaded-pdf']?.items[index];
+      DOM.readerUrlLabel.textContent = 'Local PDF Extraction';
+      DOM.readerScroll.scrollTop     = 0;
+      setReaderProgress(0);
+
+      if (item) {
+        currentArticleText = item.full_text || '';
+        let fullRender =
+          `<h1 class="reader-article-title">${escapeHtml(item.title)}</h1>` +
+          `<div class="reader-article-meta">PDF Extraction</div>` +
+          `<div class="reader-body">${parseMarkdown(item.full_text || '')}</div>`;
+        if (item.full_text_english && item.full_text_english.trim().length > 0) {
+          currentArticleText += '\n\nEnglish Translation:\n' + item.full_text_english;
+          fullRender += `<div class="translation-header">English Translation</div>` +
+                        `<div class="reader-body">${parseMarkdown(item.full_text_english)}</div>`;
+        }
+        DOM.readerContent.innerHTML = fullRender;
+        DOM.aiToggle.style.display  = 'inline-block';
+      } else {
+        DOM.readerContent.innerHTML = `<div class="system-msg">Could not find section data.</div>`;
+      }
+    }
+  }
+
+  function closeReader() {
+    DOM.readerPanel.classList.remove('open');
+    DOM.readerBackdrop.classList.remove('open');
+    document.body.style.overflow = '';
+    closeAiPanel();
+    DOM.aiToggle.style.display = 'none';
+  }
+
+  function setReaderProgress(pct) {
+    DOM.readerProgress.style.width = Math.min(100, Math.max(0, pct)) + '%';
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     SECTION 9 — AI CHAT PANEL (inside reader)
+  ═══════════════════════════════════════════════════════════════════ */
+
+  function toggleAiPanel() { DOM.aiPanel.classList.toggle('open'); if (DOM.aiPanel.classList.contains('open')) DOM.aiInput.focus(); }
+  function closeAiPanel()  { DOM.aiPanel.classList.remove('open'); }
+
+  function addChatMessage(role, text) {
+    const div     = document.createElement('div');
+    div.className = `ai-message ${role}`;
+    div.innerHTML = (role === 'system' || role === 'status') ? escapeHtml(text) : parseMarkdown(text);
+    DOM.aiChatArea.appendChild(div);
+    DOM.aiChatArea.scrollTop = DOM.aiChatArea.scrollHeight;
+    return div;
+  }
+
+  async function submitAiPrompt(userPrompt) {
+    if (!userPrompt || !userPrompt.trim()) return;
+    addChatMessage('user', userPrompt);
+    DOM.aiInput.value        = '';
+    DOM.aiSubmit.disabled    = true;
+    DOM.aiSubmit.textContent = '…';
+
+    // Status message that we update live during cascade
+    const statusDiv = addChatMessage('status', 'Thinking…');
+    DOM.aiQuotaStatus.textContent = '';
+
+    try {
+      const apiKey = getGeminiKey();
+      if (!apiKey) {
+        openKeyManager();
+        throw new Error('No API key saved. Enter one in the 🔑 API Keys panel.');
+      }
+
+      const articleCtx = currentArticleText
+        ? `--- CURRENT SECTION ---\n${currentArticleText.substring(0, 30000)}\n-----------------------\n\n`
+        : '';
+      const fullPrompt = `You are a smart assistant in a PDF reader app.\n${articleCtx}USER: ${userPrompt}`;
+
+      const res     = await callGemini(fullPrompt, statusDiv);
+      const rawText = await parseGeminiResponse(res);
+
+      DOM.aiChatArea.removeChild(statusDiv);
+      addChatMessage('assistant', cleanAiResponse(rawText));
+      DOM.aiQuotaStatus.textContent = _activeKeySlot === 2 ? '⚡ K2' : '';
+
+    } catch (err) {
+      statusDiv.textContent  = `⚠ ${err.message}`;
+      statusDiv.className    = 'ai-message system';
+    } finally {
+      DOM.aiSubmit.disabled    = false;
+      DOM.aiSubmit.textContent = 'Ask';
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     SECTION 10 — PDF PROCESSING ENGINE
+  ═══════════════════════════════════════════════════════════════════ */
+
+  function detectDocumentType(file) {
+    const selected = DOM.docTypeSelector?.value || 'auto';
+    if (selected !== 'auto') return selected;
+    const name = (file.name || '').toLowerCase();
+    if (name.includes('editorial')) return 'editorial';
+    if (name.includes('ppt') || name.includes('slide')) return 'presentation';
+    if (name.includes('book')) return 'book';
+    return 'generic';
+  }
+
+  async function routeDocumentProcessing(file) {
+    const type = detectDocumentType(file);
+    if (type === 'editorial') DOM.output.innerHTML = '<div class="system-msg">Editorial mode — page-aware summarisation.</div>';
+    else if (type === 'book') DOM.output.innerHTML = '<div class="system-msg">Book mode — hierarchical summarisation.</div>';
+    return processPdf(file, type);
+  }
+
+  async function extractPdfTextLocal(file) {
+    if (!window.pdfjsLib) throw new Error('PDF engine failed to load. Check internet connection and refresh.');
+    if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+    }
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf         = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const pages       = [];
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page    = await pdf.getPage(i);
+      const content = await page.getTextContent();
+      const txt     = content.items.map(it => it.str).join(' ').replace(/\s+/g, ' ').trim();
+      pages.push(txt);
+    }
+    return pages;
+  }
+
+  function buildChunksFromPages(pages, type) {
+    if (type === 'editorial') return pages.filter(Boolean);
+    const maxChars = type === 'book' ? 12000 : 18000;
+    const joined   = pages.join('\n\n');
+    const chunks   = [];
+    for (let i = 0; i < joined.length; i += maxChars) chunks.push(joined.slice(i, i + maxChars));
+    return chunks;
+  }
+
+  // Summarise chunks using full cascade (model + key fallback) per chunk
+  async function summarizeTextChunks(chunks, type) {
+    const results = [];
+    for (const [idx, chunk] of chunks.entries()) {
+      // Update UI progress
+      DOM.uploadPdfBtn.textContent = `🧠 Section ${idx+1}/${chunks.length}…`;
+
+      const prompt =
+        `Document type: ${type}. You are summarising section ${idx+1} of ${chunks.length}.\n` +
+        `Provide: 1) A section title, 2) 3-5 key points as bullets, 3) One insight.\n\n` +
+        `Text:\n${chunk}`;
+
+      // Status element for live cascade updates during chunk summarisation
+      const statusText = { textContent: '' };
+      const res  = await callGemini(prompt, statusText);
+      const text = await parseGeminiResponse(res);
+      results.push(cleanAiResponse(text));
+
+      // Small delay to avoid hammering the API
+      if (idx < chunks.length - 1) await new Promise(r => setTimeout(r, 1200));
+    }
+    return results;
+  }
+
+  async function processPdf(file, inferredType) {
+    const apiKey = getGeminiKey();
+    if (!apiKey) {
+      openKeyManager();
+      DOM.output.innerHTML = '<div class="system-msg">⚠ No API key found. Please add one via 🔑 API Keys.</div>';
+      return;
+    }
+
+    const originalBtnText        = DOM.uploadPdfBtn.textContent;
+    DOM.uploadPdfBtn.textContent = '⚙ Extracting…';
+    DOM.uploadPdfBtn.disabled    = true;
+
+    try {
+      // Step 1: Extract text via pdf.js
+      const pages = await extractPdfTextLocal(file);
+      if (!pages.length || pages.every(p => p.length < 20)) {
+        throw new Error('No readable text found. The PDF may be scanned/image-only.');
+      }
+
+      const docType = inferredType || (pages.length > 20 ? 'book' : 'generic');
+      const chunks  = buildChunksFromPages(pages, docType);
+
+      // Step 2: Summarise via Gemini (with full K1→K2 + model cascade)
+      const summaries = await summarizeTextChunks(chunks, docType);
+
+      // Step 3: Populate summary modal
+      DOM.modalSummary.innerText   = summaries.join('\n\n─────────────────\n\n');
+      DOM.modalTakeaways.innerText = summaries
+        .map((s, i) => `Section ${i+1}:\n${s.split('\n').slice(0,4).join('\n')}`)
+        .join('\n\n');
+
+      // Step 4: Populate feedCache (so reader panel works)
+      const feedItems = chunks.map((chunk, idx) => ({
+        title:             `Section ${idx+1}`,
+        description:       summaries[idx].substring(0, CONFIG.MAX_DESC_CHARS),
+        full_text:         chunk,
+        full_text_english: '',
+        summary_english:   ''
+      }));
+      feedCache['uploaded-pdf'] = { items: feedItems };
+
+      // Step 5: Render feed + show summary button
+      renderFeedItems(feedItems, file.name);
+      DOM.overallSummaryBtn.style.display = 'inline-flex';
+      _updateKeyStatusBadge();
+
+    } catch (err) {
+      console.error(err);
+      DOM.output.innerHTML = `<div class="system-msg">PDF processing failed: ${escapeHtml(err.message)}</div>`;
+    } finally {
+      DOM.uploadPdfBtn.textContent = originalBtnText;
+      DOM.uploadPdfBtn.disabled    = false;
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     SECTION 11 — EVENT WIRING
+  ═══════════════════════════════════════════════════════════════════ */
+
+  window.addEventListener('load', () => {
+
+    // ── Key Manager wiring ────────────────────────────────────────
+    DOM.keyMgrBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      DOM.keyManagerBox.classList.contains('open') ? closeKeyManager() : openKeyManager();
+    });
+    DOM.kmCloseBtn.addEventListener('click', closeKeyManager);
+
+    DOM.kmK1Save.addEventListener('click', () => _saveKey(1, (DOM.kmK1Input.value || '').trim()));
+    DOM.kmK2Save.addEventListener('click', () => _saveKey(2, (DOM.kmK2Input.value || '').trim()));
+
+    [DOM.kmK1Input, DOM.kmK2Input].forEach((inp, i) => {
+      inp.addEventListener('keydown', e => {
+        if (e.key === 'Enter')  { e.preventDefault(); (i === 0 ? DOM.kmK1Save : DOM.kmK2Save).click(); }
+        if (e.key === 'Escape') closeKeyManager();
+      });
+    });
+
+    // Close key manager if clicking outside
+    document.addEventListener('click', (e) => {
+      if (!DOM.keyManagerBox.contains(e.target) && e.target !== DOM.keyMgrBtn) {
+        closeKeyManager();
+      }
+    });
+
+    // ── Model selector ────────────────────────────────────────────
+    const savedModel = localStorage.getItem('pulse_gemini_model') || CONFIG.GEMINI_CASCADE[0];
+    DOM.kmModelSelect.value = savedModel;
+    DOM.kmModelSelect.addEventListener('change', function() {
+      localStorage.setItem('pulse_gemini_model', this.value);
+      _updateKeyStatusBadge();
+      _updateKmStatus();
+    });
+
+    // ── PDF Upload ────────────────────────────────────────────────
+    DOM.uploadPdfBtn.addEventListener('click', () => DOM.pdfFileInput.click());
+    DOM.pdfFileInput.addEventListener('change', (e) => {
+      if (e.target.files[0]) {
+        e.target.value = ''; // allow re-upload
+        routeDocumentProcessing(e.target.files[0]);
+      }
+    });
+
+    // ── Summary modal ─────────────────────────────────────────────
+    DOM.overallSummaryBtn.addEventListener('click', () => {
+      DOM.summaryBackdrop.classList.add('open');
+      DOM.summaryModal.classList.add('open');
+    });
+    [DOM.summaryCloseBtn, DOM.summaryBackdrop].forEach(el =>
+      el.addEventListener('click', () => {
+        DOM.summaryBackdrop.classList.remove('open');
+        DOM.summaryModal.classList.remove('open');
+      })
+    );
+
+    // ── Feed → open reader ────────────────────────────────────────
+    DOM.output.addEventListener('click', (e) => {
+      const t = e.target.closest('.reader-trigger');
+      if (t) openReader(t.getAttribute('data-url'));
+    });
+    DOM.output.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const t = e.target.closest('.reader-trigger');
+      if (t) { e.preventDefault(); t.click(); }
+    });
+
+    // ── Reader panel ──────────────────────────────────────────────
+    DOM.readerBack.addEventListener('click', closeReader);
+    DOM.readerBackdrop.addEventListener('click', closeReader);
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      if (DOM.readerPanel.classList.contains('open')) closeReader();
+      if (DOM.summaryModal.classList.contains('open')) {
+        DOM.summaryBackdrop.classList.remove('open');
+        DOM.summaryModal.classList.remove('open');
+      }
+    });
+
+    DOM.fontUp.addEventListener('click', () => {
+      readerFontSize = Math.min(CONFIG.READER_FONT_MAX, readerFontSize + 1);
+      document.documentElement.style.setProperty('--reader-font-sz', `${readerFontSize}px`);
+    });
+    DOM.fontDown.addEventListener('click', () => {
+      readerFontSize = Math.max(CONFIG.READER_FONT_MIN, readerFontSize - 1);
+      document.documentElement.style.setProperty('--reader-font-sz', `${readerFontSize}px`);
+    });
+
+    DOM.readerScroll.addEventListener('scroll', () => {
+      const { scrollTop, scrollHeight, clientHeight } = DOM.readerScroll;
+      const denom = scrollHeight - clientHeight;
+      setReaderProgress(denom > 0 ? (scrollTop / denom) * 100 : 0);
+    });
+
+    // ── AI chat panel ─────────────────────────────────────────────
+    DOM.aiToggle.addEventListener('click', toggleAiPanel);
+    DOM.aiCloseBtn.addEventListener('click', closeAiPanel);
+    DOM.aiSubmit.addEventListener('click', () => submitAiPrompt(DOM.aiInput.value));
+    DOM.aiInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitAiPrompt(DOM.aiInput.value); });
+    DOM.aiPromptBtns.forEach(btn => btn.addEventListener('click', () => submitAiPrompt(btn.textContent)));
+
+    // ── Initial badge render ──────────────────────────────────────
+    _refreshKmButtonStates();
+    _updateKeyStatusBadge();
+  });
+
   </script>
 </body>
 </html>
