@@ -193,6 +193,44 @@
       .reader-source-url { display: none; }
       #ai-panel { top: 65px; right: 10px; max-width: calc(100vw - 20px); max-height: 70vh; }
     }
+
+    /* ═══ PROCESSING OVERLAY ═══ */
+    #processing-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(245,240,232,0.96); z-index: 3000;
+      flex-direction: column; align-items: center; justify-content: center;
+      font-family: 'IBM Plex Mono', monospace; gap: 18px;
+      backdrop-filter: blur(3px);
+    }
+    #processing-overlay.active { display: flex; }
+
+    .proc-spinner {
+      width: 44px; height: 44px;
+      border: 3px solid #c8c0b0;
+      border-top-color: #1a5c3a;
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .proc-title {
+      font-size: 13px; font-weight: 700; text-transform: uppercase;
+      letter-spacing: 0.12em; color: #1a5c3a;
+    }
+    .proc-step {
+      font-size: 11px; color: #404060; text-align: center;
+      max-width: 280px; line-height: 1.6;
+    }
+    .proc-bar-wrap {
+      width: 240px; height: 4px; background: #c8c0b0; border-radius: 2px; overflow: hidden;
+    }
+    .proc-bar {
+      height: 100%; width: 0%; background: #1a5c3a;
+      border-radius: 2px; transition: width 0.4s ease;
+    }
+    .proc-note {
+      font-size: 9px; color: #7090b0; text-align: center; max-width: 260px; line-height: 1.5;
+    }
   </style>
 
   <!-- pdf.js v3.11.174 — UMD build, exposes pdfjsLib as a global reliably -->
@@ -221,7 +259,7 @@
       <option value="generic">Generic Report</option>
     </select>
     <!-- 🔑 KEY MANAGER BUTTON -->
-    <button class="btn-outline" id="key-mgr-btn" title="Manage Gemini API Keys">🔑 API Keys</button>
+    <button class="btn-outline" id="key-mgr-btn" title="Manage Gemini API Keys">🔑 Keys</button>
 
     <!-- ═══ INLINE KEY MANAGER PANEL (drops down from controls bar) ═══ -->
     <div id="key-manager-box">
@@ -271,12 +309,17 @@
 
   <div class="container">
     <div id="rss-output" aria-live="polite">
-      <div class="system-msg">
-        Awaiting PDF Upload.<br>
-        Tap <strong>🔑 API Keys</strong> to add your Gemini keys (K1 primary + K2 backup).<br>
-        On quota limit (429), system auto-switches to K2 — no interruption.
-      </div>
+      <div class="system-msg" id="welcome-msg"></div>
     </div>
+  </div>
+
+  <!-- ═══ PROCESSING OVERLAY ═══ -->
+  <div id="processing-overlay">
+    <div class="proc-spinner"></div>
+    <div class="proc-title" id="proc-title">Processing PDF</div>
+    <div class="proc-step" id="proc-step">Starting…</div>
+    <div class="proc-bar-wrap"><div class="proc-bar" id="proc-bar"></div></div>
+    <div class="proc-note" id="proc-note"></div>
   </div>
 
   <!-- ═══ READER PANEL ═══ -->
@@ -358,6 +401,7 @@
   ═══════════════════════════════════════════════════════════════════ */
   const DOM = {
     output:            document.getElementById('rss-output'),
+    welcomeMsg:        document.getElementById('welcome-msg'),
     itemCount:         document.getElementById('item-count'),
     keyStatusBadge:    document.getElementById('key-status-badge'),
 
@@ -382,6 +426,13 @@
     kmStatus:          document.getElementById('km-status'),
     kmModelSelect:     document.getElementById('km-model-select'),
     kmCloseBtn:        document.getElementById('km-close-btn'),
+
+    // Processing overlay
+    procOverlay:       document.getElementById('processing-overlay'),
+    procTitle:         document.getElementById('proc-title'),
+    procStep:          document.getElementById('proc-step'),
+    procBar:           document.getElementById('proc-bar'),
+    procNote:          document.getElementById('proc-note'),
 
     // Reader
     readerPanel:       document.getElementById('reader-panel'),
@@ -461,6 +512,24 @@
     _updateKeyStatusBadge();
   }
 
+  /* ═══ PROCESSING OVERLAY HELPERS ═══ */
+  function showOverlay(title, step, pct, note) {
+    DOM.procTitle.textContent = title || 'Processing';
+    DOM.procStep.textContent  = step  || '';
+    DOM.procBar.style.width   = (pct || 0) + '%';
+    DOM.procNote.textContent  = note || '';
+    DOM.procOverlay.classList.add('active');
+  }
+  function updateOverlay(step, pct, note) {
+    if (step !== undefined) DOM.procStep.textContent = step;
+    if (pct  !== undefined) DOM.procBar.style.width  = pct + '%';
+    if (note !== undefined) DOM.procNote.textContent = note;
+  }
+  function hideOverlay() {
+    DOM.procOverlay.classList.remove('active');
+    DOM.procBar.style.width = '0%';
+  }
+
   function clearGeminiKeys() {
     localStorage.removeItem('pulse_gemini_key1');
     localStorage.removeItem('pulse_gemini_key2');
@@ -502,8 +571,21 @@
   function _updateKeyStatusBadge() {
     if (!DOM.keyStatusBadge) return;
     const k1 = _getRawKey(1), k2 = _getRawKey(2);
+
+    // Welcome message: only show "tap Keys" hint when NO keys are stored
+    if (DOM.welcomeMsg && DOM.welcomeMsg.parentElement === DOM.output) {
+      if (!k1 && !k2) {
+        DOM.welcomeMsg.innerHTML =
+          'Awaiting PDF Upload.<br>' +
+          'Tap <strong>🔑 Keys</strong> above to add your Gemini API key before uploading.';
+      } else {
+        DOM.welcomeMsg.innerHTML =
+          'Keys saved. Tap <strong>📄 Upload PDF</strong> to begin.';
+      }
+    }
+
     if (!k1 && !k2) {
-      DOM.keyStatusBadge.innerHTML = '<span style="color:#c8102e">⚠ No API keys saved — tap 🔑 API Keys</span>';
+      DOM.keyStatusBadge.innerHTML = '<span style="color:#c8102e">⚠ No API keys saved — tap 🔑 Keys</span>';
       return;
     }
     const slotLabel = _activeKeySlot === 2
@@ -718,6 +800,7 @@
   ═══════════════════════════════════════════════════════════════════ */
 
   function renderFeedItems(items, feedName) {
+    // Replace entire output (clears welcome message)
     DOM.output.innerHTML = items.map((item, idx) => {
       const desc    = item.description ? escapeHtml(item.description.substring(0, CONFIG.MAX_DESC_CHARS)) : '';
       const engHtml = (item.summary_english && item.summary_english.trim().length > 0)
@@ -817,7 +900,7 @@
       const apiKey = getGeminiKey();
       if (!apiKey) {
         openKeyManager();
-        throw new Error('No API key saved. Enter one in the 🔑 API Keys panel.');
+        throw new Error('No API key saved. Enter one in the 🔑 Keys panel.');
       }
 
       const articleCtx = currentArticleText
@@ -889,62 +972,73 @@
     return chunks;
   }
 
-  // Summarise chunks using full cascade (model + key fallback) per chunk
-  async function summarizeTextChunks(chunks, type) {
-    const results = [];
-    for (const [idx, chunk] of chunks.entries()) {
-      // Update UI progress
-      DOM.uploadPdfBtn.textContent = `🧠 Section ${idx+1}/${chunks.length}…`;
-
-      const prompt =
-        `Document type: ${type}. You are summarising section ${idx+1} of ${chunks.length}.\n` +
-        `Provide: 1) A section title, 2) 3-5 key points as bullets, 3) One insight.\n\n` +
-        `Text:\n${chunk}`;
-
-      // Status element for live cascade updates during chunk summarisation
-      const statusText = { textContent: '' };
-      const res  = await callGemini(prompt, statusText);
-      const text = await parseGeminiResponse(res);
-      results.push(cleanAiResponse(text));
-
-      // Small delay to avoid hammering the API
-      if (idx < chunks.length - 1) await new Promise(r => setTimeout(r, 1200));
-    }
-    return results;
-  }
-
   async function processPdf(file, inferredType) {
     const apiKey = getGeminiKey();
     if (!apiKey) {
       openKeyManager();
-      DOM.output.innerHTML = '<div class="system-msg">⚠ No API key found. Please add one via 🔑 API Keys.</div>';
+      DOM.output.innerHTML = '<div class="system-msg">⚠ No API key found. Please add one via 🔑 Keys.</div>';
       return;
     }
 
     const originalBtnText        = DOM.uploadPdfBtn.textContent;
-    DOM.uploadPdfBtn.textContent = '⚙ Extracting…';
+    DOM.uploadPdfBtn.textContent = '⚙ Processing…';
     DOM.uploadPdfBtn.disabled    = true;
+
+    // Show overlay immediately
+    showOverlay('Reading PDF', `📄 Opening "${file.name}"…`, 5, 'Extracting text from pages…');
 
     try {
       // Step 1: Extract text via pdf.js
+      updateOverlay(`📄 Reading "${file.name}"…`, 10);
       const pages = await extractPdfTextLocal(file);
+
       if (!pages.length || pages.every(p => p.length < 20)) {
         throw new Error('No readable text found. The PDF may be scanned/image-only.');
       }
 
+      updateOverlay(`✅ ${pages.length} page${pages.length !== 1 ? 's' : ''} extracted — preparing sections…`, 20);
+      await new Promise(r => setTimeout(r, 300));
+
       const docType = inferredType || (pages.length > 20 ? 'book' : 'generic');
       const chunks  = buildChunksFromPages(pages, docType);
 
-      // Step 2: Summarise via Gemini (with full K1→K2 + model cascade)
-      const summaries = await summarizeTextChunks(chunks, docType);
+      updateOverlay(`🗂 ${chunks.length} section${chunks.length !== 1 ? 's' : ''} identified — starting AI analysis…`, 28,
+        `Using Gemini ${getGeminiModel()} · K1${_getRawKey(2) ? '+K2 backup ready' : ''}`);
+      await new Promise(r => setTimeout(r, 300));
 
-      // Step 3: Populate summary modal
+      // Step 2: Summarise each chunk — drive progress bar from 28→90
+      const summaries = [];
+      for (const [idx, chunk] of chunks.entries()) {
+        const pct  = 28 + Math.round(((idx + 1) / chunks.length) * 62);
+        updateOverlay(
+          `🧠 Summarising section ${idx + 1} of ${chunks.length}…`,
+          pct,
+          `Gemini ${getGeminiModel()} · ${_activeKeySlot === 2 ? '⚡ K2 active' : 'K1 active'}`
+        );
+
+        const prompt =
+          `Document type: ${docType}. You are summarising section ${idx+1} of ${chunks.length}.\n` +
+          `Provide: 1) A section title, 2) 3-5 key points as bullets, 3) One insight.\n\nText:\n${chunk}`;
+
+        const statusText = {
+          set textContent(v) { updateOverlay(v ? `⚡ ${v}` : undefined, undefined, undefined); }
+        };
+        const res  = await callGemini(prompt, statusText);
+        const text = await parseGeminiResponse(res);
+        summaries.push(cleanAiResponse(text));
+
+        if (idx < chunks.length - 1) await new Promise(r => setTimeout(r, 1200));
+      }
+
+      // Step 3: Finalise
+      updateOverlay('✅ All sections summarised — building results…', 95);
+      await new Promise(r => setTimeout(r, 400));
+
       DOM.modalSummary.innerText   = summaries.join('\n\n─────────────────\n\n');
       DOM.modalTakeaways.innerText = summaries
         .map((s, i) => `Section ${i+1}:\n${s.split('\n').slice(0,4).join('\n')}`)
         .join('\n\n');
 
-      // Step 4: Populate feedCache (so reader panel works)
       const feedItems = chunks.map((chunk, idx) => ({
         title:             `Section ${idx+1}`,
         description:       summaries[idx].substring(0, CONFIG.MAX_DESC_CHARS),
@@ -954,7 +1048,9 @@
       }));
       feedCache['uploaded-pdf'] = { items: feedItems };
 
-      // Step 5: Render feed + show summary button
+      updateOverlay('🎉 Done! Rendering sections…', 100);
+      await new Promise(r => setTimeout(r, 500));
+
       renderFeedItems(feedItems, file.name);
       DOM.overallSummaryBtn.style.display = 'inline-flex';
       _updateKeyStatusBadge();
@@ -963,6 +1059,7 @@
       console.error(err);
       DOM.output.innerHTML = `<div class="system-msg">PDF processing failed: ${escapeHtml(err.message)}</div>`;
     } finally {
+      hideOverlay();
       DOM.uploadPdfBtn.textContent = originalBtnText;
       DOM.uploadPdfBtn.disabled    = false;
     }
