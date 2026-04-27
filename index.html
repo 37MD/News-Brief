@@ -304,7 +304,6 @@
           <select id="km-model-select" class="km-model-select">
             <option value="gemini-2.5-flash">2.5 Flash (recommended)</option>
             <option value="gemini-2.0-flash">2.0 Flash</option>
-            <option value="gemini-2.0-flash-lite">2.0 Flash Lite</option>
           </select>
         </div>
         <button id="km-close-btn" class="km-close">✕ Close</button>
@@ -411,7 +410,7 @@
     READER_FONT_DEF: 17,
     // Gemini model cascade: primary → first fallback → second fallback
     // On 429 from any model, system tries next automatically
-    GEMINI_CASCADE: ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite']
+    GEMINI_CASCADE: ['gemini-2.5-flash', 'gemini-2.0-flash']
   });
 
   /* ═══════════════════════════════════════════════════════════════════
@@ -696,96 +695,51 @@
 
   /* ═══════════════════════════════════════════════════════════════════
      SECTION 5 — GEMINI API ENGINE  (LD246PAI pattern)
-     Model cascade: chosen → 2.0-flash → 2.0-flash-lite
-     Key cascade:   K1 → K2 on 429
-     Final fallback: 90s countdown → retry on first fallback model
+     Model: user-selected (2.5-flash or 2.0-flash)
+     Key cascade: K1 → K2 on 429 (exact LD246PAI dualKeyFetch pattern)
   ═══════════════════════════════════════════════════════════════════ */
 
   async function callGemini(promptText, statusEl) {
-    const chosen = getGeminiModel();
-    const GEMINI_CASCADE = [chosen, 'gemini-2.0-flash', 'gemini-2.0-flash-lite']
-      .filter((m, i, a) => a.indexOf(m) === i); // deduplicate if chosen is already 2.0-flash
-
-    const bodyObj = {
+    const model = getGeminiModel();
+    const payload = {
       contents:         [{ role: 'user', parts: [{ text: promptText }] }],
       generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
     };
 
-    for (let i = 0; i < GEMINI_CASCADE.length; i++) {
-      const model = GEMINI_CASCADE[i];
+    // ── Exact LD246PAI dualKeyFetch pattern ──────────────────────────
+    // Try K1 first. On 429, switch to K2. If both quota → throw clear error.
+    const slots = [1, 2];
+    for (const slot of slots) {
+      const k = _getRawKey(slot);
+      if (!k) continue; // skip missing slot silently
 
-      if (i > 0 && statusEl) statusEl.textContent = `Switching to ${model}…`;
-
-      // Try K1 then K2 for this model
-      for (let slot = 1; slot <= 2; slot++) {
-        const apiKey = _getRawKey(slot);
-        if (!apiKey) {
-          if (slot === 1 && _getRawKey(2)) continue; // no K1 but K2 exists — try K2
-          if (slot === 1) throw new Error('No API key saved. Tap 🔑 to add one.');
-          break; // no K2 either — move to next model (or exhaust)
-        }
-
-        let res;
-        try {
-          res = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-            { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyObj) }
-          );
-        } catch (netErr) {
-          throw new Error(`Network error: ${netErr.message}`);
-        }
-
-        if (res.status !== 429) {
-          _activeKeySlot = slot; // remember which key worked
-          return res;            // success or non-quota error — caller handles
-        }
-
-        // 429 on this slot
-        if (slot === 1 && _getRawKey(2)) {
-          if (statusEl) statusEl.textContent = `K1 quota hit — trying K2 on ${model}…`;
-          if (DOM.itemCount) DOM.itemCount.textContent = `K1 quota hit — trying K2…`;
-          continue; // try K2 on same model
-        }
-        // K2 also 429 (or no K2) — break inner loop, try next model
-        if (statusEl) statusEl.textContent = `${model} quota hit — trying next model…`;
-        break;
+      if (slot === 2) {
+        const msg = '⚡ K1 quota hit — switching to K2…';
+        if (statusEl)      statusEl.textContent      = msg;
+        if (DOM.itemCount) DOM.itemCount.textContent = msg;
       }
 
-      if (i < GEMINI_CASCADE.length - 1) continue; // move to next model
-
-      // ── All models + all keys exhausted — 90s countdown then final retry ──
-      await new Promise(resolve => {
-        let remaining = 90;
-        const tick = () => {
-          const msg = `All models quota-hit. Retrying in ${remaining}s…`;
-          if (statusEl)      statusEl.textContent      = msg;
-          if (DOM.itemCount) DOM.itemCount.textContent = msg;
-          if (remaining <= 0) { resolve(); return; }
-          remaining--;
-          setTimeout(tick, 1000);
-        };
-        tick();
-      });
-
-      // Final single retry on first fallback model with best available key
-      const retryModel = GEMINI_CASCADE[1] || GEMINI_CASCADE[0];
-      const retryKey   = getGeminiKey();
-      if (!retryKey) throw new Error('No API key. Add one via 🔑.');
-      if (statusEl) statusEl.textContent = `Retrying on ${retryModel}…`;
-      let finalRes;
+      const ep = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${k}`;
+      let res;
       try {
-        finalRes = await fetch(
-          `https://generativelanguage.googleapis.com/v1beta/models/${retryModel}:generateContent?key=${retryKey}`,
-          { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyObj) }
-        );
+        res = await fetch(ep, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(payload)
+        });
       } catch (netErr) {
         throw new Error(`Network error: ${netErr.message}`);
       }
-      if (finalRes.status === 429) throw new Error('All models quota-exhausted. Wait 2 min and try again.');
-      return finalRes;
+
+      if (res.status === 429 && slot === 1) continue; // try K2
+      _activeKeySlot = slot;                          // remember working slot
+      return res;                                     // success or error — caller handles
     }
 
-    throw new Error('All Gemini retries exhausted — please try again later.');
+    // Both slots exhausted (no key saved, or both 429)
+    const k1 = _getRawKey(1), k2 = _getRawKey(2);
+    if (!k1 && !k2) throw new Error('No API key saved. Tap 🔑 to add one.');
+    throw new Error('Both API keys hit quota (429). Wait ~1 minute and retry.');
   }
 
   // Parse and extract text from a Gemini response
