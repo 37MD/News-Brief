@@ -729,13 +729,13 @@
       // Try K1 then K2 for each model
       for (let keyTry = 0; keyTry < 2; keyTry++) {
         const apiKey = getGeminiKey();
-        if (!apiKey) throw new Error('No API key saved. Tap 🔑 API Keys to add one.');
+        if (!apiKey) throw new Error('No API key saved. Tap 🔑 to add one.');
 
         if (isFallback && keyTry === 0 && statusEl) {
-          statusEl.textContent = `⚡ Switching to ${model} (higher quota)…`;
+          statusEl.textContent = `Switching to ${model}…`;
         }
         if (keyTry === 1 && statusEl) {
-          statusEl.textContent = `⚡ K1 quota hit — switching to K2 on ${model}…`;
+          statusEl.textContent = `K1 quota hit — trying K2 on ${model}…`;
         }
 
         const ep  = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
@@ -746,83 +746,103 @@
             headers: { 'Content-Type': 'application/json' },
             body:    JSON.stringify({
               contents:         [{ role: 'user', parts: [{ text: promptText }] }],
-              generationConfig: { temperature: 0.1, maxOutputTokens: 8192 }
+              generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
             })
           });
         } catch (netErr) {
           throw new Error(`Network error: ${netErr.message}`);
         }
 
-        if (res.status !== 429) {
-          // Not a quota error — return for further handling
-          return res;
+        // 429 = quota — try next key / model
+        if (res.status === 429) {
+          if (keyTry === 0) {
+            const shifted = shiftToBackupKey();
+            if (shifted) continue;
+          }
+          break; // try next model
         }
 
-        // 429 on this key — try shifting to backup key
-        if (keyTry === 0) {
-          const shifted = shiftToBackupKey();
-          if (shifted) continue; // retry same model with K2
-          // No K2 available — fall through to next model
+        // 503 / 529 = model overloaded — wait 5s and retry same model+key once
+        if (res.status === 503 || res.status === 529) {
+          if (statusEl) statusEl.textContent = `Model overloaded — retrying in 5s…`;
+          await new Promise(r => setTimeout(r, 5000));
+          continue; // retry this key slot
         }
-        break; // both keys exhausted on this model — try next model
+
+        // Any other status (200, 400, 403, 500…) — return to parseGeminiResponse
+        return res;
       }
 
-      // Announce model switch in status
+      // Announce model switch
       if (i < cascade.length - 1 && statusEl) {
-        statusEl.textContent = `⚠ ${model} quota hit — trying ${cascade[i+1]}…`;
+        statusEl.textContent = `${model} quota hit — trying ${cascade[i+1]}…`;
       }
     }
 
-    // All models and keys exhausted — show 90s countdown then retry on first fallback model
+    // All models and keys exhausted — 60s countdown then one final retry
     if (statusEl) {
       await new Promise(resolve => {
-        let remaining = 90;
+        let remaining = 60;
         const tick = () => {
-          statusEl.textContent = `⏳ All models quota-hit. Auto-retrying in ${remaining}s on ${cascade[1] || cascade[0]}…`;
+          statusEl.textContent = `All models quota-hit. Retrying in ${remaining}s…`;
           if (remaining <= 0) { resolve(); return; }
           remaining--;
           setTimeout(tick, 1000);
         };
         tick();
       });
-      if (statusEl) statusEl.textContent = `🔄 Retrying on ${cascade[1] || cascade[0]}…`;
     }
 
-    // Final retry on first fallback model with whichever key is active
-    const finalModel  = cascade[1] || cascade[0];
-    const finalKey    = getGeminiKey();
-    if (!finalKey) throw new Error('No API key. Add one via 🔑 API Keys.');
-    const finalEp = `https://generativelanguage.googleapis.com/v1beta/models/${finalModel}:generateContent?key=${finalKey}`;
-    const finalRes = await fetch(finalEp, {
-      method:  'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body:    JSON.stringify({
-        contents:         [{ role: 'user', parts: [{ text: promptText }] }],
-        generationConfig: { temperature: 0.1, maxOutputTokens: 8192 }
-      })
-    });
+    const finalModel = cascade[1] || cascade[0];
+    const finalKey   = getGeminiKey();
+    if (!finalKey) throw new Error('No API key. Add one via 🔑.');
+    const finalRes = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/${finalModel}:generateContent?key=${finalKey}`,
+      {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({
+          contents:         [{ role: 'user', parts: [{ text: promptText }] }],
+          generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
+        })
+      }
+    );
     if (finalRes.status === 429) throw new Error('All Gemini models quota-exhausted. Wait 2 min and try again.');
     return finalRes;
   }
 
   // Parse and extract text from a Gemini response
   async function parseGeminiResponse(res) {
-    if (!res.ok && res.status !== 200) {
+    if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
       const msg     = errData?.error?.message || `HTTP ${res.status}`;
       const code    = errData?.error?.code;
       if (code === 400 || code === 403) {
-        // Bad/invalid key — clear it
         localStorage.removeItem('pulse_gemini_key1');
         _refreshKmButtonStates();
         _updateKeyStatusBadge();
         throw new Error(`API key error (${code}): ${msg} — Key cleared, please re-enter.`);
       }
+      // 503 / 529 = model overloaded — treat like 429, caller handles retry
+      if (res.status === 503 || res.status === 529) {
+        throw new Error(`OVERLOADED:${res.status}`);
+      }
       throw new Error(`Gemini error: ${msg}`);
     }
-    const data = await res.json();
-    const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) throw new Error('Gemini returned an empty response.');
+    const data         = await res.json();
+    const candidate    = data.candidates?.[0];
+    const finishReason = candidate?.finishReason || '';
+
+    // Safety block / recitation block — return a placeholder, not an error
+    if (finishReason === 'SAFETY' || finishReason === 'RECITATION' || finishReason === 'OTHER') {
+      return `[Page skipped — Gemini content filter: ${finishReason}]`;
+    }
+
+    const text = candidate?.content?.parts?.[0]?.text;
+    if (!text) {
+      // Empty response but no error — could be a blank page result
+      return '[No summary generated for this page]';
+    }
     return text;
   }
 
@@ -1196,34 +1216,62 @@
           }, 1800);
         }
 
-        // Polite delay between pages to avoid rate limiting
-        if (pageNum < totalPages) await new Promise(r => setTimeout(r, 1000));
+        // Polite delay between pages — Gemini Flash free tier = ~15 RPM
+        // 4s gap = ~15 pages/min, stays safely under limit
+        if (pageNum < totalPages) await new Promise(r => setTimeout(r, 4000));
 
       } catch (err) {
-        // Non-fatal: log the error for this page and continue with next
-        console.warn(`Page ${pageNum} failed:`, err.message);
-        const idx  = feedItems.length;
-        const item = {
-          title:             `Page ${pageNum} — processing error`,
-          description:       `Could not summarise this page: ${err.message}`,
-          full_text:         '',
-          full_text_english: '',
-          summary_english:   ''
-        };
+        // Auto-retry once after 6s before giving up on this page
+        console.warn(`Page ${pageNum} failed (will retry once):`, err.message);
+        let retryText = null;
+        try {
+          await new Promise(r => setTimeout(r, 6000));
+          DOM.itemCount.textContent = `⚙ Retrying page ${pageNum}…`;
+          const retryPageText = await extractPageText(pdfDoc, pageNum);
+          if (retryPageText && retryPageText.length >= 30) {
+            const retryResult = await summarisePage(retryPageText, pageNum, totalPages, docType, { set textContent(v){} });
+            retryText = retryResult;
+          }
+        } catch (retryErr) {
+          console.warn(`Page ${pageNum} retry also failed:`, retryErr.message);
+        }
+
+        const idx = feedItems.length;
+        let item;
+        if (retryText) {
+          // Retry succeeded
+          item = {
+            title:             retryText.title,
+            description:       retryText.body.substring(0, CONFIG.MAX_DESC_CHARS),
+            full_text:         '',
+            full_text_english: '',
+            summary_english:   ''
+          };
+          titles.push(retryText.title);
+          summaries.push(retryText.body);
+        } else {
+          // Both attempts failed — show soft error card
+          item = {
+            title:             `Page ${pageNum} — skipped`,
+            description:       `Could not summarise: ${err.message.substring(0, 120)}`,
+            full_text:         '',
+            full_text_english: '',
+            summary_english:   ''
+          };
+          titles.push(`Page ${pageNum}`);
+          summaries.push('');
+        }
         feedItems.push(item);
-        summaries.push('');
-        titles.push(`Page ${pageNum}`);
         feedCache['uploaded-pdf'] = { items: feedItems };
         renderOneFeedItem(item, idx, file.name, true);
 
-        // If page 1 itself errors, hide overlay and re-enable button
         if (pageNum === 1) {
           hideOverlay();
           DOM.uploadPdfBtn.textContent = originalBtnText;
           DOM.uploadPdfBtn.disabled    = false;
         }
-        // Wait longer after an error before retrying next page
-        await new Promise(r => setTimeout(r, 2000));
+        // Longer wait after failure before next page
+        if (pageNum < totalPages) await new Promise(r => setTimeout(r, 6000));
       }
     }
 
