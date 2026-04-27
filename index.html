@@ -699,7 +699,22 @@
      Key cascade: K1 → K2 on 429 (exact LD246PAI dualKeyFetch pattern)
   ═══════════════════════════════════════════════════════════════════ */
 
+  // ── 100-second rolling throttle between every Gemini API call ──────
+  const GEMINI_GAP_MS  = 100_000;
+  let   _lastGeminiCallAt = 0;
+
   async function callGemini(promptText, statusEl) {
+    // Enforce 100s gap from last call
+    const sinceLastCall = Date.now() - _lastGeminiCallAt;
+    if (sinceLastCall < GEMINI_GAP_MS) {
+      let wait = Math.ceil((GEMINI_GAP_MS - sinceLastCall) / 1000);
+      for (; wait > 0; wait--) {
+        const msg = `⏱ Rate limit — next request in ${wait}s…`;
+        if (statusEl)      statusEl.textContent      = msg;
+        if (DOM.itemCount) DOM.itemCount.textContent = msg;
+        await new Promise(r => setTimeout(r, 1000));
+      }
+    }
     const model = getGeminiModel();
     const payload = {
       contents:         [{ role: 'user', parts: [{ text: promptText }] }],
@@ -761,6 +776,7 @@
       throw new Error(`Gemini error: ${msg}`);
     }
     const data         = await res.json();
+    _lastGeminiCallAt  = Date.now(); // ← 100s gap starts NOW (after full JSON received)
     const candidate    = data.candidates?.[0];
     const finishReason = candidate?.finishReason || '';
 
