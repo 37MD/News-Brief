@@ -21,9 +21,19 @@
 
     /* ═══ CONTROLS BAR ═══ */
     .controls-bar {
-      position: relative; padding: 10px 20px;
+      position: relative; padding: 8px 20px 0;
       display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;
       border-bottom: 1px solid var(--rule); background: #e4eaf2;
+    }
+    .controls-row1 {
+      width: 100%; display: flex; justify-content: center; align-items: center;
+      gap: 8px; flex-wrap: wrap; padding-bottom: 8px;
+    }
+    .controls-row2 {
+      width: 100%; text-align: center;
+      font-family: 'IBM Plex Mono', monospace; font-size: 9px;
+      letter-spacing: 0.04em; padding: 5px 0 7px;
+      border-top: 1px solid var(--rule);
     }
     .btn-outline {
       font-family: 'IBM Plex Mono', monospace; font-size: 11px;
@@ -247,19 +257,25 @@
 
   <!-- ═══ CONTROLS BAR ═══ -->
   <div class="controls-bar">
-    <button class="btn-outline" id="overall-summary-btn" style="display:none;">📊 PDF Summary</button>
-    <button class="btn-outline" id="upload-pdf-btn">📄 Upload PDF</button>
-    <input type="file" id="pdf-file-input" accept=".pdf,application/pdf" style="display:none;">
-    <select id="doc-type-selector" class="btn-outline" title="Document Type">
-      <option value="auto">Auto Detect</option>
-      <option value="onepager">1-Pager</option>
-      <option value="presentation">Presentation</option>
-      <option value="editorial">Editorial Bundle</option>
-      <option value="book">Book / Long PDF</option>
-      <option value="generic">Generic Report</option>
-    </select>
-    <!-- 🔑 KEY MANAGER BUTTON -->
-    <button class="btn-outline" id="key-mgr-btn" title="Manage Gemini API Keys">🔑 Keys</button>
+    <!-- Row 1: buttons -->
+    <div class="controls-row1">
+      <button class="btn-outline" id="overall-summary-btn" style="display:none;">📊 PDF Summary</button>
+      <button class="btn-outline" id="upload-pdf-btn">📄 Upload PDF</button>
+      <input type="file" id="pdf-file-input" accept=".pdf,application/pdf" style="display:none;">
+      <select id="doc-type-selector" class="btn-outline" title="Document Type">
+        <option value="auto">Auto Detect</option>
+        <option value="onepager">1-Pager</option>
+        <option value="presentation">Presentation</option>
+        <option value="editorial">Editorial Bundle</option>
+        <option value="book">Book / Long PDF</option>
+        <option value="generic">Generic Report</option>
+      </select>
+      <!-- 🔑 KEY MANAGER BUTTON — symbol only -->
+      <button class="btn-outline" id="key-mgr-btn" title="Manage Gemini API Keys" style="padding:6px 10px;font-size:15px;line-height:1;">🔑</button>
+    </div>
+
+    <!-- Row 2: live Gemini key/model status -->
+    <div class="controls-row2" id="key-status-badge"></div>
 
     <!-- ═══ INLINE KEY MANAGER PANEL (drops down from controls bar) ═══ -->
     <div id="key-manager-box">
@@ -303,8 +319,7 @@
     <div class="tagline">PDF Intelligence Terminal</div>
   </div>
 
-  <!-- Key status badge under masthead -->
-  <div id="key-status-badge"></div>
+  <!-- Key status is now in controls-bar row 2 -->
   <div class="feed-status-bar"><span id="item-count"></span></div>
 
   <div class="container">
@@ -981,14 +996,14 @@
     }
 
     const originalBtnText        = DOM.uploadPdfBtn.textContent;
-    DOM.uploadPdfBtn.textContent = '⚙ Processing…';
+    DOM.uploadPdfBtn.textContent = '⏫ Uploading…';
     DOM.uploadPdfBtn.disabled    = true;
 
     // Show overlay immediately
     showOverlay('Reading PDF', `📄 Opening "${file.name}"…`, 5, 'Extracting text from pages…');
 
     try {
-      // Step 1: Extract text via pdf.js
+      // Step 1: Extract text via pdf.js — button says Uploading
       updateOverlay(`📄 Reading "${file.name}"…`, 10);
       const pages = await extractPdfTextLocal(file);
 
@@ -998,6 +1013,9 @@
 
       updateOverlay(`✅ ${pages.length} page${pages.length !== 1 ? 's' : ''} extracted — preparing sections…`, 20);
       await new Promise(r => setTimeout(r, 300));
+
+      // Switch button to Processing once text is extracted and AI starts
+      DOM.uploadPdfBtn.textContent = '⚙ Processing…';
 
       const docType = inferredType || (pages.length > 20 ? 'book' : 'generic');
       const chunks  = buildChunksFromPages(pages, docType);
@@ -1051,6 +1069,9 @@
       updateOverlay('🎉 Done! Rendering sections…', 100);
       await new Promise(r => setTimeout(r, 500));
 
+      // Button shows Ready
+      DOM.uploadPdfBtn.textContent = '✅ Ready';
+
       renderFeedItems(feedItems, file.name);
       DOM.overallSummaryBtn.style.display = 'inline-flex';
       _updateKeyStatusBadge();
@@ -1060,8 +1081,11 @@
       DOM.output.innerHTML = `<div class="system-msg">PDF processing failed: ${escapeHtml(err.message)}</div>`;
     } finally {
       hideOverlay();
-      DOM.uploadPdfBtn.textContent = originalBtnText;
-      DOM.uploadPdfBtn.disabled    = false;
+      // Reset button after brief pause so user sees "Ready"
+      setTimeout(() => {
+        DOM.uploadPdfBtn.textContent = originalBtnText;
+        DOM.uploadPdfBtn.disabled    = false;
+      }, 1800);
     }
   }
 
