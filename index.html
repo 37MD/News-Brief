@@ -548,6 +548,48 @@
     DOM.procBar.style.width = '0%';
   }
 
+  /* ═══ SESSION PERSISTENCE ═══
+     Saves the last PDF result to localStorage so it survives refresh.
+     Cleared automatically when a new PDF is uploaded.
+  ═══════════════════════════ */
+  const STORAGE_KEY = 'pulse_pdf_session';
+
+  function _saveSessionToStorage(fileName, feedItems, summaries, titles) {
+    try {
+      const payload = JSON.stringify({ fileName, feedItems, summaries, titles, savedAt: Date.now() });
+      localStorage.setItem(STORAGE_KEY, payload);
+    } catch (e) {
+      // Silently fail if storage is full (large PDFs)
+      console.warn('Could not persist session:', e.message);
+    }
+  }
+
+  function _loadSessionFromStorage() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (e) { return null; }
+  }
+
+  function _restoreSession(session) {
+    if (!session || !session.feedItems || !session.feedItems.length) return false;
+    // Rebuild feedCache so reader panel works
+    feedCache['uploaded-pdf'] = { items: session.feedItems };
+    // Rebuild modal content
+    const { summaries, titles, feedItems, fileName } = session;
+    DOM.modalSummary.innerText   = summaries.map((s, i) => `${titles[i]}\n${s}`).join('\n\n─────────────────\n\n');
+    DOM.modalTakeaways.innerText = summaries
+      .map((s, i) => `${titles[i]}:\n${s.split('\n').slice(0,4).join('\n')}`)
+      .join('\n\n');
+    renderFeedItems(feedItems, fileName);
+    DOM.overallSummaryBtn.style.display = 'inline-flex';
+    // Show restore notice
+    DOM.itemCount.textContent =
+      `${feedItems.length} section${feedItems.length !== 1 ? 's' : ''} restored · ${fileName}`;
+    return true;
+  }
+
   function clearGeminiKeys() {
     localStorage.removeItem('pulse_gemini_key1');
     localStorage.removeItem('pulse_gemini_key2');
@@ -577,11 +619,11 @@
   function _updateKmStatus() {
     if (!DOM.kmStatus) return;
     const k1 = _getRawKey(1), k2 = _getRawKey(2);
-    const slot = _activeKeySlot === 2 ? ' &nbsp;<strong style="color:#f59e0b">⚡ K2 active (K1 quota hit)</strong>' : '';
+    const slot = _activeKeySlot === 2 ? '  <strong style="color:#f59e0b">⚡ K2 active (K1 quota hit)</strong>' : '';
     DOM.kmStatus.innerHTML =
       `<span style="color:${k1?'#009e70':'#c8102e'};font-weight:700">K1: ${_maskKey(k1)}</span>` +
-      `&nbsp;&nbsp;<span style="color:${k2?'#009e70':'#7090b0'};font-weight:700">K2: ${_maskKey(k2)}</span>` +
-      (k2 ? `&nbsp;<span style="color:#009e70"> ✓ fallback ready</span>` : '') +
+      `  <span style="color:${k2?'#009e70':'#7090b0'};font-weight:700">K2: ${_maskKey(k2)}</span>` +
+      (k2 ? ` <span style="color:#009e70"> ✓ fallback ready</span>` : '') +
       slot;
   }
 
@@ -598,7 +640,7 @@
           'Tap <strong>🔑</strong> above to add your Gemini API key before uploading.';
       } else {
         DOM.welcomeMsg.innerHTML =
-          'Keys saved &mdash; tap <strong>📄 Upload PDF</strong> to begin.';
+          'Keys saved — tap <strong>📄 Upload PDF</strong> to begin.';
       }
     }
 
@@ -614,7 +656,7 @@
       ? '<span style="color:#009e70"> · K2 Backup Ready</span>'
       : '<span style="color:#7090b0"> · K2 not set</span>';
     DOM.keyStatusBadge.innerHTML =
-      `Gemini: ${slotLabel}${k2label} &nbsp;·&nbsp; Model: <strong>${getGeminiModel()}</strong>`;
+      `Gemini: ${slotLabel}${k2label}  ·  Model: <strong>${getGeminiModel()}</strong>`;
   }
 
   function openKeyManager() {
@@ -963,6 +1005,8 @@
   }
 
   async function routeDocumentProcessing(file) {
+    // Clear persisted session — new PDF replaces old one
+    localStorage.removeItem(STORAGE_KEY);
     const type = detectDocumentType(file);
     if (type === 'editorial') DOM.output.innerHTML = '<div class="system-msg">Editorial mode — page-aware summarisation.</div>';
     else if (type === 'book') DOM.output.innerHTML = '<div class="system-msg">Book mode — hierarchical summarisation.</div>';
@@ -1035,6 +1079,7 @@
 
       // Step 2: Summarise each chunk — drive progress bar from 28→90
       const summaries = [];
+      const titles    = [];
       for (const [idx, chunk] of chunks.entries()) {
         const pct  = 28 + Math.round(((idx + 1) / chunks.length) * 62);
         updateOverlay(
@@ -1044,15 +1089,28 @@
         );
 
         const prompt =
-          `Document type: ${docType}. You are summarising section ${idx+1} of ${chunks.length}.\n` +
-          `Provide: 1) A section title, 2) 3-5 key points as bullets, 3) One insight.\n\nText:\n${chunk}`;
+          `You are summarising section ${idx+1} of ${chunks.length} from a "${docType}" document.\n\n` +
+          `INSTRUCTIONS:\n` +
+          `1. TITLE: Detect the actual chapter or section heading from the text (e.g. "Chapter 3: The Fall of Rome"). If no heading is found, infer a short descriptive title (max 8 words). Output it on the FIRST line starting with "TITLE: ".\n` +
+          `2. SUMMARY: Write 3-5 bullet points of key ideas.\n` +
+          `3. INSIGHT: One sentence of the most important takeaway.\n\n` +
+          `Text:\n${chunk}`;
 
         const statusText = {
           set textContent(v) { updateOverlay(v ? `⚡ ${v}` : undefined, undefined, undefined); }
         };
         const res  = await callGemini(prompt, statusText);
-        const text = await parseGeminiResponse(res);
-        summaries.push(cleanAiResponse(text));
+        const text = cleanAiResponse(await parseGeminiResponse(res));
+
+        // Extract TITLE line from response
+        const titleMatch = text.match(/^TITLE:\s*(.+)/im);
+        const chTitle    = titleMatch
+          ? titleMatch[1].trim().replace(/^["']|["']$/g, '')
+          : `Section ${idx + 1}`;
+        const bodyText   = text.replace(/^TITLE:.*$/im, '').trim();
+
+        titles.push(chTitle);
+        summaries.push(bodyText);
 
         if (idx < chunks.length - 1) await new Promise(r => setTimeout(r, 1200));
       }
@@ -1061,19 +1119,22 @@
       updateOverlay('✅ All sections summarised — building results…', 95);
       await new Promise(r => setTimeout(r, 400));
 
-      DOM.modalSummary.innerText   = summaries.join('\n\n─────────────────\n\n');
+      DOM.modalSummary.innerText   = summaries.map((s, i) => `${titles[i]}\n${s}`).join('\n\n─────────────────\n\n');
       DOM.modalTakeaways.innerText = summaries
-        .map((s, i) => `Section ${i+1}:\n${s.split('\n').slice(0,4).join('\n')}`)
+        .map((s, i) => `${titles[i]}:\n${s.split('\n').slice(0,4).join('\n')}`)
         .join('\n\n');
 
       const feedItems = chunks.map((chunk, idx) => ({
-        title:             `Section ${idx+1}`,
+        title:             titles[idx],
         description:       summaries[idx].substring(0, CONFIG.MAX_DESC_CHARS),
         full_text:         chunk,
         full_text_english: '',
         summary_english:   ''
       }));
       feedCache['uploaded-pdf'] = { items: feedItems };
+
+      // Persist to localStorage so data survives page refresh
+      _saveSessionToStorage(file.name, feedItems, summaries, titles);
 
       updateOverlay('🎉 Done! Rendering sections…', 100);
       await new Promise(r => setTimeout(r, 500));
@@ -1207,6 +1268,12 @@
     // ── Initial badge render ──────────────────────────────────────
     _refreshKmButtonStates();
     _updateKeyStatusBadge();
+
+    // ── Restore last session if available ─────────────────────────
+    const saved = _loadSessionFromStorage();
+    if (saved) {
+      _restoreSession(saved);
+    }
   });
 
   </script>
