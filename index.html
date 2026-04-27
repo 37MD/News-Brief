@@ -832,6 +832,7 @@
 
   function escapeHtml(str) {
     if (str == null) return '';
+    // Build entity strings via concatenation — keeps & out of source
     return String(str)
       .replace(/&/g,  '&amp;')
       .replace(/</g,  '&lt;')
@@ -992,6 +993,12 @@
 
   /* ═══════════════════════════════════════════════════════════════════
      SECTION 10 — PDF PROCESSING ENGINE
+     Architecture: page-by-page streaming
+     - Open PDF, get page count
+     - Process page 1 → render immediately → user can browse
+     - Process pages 2,3,4… in background one at a time
+     - Each page = one Gemini call (small, never hits token limit)
+     - No chunking, no batching
   ═══════════════════════════════════════════════════════════════════ */
 
   function detectDocumentType(file) {
@@ -1005,42 +1012,82 @@
   }
 
   async function routeDocumentProcessing(file) {
-    // Clear persisted session — new PDF replaces old one
     localStorage.removeItem(STORAGE_KEY);
-    const type = detectDocumentType(file);
-    if (type === 'editorial') DOM.output.innerHTML = '<div class="system-msg">Editorial mode — page-aware summarisation.</div>';
-    else if (type === 'book') DOM.output.innerHTML = '<div class="system-msg">Book mode — hierarchical summarisation.</div>';
-    return processPdf(file, type);
+    return processPdf(file);
   }
 
-  async function extractPdfTextLocal(file) {
+  // Open the PDF and return a pdfjsLib document object (keeps file open for page-by-page access)
+  async function openPdfDocument(file) {
     if (!window.pdfjsLib) throw new Error('PDF engine failed to load. Check internet connection and refresh.');
     if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
       pdfjsLib.GlobalWorkerOptions.workerSrc =
         'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     }
     const arrayBuffer = await file.arrayBuffer();
-    const pdf         = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    const pages       = [];
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page    = await pdf.getPage(i);
-      const content = await page.getTextContent();
-      const txt     = content.items.map(it => it.str).join(' ').replace(/\s+/g, ' ').trim();
-      pages.push(txt);
+    return pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  }
+
+  // Extract text from a single page — keeps token count small
+  async function extractPageText(pdfDoc, pageNum) {
+    const page    = await pdfDoc.getPage(pageNum);
+    const content = await page.getTextContent();
+    return content.items.map(it => it.str).join(' ').replace(/\s+/g, ' ').trim();
+  }
+
+  // Summarise a single page's text via Gemini — small prompt, never hits token limit
+  async function summarisePage(pageText, pageNum, totalPages, docType, statusSetter) {
+    const prompt =
+      `You are summarising page ${pageNum} of ${totalPages} from a "${docType}" document.\n\n` +
+      `INSTRUCTIONS:\n` +
+      `1. TITLE: Detect the actual article or section heading on this page. If none, infer a short descriptive title (max 8 words). Output on the FIRST line as "TITLE: <title>".\n` +
+      `2. SUMMARY: Write 3-5 concise bullet points of key ideas on this page.\n` +
+      `3. INSIGHT: One sentence — the single most important takeaway.\n\n` +
+      `Keep your total response under 300 words.\n\n` +
+      `Page text:\n${pageText.substring(0, 6000)}`;
+
+    const res  = await callGemini(prompt, statusSetter);
+    const text = cleanAiResponse(await parseGeminiResponse(res));
+
+    const titleMatch = text.match(/^TITLE:\s*(.+)/im);
+    const title      = titleMatch
+      ? titleMatch[1].trim().replace(/^["']|["']$/g, '')
+      : `Page ${pageNum}`;
+    const body       = text.replace(/^TITLE:.*$/im, '').trim();
+
+    return { title, body };
+  }
+
+  // Add or update a single feed item card in the DOM
+  function renderOneFeedItem(item, idx, fileName, isNew) {
+    const id      = `feed-item-${idx}`;
+    const existing = document.getElementById(id);
+    const engHtml  = (item.summary_english && item.summary_english.trim().length > 0)
+      ? `<p class="description translation"><strong>English:</strong><br>${escapeHtml(item.summary_english.substring(0, CONFIG.MAX_DESC_CHARS))}</p>`
+      : '';
+    const desc     = item.description ? escapeHtml(item.description.substring(0, CONFIG.MAX_DESC_CHARS)) : '';
+    const html     =
+      `<span class="headline reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0">${escapeHtml(item.title)}</span>` +
+      (desc ? `<p class="description">${desc}</p>` : '') +
+      engHtml +
+      `<div class="meta">Page ${idx + 1} · ${escapeHtml(fileName)}</div>`;
+
+    if (existing) {
+      existing.innerHTML = html;
+      existing.style.opacity = '1';
+    } else {
+      const div        = document.createElement('div');
+      div.className    = 'feed-item';
+      div.id           = id;
+      div.style.animationDelay = `${Math.min(idx * 30, 300)}ms`;
+      if (isNew) div.style.opacity = '0';
+      div.innerHTML    = html;
+      DOM.output.appendChild(div);
+      // Fade in
+      if (isNew) requestAnimationFrame(() => { div.style.transition = 'opacity 0.4s'; div.style.opacity = '1'; });
     }
-    return pages;
   }
 
-  function buildChunksFromPages(pages, type) {
-    if (type === 'editorial') return pages.filter(Boolean);
-    const maxChars = type === 'book' ? 12000 : 18000;
-    const joined   = pages.join('\n\n');
-    const chunks   = [];
-    for (let i = 0; i < joined.length; i += maxChars) chunks.push(joined.slice(i, i + maxChars));
-    return chunks;
-  }
-
-  async function processPdf(file, inferredType) {
+  async function processPdf(file) {
     const apiKey = getGeminiKey();
     if (!apiKey) {
       openKeyManager();
@@ -1048,115 +1095,151 @@
       return;
     }
 
-    const originalBtnText        = DOM.uploadPdfBtn.textContent;
+    const docType         = detectDocumentType(file);
+    const originalBtnText = DOM.uploadPdfBtn.textContent;
     DOM.uploadPdfBtn.textContent = '⏫ Uploading…';
     DOM.uploadPdfBtn.disabled    = true;
 
-    // Show overlay immediately
-    showOverlay('Reading PDF', `📄 Opening "${file.name}"…`, 5, 'Extracting text from pages…');
+    showOverlay('Opening PDF', `📄 "${file.name}"…`, 5, 'Loading pages…');
 
+    let pdfDoc, totalPages;
     try {
-      // Step 1: Extract text via pdf.js — button says Uploading
-      updateOverlay(`📄 Reading "${file.name}"…`, 10);
-      const pages = await extractPdfTextLocal(file);
-
-      if (!pages.length || pages.every(p => p.length < 20)) {
-        throw new Error('No readable text found. The PDF may be scanned/image-only.');
-      }
-
-      updateOverlay(`✅ ${pages.length} page${pages.length !== 1 ? 's' : ''} extracted — preparing sections…`, 20);
-      await new Promise(r => setTimeout(r, 300));
-
-      // Switch button to Processing once text is extracted and AI starts
-      DOM.uploadPdfBtn.textContent = '⚙ Processing…';
-
-      const docType = inferredType || (pages.length > 20 ? 'book' : 'generic');
-      const chunks  = buildChunksFromPages(pages, docType);
-
-      updateOverlay(`🗂 ${chunks.length} section${chunks.length !== 1 ? 's' : ''} identified — starting AI analysis…`, 28,
-        `Using Gemini ${getGeminiModel()} · K1${_getRawKey(2) ? '+K2 backup ready' : ''}`);
-      await new Promise(r => setTimeout(r, 300));
-
-      // Step 2: Summarise each chunk — drive progress bar from 28→90
-      const summaries = [];
-      const titles    = [];
-      for (const [idx, chunk] of chunks.entries()) {
-        const pct  = 28 + Math.round(((idx + 1) / chunks.length) * 62);
-        updateOverlay(
-          `🧠 Summarising section ${idx + 1} of ${chunks.length}…`,
-          pct,
-          `Gemini ${getGeminiModel()} · ${_activeKeySlot === 2 ? '⚡ K2 active' : 'K1 active'}`
-        );
-
-        const prompt =
-          `You are summarising section ${idx+1} of ${chunks.length} from a "${docType}" document.\n\n` +
-          `INSTRUCTIONS:\n` +
-          `1. TITLE: Detect the actual chapter or section heading from the text (e.g. "Chapter 3: The Fall of Rome"). If no heading is found, infer a short descriptive title (max 8 words). Output it on the FIRST line starting with "TITLE: ".\n` +
-          `2. SUMMARY: Write 3-5 bullet points of key ideas.\n` +
-          `3. INSIGHT: One sentence of the most important takeaway.\n\n` +
-          `Text:\n${chunk}`;
-
-        const statusText = {
-          set textContent(v) { updateOverlay(v ? `⚡ ${v}` : undefined, undefined, undefined); }
-        };
-        const res  = await callGemini(prompt, statusText);
-        const text = cleanAiResponse(await parseGeminiResponse(res));
-
-        // Extract TITLE line from response
-        const titleMatch = text.match(/^TITLE:\s*(.+)/im);
-        const chTitle    = titleMatch
-          ? titleMatch[1].trim().replace(/^["']|["']$/g, '')
-          : `Section ${idx + 1}`;
-        const bodyText   = text.replace(/^TITLE:.*$/im, '').trim();
-
-        titles.push(chTitle);
-        summaries.push(bodyText);
-
-        if (idx < chunks.length - 1) await new Promise(r => setTimeout(r, 1200));
-      }
-
-      // Step 3: Finalise
-      updateOverlay('✅ All sections summarised — building results…', 95);
-      await new Promise(r => setTimeout(r, 400));
-
-      DOM.modalSummary.innerText   = summaries.map((s, i) => `${titles[i]}\n${s}`).join('\n\n─────────────────\n\n');
-      DOM.modalTakeaways.innerText = summaries
-        .map((s, i) => `${titles[i]}:\n${s.split('\n').slice(0,4).join('\n')}`)
-        .join('\n\n');
-
-      const feedItems = chunks.map((chunk, idx) => ({
-        title:             titles[idx],
-        description:       summaries[idx].substring(0, CONFIG.MAX_DESC_CHARS),
-        full_text:         chunk,
-        full_text_english: '',
-        summary_english:   ''
-      }));
-      feedCache['uploaded-pdf'] = { items: feedItems };
-
-      // Persist to localStorage so data survives page refresh
-      _saveSessionToStorage(file.name, feedItems, summaries, titles);
-
-      updateOverlay('🎉 Done! Rendering sections…', 100);
-      await new Promise(r => setTimeout(r, 500));
-
-      // Button shows Ready
-      DOM.uploadPdfBtn.textContent = '✅ Ready';
-
-      renderFeedItems(feedItems, file.name);
-      DOM.overallSummaryBtn.style.display = 'inline-flex';
-      _updateKeyStatusBadge();
-
+      pdfDoc     = await openPdfDocument(file);
+      totalPages = pdfDoc.numPages;
     } catch (err) {
-      console.error(err);
-      DOM.output.innerHTML = `<div class="system-msg">PDF processing failed: ${escapeHtml(err.message)}</div>`;
-    } finally {
       hideOverlay();
-      // Reset button after brief pause so user sees "Ready"
-      setTimeout(() => {
-        DOM.uploadPdfBtn.textContent = originalBtnText;
-        DOM.uploadPdfBtn.disabled    = false;
-      }, 1800);
+      DOM.output.innerHTML = `<div class="system-msg">Failed to open PDF: ${escapeHtml(err.message)}</div>`;
+      DOM.uploadPdfBtn.textContent = originalBtnText;
+      DOM.uploadPdfBtn.disabled    = false;
+      return;
     }
+
+    updateOverlay(`📄 ${totalPages} pages found — processing page 1 first…`, 10, '');
+    DOM.uploadPdfBtn.textContent = '⚙ Processing…';
+
+    // Clear output and set up the session state
+    DOM.output.innerHTML = '';
+    DOM.itemCount.textContent = `0 / ${totalPages} pages processed`;
+    DOM.overallSummaryBtn.style.display = 'none';
+
+    const feedItems = [];
+    const summaries = [];
+    const titles    = [];
+
+    // ── Process pages one at a time ──────────────────────────────
+    for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+      const pct = Math.round((pageNum / totalPages) * 90) + 5;
+
+      // After page 1 is done, hide overlay so user can browse
+      // Background pages update status bar only
+      if (pageNum === 1) {
+        updateOverlay(`🧠 Summarising page 1 of ${totalPages}…`, pct,
+          `Gemini ${getGeminiModel()} · ${_activeKeySlot === 2 ? '⚡ K2' : 'K1'}`);
+      } else {
+        // Overlay hidden — update the item count bar instead
+        DOM.itemCount.textContent = `⚙ Processing page ${pageNum} of ${totalPages}… (${pageNum - 1} ready)`;
+      }
+
+      try {
+        // Extract this page's text
+        const pageText = await extractPageText(pdfDoc, pageNum);
+
+        // Skip blank/near-blank pages silently
+        if (!pageText || pageText.length < 30) {
+          if (pageNum === 1) {
+            hideOverlay();
+            DOM.uploadPdfBtn.textContent = '✅ Ready';
+            setTimeout(() => { DOM.uploadPdfBtn.textContent = originalBtnText; DOM.uploadPdfBtn.disabled = false; }, 1800);
+          }
+          continue;
+        }
+
+        // Status setter for cascade messages — show in overlay (page 1) or item count (rest)
+        const statusSetter = {
+          set textContent(v) {
+            if (!v) return;
+            if (pageNum === 1) updateOverlay(`⚡ ${v}`, undefined, undefined);
+            else DOM.itemCount.textContent = `⚡ ${v} (page ${pageNum}/${totalPages})`;
+          }
+        };
+
+        const { title, body } = await summarisePage(pageText, pageNum, totalPages, docType, statusSetter);
+
+        const idx  = feedItems.length;
+        const item = {
+          title,
+          description:       body.substring(0, CONFIG.MAX_DESC_CHARS),
+          full_text:         pageText,
+          full_text_english: '',
+          summary_english:   ''
+        };
+
+        feedItems.push(item);
+        summaries.push(body);
+        titles.push(title);
+        feedCache['uploaded-pdf'] = { items: feedItems };
+
+        // Render this item immediately — user sees it appear
+        renderOneFeedItem(item, idx, file.name, true);
+        DOM.itemCount.textContent = `${feedItems.length} of ${totalPages} pages processed`;
+
+        // Page 1 done — hide overlay immediately so user can start reading
+        if (pageNum === 1) {
+          updateOverlay('✅ Page 1 ready — processing rest in background…', 20, '');
+          await new Promise(r => setTimeout(r, 600));
+          hideOverlay();
+          DOM.uploadPdfBtn.textContent = '✅ Ready';
+          DOM.overallSummaryBtn.style.display = 'inline-flex';
+          setTimeout(() => {
+            DOM.uploadPdfBtn.textContent = originalBtnText;
+            DOM.uploadPdfBtn.disabled    = false;
+          }, 1800);
+        }
+
+        // Polite delay between pages to avoid rate limiting
+        if (pageNum < totalPages) await new Promise(r => setTimeout(r, 1000));
+
+      } catch (err) {
+        // Non-fatal: log the error for this page and continue with next
+        console.warn(`Page ${pageNum} failed:`, err.message);
+        const idx  = feedItems.length;
+        const item = {
+          title:             `Page ${pageNum} — processing error`,
+          description:       `Could not summarise this page: ${err.message}`,
+          full_text:         '',
+          full_text_english: '',
+          summary_english:   ''
+        };
+        feedItems.push(item);
+        summaries.push('');
+        titles.push(`Page ${pageNum}`);
+        feedCache['uploaded-pdf'] = { items: feedItems };
+        renderOneFeedItem(item, idx, file.name, true);
+
+        // If page 1 itself errors, hide overlay and re-enable button
+        if (pageNum === 1) {
+          hideOverlay();
+          DOM.uploadPdfBtn.textContent = originalBtnText;
+          DOM.uploadPdfBtn.disabled    = false;
+        }
+        // Wait longer after an error before retrying next page
+        await new Promise(r => setTimeout(r, 2000));
+      }
+    }
+
+    // All pages done
+    DOM.itemCount.textContent = `✅ All ${feedItems.length} pages processed · ${file.name}`;
+    DOM.overallSummaryBtn.style.display = 'inline-flex';
+
+    // Build summary modal with everything
+    DOM.modalSummary.innerText   = summaries.map((s, i) => `${titles[i]}\n${s}`).join('\n\n─────────────────\n\n');
+    DOM.modalTakeaways.innerText = summaries
+      .map((s, i) => `${titles[i]}:\n${s.split('\n').slice(0,4).join('\n')}`)
+      .join('\n\n');
+
+    // Persist full session
+    _saveSessionToStorage(file.name, feedItems, summaries, titles);
+    _updateKeyStatusBadge();
   }
 
   /* ═══════════════════════════════════════════════════════════════════
