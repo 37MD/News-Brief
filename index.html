@@ -482,13 +482,9 @@
   let   currentArticleText = '';
 
   // ── Dual-Key State ──────────────────────────────────────────────
-  // K1 = Primary  → localStorage key: 'pulse_gemini_key1'
-  // K2 = Backup   → localStorage key: 'pulse_gemini_key2'
-  // Per-slot quota cooldown — 65s after a 429
-  const KEY_COOLDOWN_MS = 65000;
-  const _slotCooldown   = { 1: 0, 2: 0 };
-  let   _activeKeySlot  = 1;
-  let   _lastUsedSlot   = 0;
+  // pulse_gemini_key1 = Primary (K1)
+  // pulse_gemini_key2 = Backup  (K2) — auto-shifts on 429
+  let _activeKeySlot = 1; // 1 = primary, 2 = backup
 
   /* ═══════════════════════════════════════════════════════════════════
      SECTION 4 — DUAL-KEY MANAGER
@@ -501,42 +497,23 @@
     return k ? k.trim() : null;
   }
 
-  function _isSlotCooling(slot) {
-    return (Date.now() - _slotCooldown[slot]) < KEY_COOLDOWN_MS;
+  function getGeminiKey() {
+    // Return active key; fall back to the other slot if missing
+    const primary = _getRawKey(1);
+    const backup  = _getRawKey(2);
+    if (_activeKeySlot === 2 && backup) return backup;
+    if (primary) return primary;
+    if (backup)  return backup;
+    return null;
   }
-
-  function _markSlotCooling(slot) {
-    _slotCooldown[slot] = Date.now();
-    const other = slot === 1 ? 2 : 1;
-    if (_getRawKey(other)) _activeKeySlot = other;
-    _updateKeyStatusBadge();
-  }
-
-  // Returns [slot, key] — alternates K1/K2 when both healthy
-  function _getBestKey() {
-    const k1 = _getRawKey(1), k2 = _getRawKey(2);
-    const c1 = _isSlotCooling(1), c2 = _isSlotCooling(2);
-    if (k1 && !c1 && k2 && !c2) {
-      const slot = _lastUsedSlot === 1 ? 2 : 1;
-      _lastUsedSlot = slot; _activeKeySlot = slot;
-      return [slot, slot === 1 ? k1 : k2];
-    }
-    if (k1 && !c1) { _lastUsedSlot = 1; _activeKeySlot = 1; return [1, k1]; }
-    if (k2 && !c2) { _lastUsedSlot = 2; _activeKeySlot = 2; return [2, k2]; }
-    if (k1)        { _lastUsedSlot = 1; _activeKeySlot = 1; return [1, k1]; }
-    if (k2)        { _lastUsedSlot = 2; _activeKeySlot = 2; return [2, k2]; }
-    return [0, null];
-  }
-
-  function getGeminiKey() { const [, k] = _getBestKey(); return k; }
 
   function getGeminiModel() {
     return localStorage.getItem('pulse_gemini_model') || CONFIG.GEMINI_CASCADE[0];
   }
 
   function shiftToBackupKey() {
-    const k2 = _getRawKey(2);
-    if (k2 && _activeKeySlot === 1) { _activeKeySlot = 2; _updateKeyStatusBadge(); return true; }
+    const backup = _getRawKey(2);
+    if (backup && _activeKeySlot === 1) { _activeKeySlot = 2; _updateKeyStatusBadge(); return true; }
     return false;
   }
 
@@ -718,98 +695,96 @@
   window.openKeyManager    = openKeyManager;
 
   /* ═══════════════════════════════════════════════════════════════════
-     SECTION 5 — GEMINI API ENGINE
-     K1 + K2 alternate per request (both healthy)
-     429 on a slot → marks it cooling 65s → uses other slot instantly
-     Both cooling → tries next model in cascade
-     All exhausted → live countdown → retry
-     503/529 → 8s wait → retry same slot
+     SECTION 5 — GEMINI API ENGINE  (LD246PAI pattern)
+     Model cascade: chosen → 2.0-flash → 2.0-flash-lite
+     Key cascade:   K1 → K2 on 429
+     Final fallback: 90s countdown → retry on first fallback model
   ═══════════════════════════════════════════════════════════════════ */
 
-  function _buildCascade() {
-    const chosen = getGeminiModel();
-    return [chosen, ...CONFIG.GEMINI_CASCADE.filter(m => m !== chosen)];
-  }
-
-  async function _waitCountdown(seconds, label, statusEl) {
-    for (let s = seconds; s > 0; s--) {
-      const msg = `${label} — resuming in ${s}s`;
-      if (statusEl) statusEl.textContent = msg;
-      if (DOM.itemCount) DOM.itemCount.textContent = msg;
-      await new Promise(r => setTimeout(r, 1000));
-    }
-  }
-
   async function callGemini(promptText, statusEl) {
-    const cascade = _buildCascade();
+    const chosen = getGeminiModel();
+    const GEMINI_CASCADE = [chosen, 'gemini-2.0-flash', 'gemini-2.0-flash-lite']
+      .filter((m, i, a) => a.indexOf(m) === i); // deduplicate if chosen is already 2.0-flash
 
-    for (let mi = 0; mi < cascade.length; mi++) {
-      const model = cascade[mi];
+    const bodyObj = {
+      contents:         [{ role: 'user', parts: [{ text: promptText }] }],
+      generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
+    };
 
-      for (let attempt = 0; attempt < 4; attempt++) {
-        const [slot, apiKey] = _getBestKey();
-        if (!apiKey) throw new Error('No API key saved. Tap 🔑 to add one.');
+    for (let i = 0; i < GEMINI_CASCADE.length; i++) {
+      const model = GEMINI_CASCADE[i];
+
+      if (i > 0 && statusEl) statusEl.textContent = `Switching to ${model}…`;
+
+      // Try K1 then K2 for this model
+      for (let slot = 1; slot <= 2; slot++) {
+        const apiKey = _getRawKey(slot);
+        if (!apiKey) {
+          if (slot === 1 && _getRawKey(2)) continue; // no K1 but K2 exists — try K2
+          if (slot === 1) throw new Error('No API key saved. Tap 🔑 to add one.');
+          break; // no K2 either — move to next model (or exhaust)
+        }
 
         let res;
         try {
           res = await fetch(
             `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
-            {
-              method:  'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body:    JSON.stringify({
-                contents:         [{ role: 'user', parts: [{ text: promptText }] }],
-                generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
-              })
-            }
+            { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyObj) }
           );
         } catch (netErr) {
           throw new Error(`Network error: ${netErr.message}`);
         }
 
-        if (res.status === 200) return res;
-
-        if (res.status === 429) {
-          _markSlotCooling(slot);
-          const other    = slot === 1 ? 2 : 1;
-          const otherKey = _getRawKey(other);
-
-          // Other key is healthy → switch and retry immediately
-          if (otherKey && !_isSlotCooling(other)) {
-            const msg = `K${slot} quota → switching to K${other}`;
-            if (statusEl) statusEl.textContent = msg;
-            if (DOM.itemCount) DOM.itemCount.textContent = msg;
-            continue;
-          }
-
-          // Both keys cooling (or only one key) → wait for cooldown first
-          const c1rem = KEY_COOLDOWN_MS - (Date.now() - _slotCooldown[1]);
-          const c2rem = KEY_COOLDOWN_MS - (Date.now() - _slotCooldown[2]);
-          const waitS = Math.ceil(Math.max(5, Math.min(
-            c1rem > 0 ? c1rem : KEY_COOLDOWN_MS,
-            c2rem > 0 ? c2rem : KEY_COOLDOWN_MS
-          ) / 1000));
-          const label = mi < cascade.length - 1
-            ? `Quota hit — waiting before trying ${cascade[mi + 1]}`
-            : 'All quota exhausted — waiting';
-          await _waitCountdown(waitS, label, statusEl);
-
-          // After wait, move to next model if available, otherwise retry same
-          if (mi < cascade.length - 1) break;
-          continue;
+        if (res.status !== 429) {
+          _activeKeySlot = slot; // remember which key worked
+          return res;            // success or non-quota error — caller handles
         }
 
-        if (res.status === 503 || res.status === 529) {
-          const msg = `Model overloaded (${res.status}) — retrying in 8s`;
-          if (statusEl) statusEl.textContent = msg;
-          if (DOM.itemCount) DOM.itemCount.textContent = msg;
-          await new Promise(r => setTimeout(r, 8000));
-          continue;
+        // 429 on this slot
+        if (slot === 1 && _getRawKey(2)) {
+          if (statusEl) statusEl.textContent = `K1 quota hit — trying K2 on ${model}…`;
+          if (DOM.itemCount) DOM.itemCount.textContent = `K1 quota hit — trying K2…`;
+          continue; // try K2 on same model
         }
-
-        return res;
+        // K2 also 429 (or no K2) — break inner loop, try next model
+        if (statusEl) statusEl.textContent = `${model} quota hit — trying next model…`;
+        break;
       }
+
+      if (i < GEMINI_CASCADE.length - 1) continue; // move to next model
+
+      // ── All models + all keys exhausted — 90s countdown then final retry ──
+      await new Promise(resolve => {
+        let remaining = 90;
+        const tick = () => {
+          const msg = `All models quota-hit. Retrying in ${remaining}s…`;
+          if (statusEl)      statusEl.textContent      = msg;
+          if (DOM.itemCount) DOM.itemCount.textContent = msg;
+          if (remaining <= 0) { resolve(); return; }
+          remaining--;
+          setTimeout(tick, 1000);
+        };
+        tick();
+      });
+
+      // Final single retry on first fallback model with best available key
+      const retryModel = GEMINI_CASCADE[1] || GEMINI_CASCADE[0];
+      const retryKey   = getGeminiKey();
+      if (!retryKey) throw new Error('No API key. Add one via 🔑.');
+      if (statusEl) statusEl.textContent = `Retrying on ${retryModel}…`;
+      let finalRes;
+      try {
+        finalRes = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models/${retryModel}:generateContent?key=${retryKey}`,
+          { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(bodyObj) }
+        );
+      } catch (netErr) {
+        throw new Error(`Network error: ${netErr.message}`);
+      }
+      if (finalRes.status === 429) throw new Error('All models quota-exhausted. Wait 2 min and try again.');
+      return finalRes;
     }
+
     throw new Error('All Gemini retries exhausted — please try again later.');
   }
 
