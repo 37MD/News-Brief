@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pulse v2 — PDF Intelligence</title>
+  <title>Pulse v3 — PDF Intelligence</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
     /* ═══ BASE ═══ */
@@ -302,8 +302,9 @@
         <div>
           <div class="km-label" style="margin-bottom:3px;">Gemini Model</div>
           <select id="km-model-select" class="km-model-select">
-            <option value="gemini-2.5-flash">2.5 Flash (recommended)</option>
-            <option value="gemini-2.0-flash">2.0 Flash</option>
+            <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite (default)</option>
+            <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+            <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
           </select>
         </div>
         <button id="km-close-btn" class="km-close">✕ Close</button>
@@ -317,7 +318,7 @@
 
   <!-- ═══ MASTHEAD ═══ -->
   <div class="masthead">
-    <div class="masthead-title">Pulse v2</div>
+    <div class="masthead-title">Pulse v3</div>
     <div class="tagline">PDF Intelligence Terminal</div>
   </div>
 
@@ -410,7 +411,7 @@
     READER_FONT_DEF: 17,
     // Gemini model cascade: primary → first fallback → second fallback
     // On 429 from any model, system tries next automatically
-    GEMINI_CASCADE: ['gemini-2.5-flash', 'gemini-2.0-flash']
+    GEMINI_CASCADE: ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-pro']
   });
 
   /* ═══════════════════════════════════════════════════════════════════
@@ -670,20 +671,31 @@
   }
 
   function _saveKey(slot, val) {
-    if (!val || val.length < 20) {
-      DOM.kmStatus.innerHTML = '<span style="color:#c8102e;font-weight:700">⚠ Key too short — paste the full AIza… key.</span>';
+    // Validate — Gemini keys start with "AIza" and are 39 chars
+    if (!val) {
+      DOM.kmStatus.innerHTML = '<span style="color:#c8102e;font-weight:700">⚠ Nothing to save — paste your AIza… key first.</span>';
+      return;
+    }
+    if (!val.startsWith('AIza')) {
+      DOM.kmStatus.innerHTML = '<span style="color:#c8102e;font-weight:700">⚠ Key should start with "AIza…" — check and paste again.</span>';
       return;
     }
     const storageKey = slot === 2 ? 'pulse_gemini_key2' : 'pulse_gemini_key1';
     localStorage.setItem(storageKey, val);
+
+    // Confirm save immediately in UI
     const btn = slot === 1 ? DOM.kmK1Save : DOM.kmK2Save;
     const inp = slot === 1 ? DOM.kmK1Input : DOM.kmK2Input;
-    if (btn) { btn.textContent = `✅ K${slot} Active`; btn.classList.add('active'); }
+    if (btn) { btn.textContent = `✅ K${slot} Saved`; btn.classList.add('active'); }
     if (inp) inp.value = '';
+
     _updateKmStatus();
     _updateKeyStatusBadge();
-    // Auto-close after K1 save; stay open so user can also enter K2
-    if (slot === 1) setTimeout(() => { closeKeyManager(); _refreshKmButtonStates(); }, 1400);
+
+    // Show success in status bar — do NOT auto-close so user can optionally add K2
+    DOM.kmStatus.innerHTML +=
+      `<br><span style="color:#009e70;font-weight:700">✅ K${slot} saved successfully.</span>` +
+      (slot === 1 && !_getRawKey(2) ? ' You can also add K2 as a backup.' : '');
   }
 
   // Expose as globals (referenced by any future sub-scripts, pattern from reference)
@@ -1264,8 +1276,11 @@
     });
 
     // ── Model selector ────────────────────────────────────────────
-    const savedModel = localStorage.getItem('pulse_gemini_model') || CONFIG.GEMINI_CASCADE[0];
-    DOM.kmModelSelect.value = savedModel;
+    const VALID_MODELS  = CONFIG.GEMINI_CASCADE;
+    const savedModel    = localStorage.getItem('pulse_gemini_model');
+    const activeModel   = VALID_MODELS.includes(savedModel) ? savedModel : VALID_MODELS[0];
+    if (!VALID_MODELS.includes(savedModel)) localStorage.setItem('pulse_gemini_model', VALID_MODELS[0]);
+    DOM.kmModelSelect.value = activeModel;
     DOM.kmModelSelect.addEventListener('change', function() {
       localStorage.setItem('pulse_gemini_model', this.value);
       _updateKeyStatusBadge();
