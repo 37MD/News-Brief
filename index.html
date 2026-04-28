@@ -1162,10 +1162,7 @@
             DOM.uploadPdfBtn.disabled    = false;
           }, 1800);
         }
-
-        // Polite delay between pages — Gemini Flash free tier = ~15 RPM
-        // 4s gap = ~15 pages/min, stays safely under limit
-        if (pageNum < totalPages) await new Promise(r => setTimeout(r, 4000));
+        // ⏱ No manual delay here — callGemini enforces 100s gap after JSON received
 
       } catch (err) {
         // Auto-retry once after 6s before giving up on this page
@@ -1217,8 +1214,7 @@
           DOM.uploadPdfBtn.textContent = originalBtnText;
           DOM.uploadPdfBtn.disabled    = false;
         }
-        // Longer wait after failure before next page
-        if (pageNum < totalPages) await new Promise(r => setTimeout(r, 6000));
+        // ⏱ No manual delay — callGemini 100s throttle handles next page pacing
       }
     }
 
