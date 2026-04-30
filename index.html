@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pulse v3 — PDF Intelligence</title>
+  <title>Pulse v3A — PDF Intelligence</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
     /* ═══ BASE ═══ */
@@ -244,6 +244,30 @@
     .proc-note {
       font-size: 9px; color: #7090b0; text-align: center; max-width: 260px; line-height: 1.5;
     }
+
+    /* ── Rate Limit Ticker ── */
+    #rate-limit-ticker {
+      position: fixed; bottom: 14px; right: 16px; z-index: 999;
+      background: rgba(0,0,0,0.82); color: #f0c040;
+      font-size: 11px; font-family: 'IBM Plex Mono', monospace;
+      padding: 5px 10px; border-radius: 6px;
+      border: 1px solid #f0c04055;
+      pointer-events: none;
+      transition: opacity 0.5s;
+    }
+
+    /* ── Doc Type Confirm Bar ── */
+    #doctype-confirm-bar {
+      background: #1a2636; border: 1px solid #2e9e70;
+      border-radius: 6px; padding: 8px 12px;
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      font-size: 12px; color: #b0c8d8;
+      margin: 6px 12px 0;
+    }
+    #doctype-confirm-msg { flex: 1; min-width: 160px; }
+
+    /* ── Reader paragraph text ── */
+    .reader-text-para { margin-bottom: 0.8em; line-height: 1.7; }
   </style>
 
   <!-- pdf.js v3.11.174 — UMD build, exposes pdfjsLib as a global reliably -->
@@ -318,7 +342,7 @@
 
   <!-- ═══ MASTHEAD ═══ -->
   <div class="masthead">
-    <div class="masthead-title">Pulse v3</div>
+    <div class="masthead-title">Pulse v3A</div>
     <div class="tagline">PDF Intelligence Terminal</div>
   </div>
 
@@ -381,6 +405,16 @@
 
   <!-- ═══ SUMMARY MODAL ═══ -->
   <div id="summary-backdrop" aria-hidden="true"></div>
+
+  <!-- ═══ RATE LIMIT TICKER — bottom right ═══ -->
+  <div id="rate-limit-ticker" style="display:none;"></div>
+
+  <!-- ═══ DOC TYPE CONFIRM BAR ═══ -->
+  <div id="doctype-confirm-bar" style="display:none;">
+    <span id="doctype-confirm-msg"></span>
+    <select id="doctype-confirm-select" class="btn-outline" style="font-size:12px;padding:3px 6px;"></select>
+    <button id="doctype-confirm-btn" class="btn-outline" style="font-size:12px;padding:4px 10px;background:#009e70;color:#fff;border-color:#009e70;">✓ Confirm &amp; Process</button>
+  </div>
   <div id="summary-modal" role="dialog" aria-modal="true">
     <div class="summary-header">
       <div class="summary-title">Overall PDF Intelligence</div>
@@ -471,7 +505,14 @@
     aiInput:           document.getElementById('ai-input'),
     aiSubmit:          document.getElementById('ai-submit'),
     aiQuotaStatus:     document.getElementById('ai-quota-status'),
-    aiPromptBtns:      document.querySelectorAll('.ai-prompt-btn')
+    aiPromptBtns:      document.querySelectorAll('.ai-prompt-btn'),
+
+    // Rate limit ticker + doctype confirm
+    rateTicker:        document.getElementById('rate-limit-ticker'),
+    doctypeBar:        document.getElementById('doctype-confirm-bar'),
+    doctypeMsg:        document.getElementById('doctype-confirm-msg'),
+    doctypeSelect:     document.getElementById('doctype-confirm-select'),
+    doctypeConfirmBtn: document.getElementById('doctype-confirm-btn')
   };
 
   /* ═══════════════════════════════════════════════════════════════════
@@ -707,7 +748,7 @@
 
   /* ═══════════════════════════════════════════════════════════════════
      SECTION 5 — GEMINI API ENGINE  (LD246PAI pattern)
-     Model: user-selected (2.5-flash or 2.0-flash)
+     Model: user-selected (2.5 Flash-Lite / 2.5 Flash / 2.5 Pro)
      Key cascade: K1 → K2 on 429 (exact LD246PAI dualKeyFetch pattern)
   ═══════════════════════════════════════════════════════════════════ */
 
@@ -720,12 +761,18 @@
     const sinceLastCall = Date.now() - _lastGeminiCallAt;
     if (sinceLastCall < GEMINI_GAP_MS) {
       let wait = Math.ceil((GEMINI_GAP_MS - sinceLastCall) / 1000);
+      DOM.rateTicker.style.display = 'block';
+      DOM.rateTicker.style.opacity = '1';
       for (; wait > 0; wait--) {
-        const msg = `⏱ Rate limit — next request in ${wait}s…`;
-        if (statusEl)      statusEl.textContent      = msg;
-        if (DOM.itemCount) DOM.itemCount.textContent = msg;
+        const msg = `⏱ Next request in ${wait}s…`;
+        DOM.rateTicker.textContent = msg;
+        if (statusEl)      statusEl.textContent      = `⏱ Rate limit — next request in ${wait}s…`;
+        if (DOM.itemCount) DOM.itemCount.textContent = `⏱ Rate limit — next request in ${wait}s…`;
         await new Promise(r => setTimeout(r, 1000));
       }
+      // Fade out ticker
+      DOM.rateTicker.style.opacity = '0';
+      setTimeout(() => { DOM.rateTicker.style.display = 'none'; }, 500);
     }
     const model = getGeminiModel();
     const payload = {
@@ -886,10 +933,17 @@
 
       if (item) {
         currentArticleText = item.full_text || '';
+        // Render raw extracted text as paragraphs (preserving original paragraph breaks)
+        const rawParas = (item.full_text || '')
+          .split(/\n\n+/)
+          .map(p => p.replace(/\n/g, ' ').trim())
+          .filter(Boolean)
+          .map(p => `<p class="reader-text-para">${escapeHtml(p)}</p>`)
+          .join('');
         let fullRender =
           `<h1 class="reader-article-title">${escapeHtml(item.title)}</h1>` +
           `<div class="reader-article-meta">PDF Extraction</div>` +
-          `<div class="reader-body">${parseMarkdown(item.full_text || '')}</div>`;
+          `<div class="reader-body">${rawParas || parseMarkdown(item.full_text || '')}</div>`;
         if (item.full_text_english && item.full_text_english.trim().length > 0) {
           currentArticleText += '\n\nEnglish Translation:\n' + item.full_text_english;
           fullRender += `<div class="translation-header">English Translation</div>` +
@@ -990,9 +1044,9 @@
     return 'generic';
   }
 
-  async function routeDocumentProcessing(file) {
-    localStorage.removeItem(STORAGE_KEY);
-    return processPdf(file);
+  async function routeDocumentProcessing(file, confirmedType) {
+    // Do NOT clear storage here — old data stays visible until new page 1 succeeds
+    return processPdf(file, confirmedType);
   }
 
   // Open the PDF and return a pdfjsLib document object (keeps file open for page-by-page access)
@@ -1006,11 +1060,49 @@
     return pdfjsLib.getDocument({ data: arrayBuffer }).promise;
   }
 
-  // Extract text from a single page — keeps token count small
+  // Extract text from a single page — preserves paragraph breaks via y-position grouping
   async function extractPageText(pdfDoc, pageNum) {
     const page    = await pdfDoc.getPage(pageNum);
     const content = await page.getTextContent();
-    return content.items.map(it => it.str).join(' ').replace(/\s+/g, ' ').trim();
+
+    if (!content.items.length) return '';
+
+    // Group text items by approximate y-position (same line = within 3px)
+    const lines = [];
+    let   curLine = null;
+    let   curY    = null;
+
+    for (const item of content.items) {
+      if (!item.str) continue;
+      const y = Math.round(item.transform[5]);  // vertical position
+      if (curY === null || Math.abs(y - curY) > 3) {
+        curLine = { y, text: item.str };
+        lines.push(curLine);
+        curY = y;
+      } else {
+        curLine.text += item.str;
+      }
+    }
+
+    // Sort lines top-to-bottom (PDF coords are bottom-up)
+    lines.sort((a, b) => b.y - a.y);
+
+    // Group lines into paragraphs: gap > 14px = new paragraph
+    const paragraphs = [];
+    let   para        = [];
+    let   prevY       = null;
+
+    for (const line of lines) {
+      if (prevY !== null && Math.abs(prevY - line.y) > 14) {
+        if (para.length) { paragraphs.push(para.join(' ')); para = []; }
+      }
+      const t = line.text.trim();
+      if (t) para.push(t);
+      prevY = line.y;
+    }
+    if (para.length) paragraphs.push(para.join(' '));
+
+    return paragraphs.join('\n\n').replace(/[ \t]+/g, ' ').trim();
   }
 
   // Summarise a single page's text via Gemini — small prompt, never hits token limit
@@ -1066,7 +1158,7 @@
     }
   }
 
-  async function processPdf(file) {
+  async function processPdf(file, confirmedType) {
     const apiKey = getGeminiKey();
     if (!apiKey) {
       openKeyManager();
@@ -1074,7 +1166,7 @@
       return;
     }
 
-    const docType         = detectDocumentType(file);
+    const docType         = confirmedType || detectDocumentType(file);
     const originalBtnText = DOM.uploadPdfBtn.textContent;
     DOM.uploadPdfBtn.textContent = '⏫ Uploading…';
     DOM.uploadPdfBtn.disabled    = true;
@@ -1096,9 +1188,7 @@
     updateOverlay(`📄 ${totalPages} pages found — processing page 1 first…`, 10, '');
     DOM.uploadPdfBtn.textContent = '⚙ Processing…';
 
-    // Clear output and set up the session state
-    DOM.output.innerHTML = '';
-    DOM.itemCount.textContent = `0 / ${totalPages} pages processed`;
+    DOM.itemCount.textContent = `0 / ${totalPages} pages processing…`;
     DOM.overallSummaryBtn.style.display = 'none';
 
     const feedItems = [];
@@ -1162,8 +1252,11 @@
         renderOneFeedItem(item, idx, file.name, true);
         DOM.itemCount.textContent = `${feedItems.length} of ${totalPages} pages processed`;
 
-        // Page 1 done — hide overlay immediately so user can start reading
+        // Page 1 done — NOW clear old session and show new content
         if (pageNum === 1) {
+          localStorage.removeItem(STORAGE_KEY);   // clear old only now
+          DOM.output.innerHTML = '';               // remove old cards
+          renderOneFeedItem(item, idx, file.name, true); // re-render page 1 fresh
           updateOverlay('✅ Page 1 ready — processing rest in background…', 20, '');
           await new Promise(r => setTimeout(r, 600));
           hideOverlay();
@@ -1287,14 +1380,48 @@
       _updateKmStatus();
     });
 
-    // ── PDF Upload ────────────────────────────────────────────────
+    // ── PDF Upload — with auto-detect confirm ─────────────────────
+    const DOC_TYPES = [
+      { val: 'auto',         label: 'Auto Detect' },
+      { val: 'onepager',     label: '1-Pager' },
+      { val: 'presentation', label: 'Presentation' },
+      { val: 'editorial',    label: 'Editorial Bundle' },
+      { val: 'book',         label: 'Book / Long PDF' },
+      { val: 'generic',      label: 'Generic Report' }
+    ];
+    // Populate confirm select
+    DOC_TYPES.filter(d => d.val !== 'auto').forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d.val; opt.textContent = d.label;
+      DOM.doctypeSelect.appendChild(opt);
+    });
+
+    let _pendingFile = null;
+
+    function showDoctypeConfirm(file, detected) {
+      _pendingFile = file;
+      DOM.doctypeSelect.value = detected;
+      DOM.doctypeMsg.textContent =
+        `📄 "${file.name}" — Auto-detected: ${DOC_TYPES.find(d=>d.val===detected)?.label || detected}`;
+      DOM.doctypeBar.style.display = 'flex';
+    }
+
+    DOM.doctypeConfirmBtn.addEventListener('click', () => {
+      if (!_pendingFile) return;
+      const chosen = DOM.doctypeSelect.value;
+      DOM.doctypeBar.style.display = 'none';
+      routeDocumentProcessing(_pendingFile, chosen);
+      _pendingFile = null;
+    });
+
     DOM.uploadPdfBtn.addEventListener('click', () => DOM.pdfFileInput.click());
     DOM.pdfFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      // Capture file reference FIRST, then clear input so same file can be re-selected later
       setTimeout(() => { e.target.value = ''; }, 100);
-      routeDocumentProcessing(file);
+      // Detect type and ask user to confirm before processing
+      const detected = detectDocumentType(file);
+      showDoctypeConfirm(file, detected);
     });
 
     // ── Summary modal ─────────────────────────────────────────────
