@@ -392,7 +392,7 @@
     READER_FONT_MIN: 13,
     READER_FONT_MAX: 24,
     READER_FONT_DEF: 17,
-    CHUNK_SIZE_PAGES: 2, // Controls API payload limit per fetch
+    CHUNK_SIZE_PAGES: 2, 
     GEMINI_CASCADE: ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-pro']
   });
 
@@ -416,7 +416,6 @@
     pdfFileInput:      document.getElementById('pdf-file-input'),
     docTypeSelector:   document.getElementById('doc-type-selector'),
 
-    // Key manager
     keyMgrBtn:         document.getElementById('key-mgr-btn'),
     keyManagerBox:     document.getElementById('key-manager-box'),
     kmK1Input:         document.getElementById('km-k1-input'),
@@ -427,14 +426,12 @@
     kmModelSelect:     document.getElementById('km-model-select'),
     kmCloseBtn:        document.getElementById('km-close-btn'),
 
-    // Processing overlay
     procOverlay:       document.getElementById('processing-overlay'),
     procTitle:         document.getElementById('proc-title'),
     procStep:          document.getElementById('proc-step'),
     procBar:           document.getElementById('proc-bar'),
     procNote:          document.getElementById('proc-note'),
 
-    // Reader
     readerPanel:       document.getElementById('reader-panel'),
     readerBackdrop:    document.getElementById('reader-backdrop'),
     readerContent:     document.getElementById('reader-content'),
@@ -445,7 +442,6 @@
     fontUp:            document.getElementById('font-up'),
     fontDown:          document.getElementById('font-down'),
 
-    // AI panel
     aiToggle:          document.getElementById('reader-ai-toggle'),
     aiPanel:           document.getElementById('ai-panel'),
     aiCloseBtn:        document.getElementById('ai-close-btn'),
@@ -542,7 +538,7 @@
     const { summaries, titles, feedItems, fileName } = session;
     DOM.modalSummary.innerText   = summaries.map((s, i) => `${titles[i]}\n${s}`).join('\n\n─────────────────\n\n');
     DOM.modalTakeaways.innerText = summaries
-      .map((s, i) => `${titles[i]}:\n${s.split('\n').slice(0,4).join('\n')}`)
+      .map((s, i) => `${titles[i]}:\n${(s || '').split('\n').slice(0,4).join('\n')}`)
       .join('\n\n');
     renderFeedItems(feedItems, fileName);
     DOM.overallSummaryBtn.style.display = 'inline-flex';
@@ -667,7 +663,7 @@
      SECTION 5 — GEMINI API ENGINE (Multimodal Integration)
   ═══════════════════════════════════════════════════════════════════ */
 
-  const GEMINI_GAP_MS  = 100_000;
+  const GEMINI_GAP_MS  = 6_000; // Fixed from 100_000 to 6_000 (10 RPM)
   let   _lastGeminiCallAt = 0;
 
   async function callGemini(promptText, base64Pdf = null, statusEl, isJson = false) {
@@ -676,14 +672,13 @@
       let wait = Math.ceil((GEMINI_GAP_MS - sinceLastCall) / 1000);
       for (; wait > 0; wait--) {
         const msg = `⏱ Rate limit — next request in ${wait}s…`;
-        if (statusEl)      statusEl.textContent      = msg;
+        if (statusEl && statusEl.textContent !== undefined) statusEl.textContent = msg;
         if (DOM.itemCount) DOM.itemCount.textContent = msg;
         await new Promise(r => setTimeout(r, 1000));
       }
     }
     const model = getGeminiModel();
     
-    // Construct Multimodal Payload
     const parts = [];
     if (base64Pdf) {
       parts.push({
@@ -699,10 +694,31 @@
       contents: [{ role: 'user', parts: parts }],
       generationConfig: { 
         temperature: 0.1, 
-        maxOutputTokens: 8192,
-        ...(isJson ? { responseMimeType: "application/json" } : {})
+        maxOutputTokens: 8192
       }
     };
+
+    if (isJson) {
+      payload.generationConfig.responseMimeType = "application/json";
+      payload.generationConfig.responseSchema = {
+        type: "OBJECT",
+        properties: {
+          articles: {
+            type: "ARRAY",
+            items: {
+              type: "OBJECT",
+              properties: {
+                title: { type: "STRING" },
+                summary: { type: "STRING" },
+                full_text: { type: "STRING" }
+              },
+              required: ["title", "summary", "full_text"]
+            }
+          }
+        },
+        required: ["articles"]
+      };
+    }
 
     const slots = [1, 2];
     for (const slot of slots) {
@@ -711,7 +727,7 @@
 
       if (slot === 2) {
         const msg = '⚡ K1 quota hit — switching to K2…';
-        if (statusEl)      statusEl.textContent      = msg;
+        if (statusEl && statusEl.textContent !== undefined) statusEl.textContent = msg;
         if (DOM.itemCount) DOM.itemCount.textContent = msg;
       }
 
@@ -746,7 +762,7 @@
         localStorage.removeItem('pulse_gemini_key1');
         _refreshKmButtonStates();
         _updateKeyStatusBadge();
-        throw new Error(`API key error (${code}): ${msg} — Key cleared, please re-enter.`);
+        throw new Error(`API key error (${code}): ${msg} — Key cleared.`);
       }
       if (res.status === 503 || res.status === 529) {
         throw new Error(`OVERLOADED:${res.status}`);
@@ -764,7 +780,7 @@
 
     const text = candidate?.content?.parts?.[0]?.text;
     if (!text) {
-      return '[No summary generated]';
+      return '';
     }
     return text;
   }
@@ -971,37 +987,22 @@
       `2. Identify and segregate each distinct editorial article.\n` +
       `3. For each article, write a maximum 500-character summary.\n` +
       `4. Extract the full text of the article natively, maintaining paragraph structures.\n` +
-      `5. Return the result strictly as a valid JSON array.\n\n` +
-      `JSON SCHEMA:\n` +
-      `[\n` +
-      `  {\n` +
-      `    "title": "Article Headline",\n` +
-      `    "summary": "The 500-character summary...",\n` +
-      `    "full_text": "The complete extracted article text formatted with paragraphs."\n` +
-      `  }\n` +
-      `]`;
+      `5. Return the result strictly as a JSON object containing an "articles" array.\n`;
 
     const res  = await callGemini(prompt, base64Pdf, statusSetter, true);
     const text = cleanAiResponse(await parseGeminiResponse(res));
 
     try {
-        const articles = JSON.parse(text);
-        return Array.isArray(articles) ? articles : [articles];
+        const parsed = JSON.parse(text);
+        const articles = parsed.articles ? parsed.articles : (Array.isArray(parsed) ? parsed : [parsed]);
+        return Array.isArray(articles) ? articles : [];
     } catch (e) {
-        console.error("Failed to parse Gemini JSON output. Attempting regex extraction.", e);
-        try {
-            const jsonMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/);
-            const jsonString = jsonMatch ? jsonMatch[0] : text;
-            const articles = JSON.parse(jsonString);
-            return Array.isArray(articles) ? articles : [articles];
-        } catch (err2) {
-            console.error("Regex extraction also failed. Returning fallback.", err2);
-            return [{
-                title: `Extracted Data (Chunk ${chunkNum})`,
-                summary: text.substring(0, 500),
-                full_text: text
-            }];
-        }
+        console.error("Failed to parse Gemini JSON:", text);
+        return [{
+            title: `Extraction Error (Chunk ${chunkNum})`,
+            summary: "Content formatting was rejected or poorly structured by the AI model.",
+            full_text: text || "No data."
+        }];
     }
   }
 
@@ -1098,7 +1099,7 @@
         }
       }
 
-      if (articles) {
+      if (articles && articles.length > 0) {
         articles.forEach(article => {
            const idx = feedItems.length;
            const item = {
@@ -1109,7 +1110,7 @@
              summary_english: ''
            };
            feedItems.push(item);
-           summaries.push(article.summary);
+           summaries.push(article.summary || 'No summary generated.');
            titles.push(item.title);
            feedCache['uploaded-pdf'] = { items: feedItems };
            renderOneFeedItem(item, idx, file.name, true);
@@ -1157,7 +1158,7 @@
 
     DOM.modalSummary.innerText   = summaries.map((s, i) => `${titles[i]}\n${s}`).join('\n\n─────────────────\n\n');
     DOM.modalTakeaways.innerText = summaries
-      .map((s, i) => `${titles[i]}:\n${s.split('\n').slice(0,4).join('\n')}`)
+      .map((s, i) => `${titles[i]}:\n${(s || '').split('\n').slice(0,4).join('\n')}`)
       .join('\n\n');
 
     _saveSessionToStorage(file.name, feedItems, summaries, titles);
