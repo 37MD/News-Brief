@@ -670,7 +670,7 @@
   const GEMINI_GAP_MS  = 100_000;
   let   _lastGeminiCallAt = 0;
 
-  async function callGemini(promptText, base64Pdf = null, statusEl) {
+  async function callGemini(promptText, base64Pdf = null, statusEl, isJson = false) {
     const sinceLastCall = Date.now() - _lastGeminiCallAt;
     if (sinceLastCall < GEMINI_GAP_MS) {
       let wait = Math.ceil((GEMINI_GAP_MS - sinceLastCall) / 1000);
@@ -697,7 +697,11 @@
 
     const payload = {
       contents: [{ role: 'user', parts: parts }],
-      generationConfig: { temperature: 0.1, maxOutputTokens: 8192 }
+      generationConfig: { 
+        temperature: 0.1, 
+        maxOutputTokens: 8192,
+        ...(isJson ? { responseMimeType: "application/json" } : {})
+      }
     };
 
     const slots = [1, 2];
@@ -928,7 +932,7 @@
         : '';
       const fullPrompt = `You are a smart assistant in a PDF reader app.\n${articleCtx}USER: ${userPrompt}`;
 
-      const res     = await callGemini(fullPrompt, null, statusDiv);
+      const res     = await callGemini(fullPrompt, null, statusDiv, false);
       const rawText = await parseGeminiResponse(res);
 
       DOM.aiChatArea.removeChild(statusDiv);
@@ -967,8 +971,8 @@
       `2. Identify and segregate each distinct editorial article.\n` +
       `3. For each article, write a maximum 500-character summary.\n` +
       `4. Extract the full text of the article natively, maintaining paragraph structures.\n` +
-      `5. RETURN THE RESULT STRICTLY AS A JSON ARRAY without markdown wrappers.\n\n` +
-      `FORMAT REQUIREMENT:\n` +
+      `5. Return the result strictly as a valid JSON array.\n\n` +
+      `JSON SCHEMA:\n` +
       `[\n` +
       `  {\n` +
       `    "title": "Article Headline",\n` +
@@ -977,21 +981,27 @@
       `  }\n` +
       `]`;
 
-    const res  = await callGemini(prompt, base64Pdf, statusSetter);
+    const res  = await callGemini(prompt, base64Pdf, statusSetter, true);
     const text = cleanAiResponse(await parseGeminiResponse(res));
 
     try {
-        const jsonMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/);
-        const jsonString = jsonMatch ? jsonMatch[0] : text;
-        const articles = JSON.parse(jsonString);
+        const articles = JSON.parse(text);
         return Array.isArray(articles) ? articles : [articles];
     } catch (e) {
-        console.error("Failed to parse Gemini JSON output. Returning fallback single item.", e);
-        return [{
-            title: `Extracted Data (Chunk ${chunkNum})`,
-            summary: text.substring(0, 500),
-            full_text: text
-        }];
+        console.error("Failed to parse Gemini JSON output. Attempting regex extraction.", e);
+        try {
+            const jsonMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/);
+            const jsonString = jsonMatch ? jsonMatch[0] : text;
+            const articles = JSON.parse(jsonString);
+            return Array.isArray(articles) ? articles : [articles];
+        } catch (err2) {
+            console.error("Regex extraction also failed. Returning fallback.", err2);
+            return [{
+                title: `Extracted Data (Chunk ${chunkNum})`,
+                summary: text.substring(0, 500),
+                full_text: text
+            }];
+        }
     }
   }
 
@@ -1053,7 +1063,6 @@
       const maxAttempts = 3;
       let lastError = "";
 
-      // Create local PDF chunk using pdf-lib once per loop iteration
       const chunkPdf = await PDFLib.PDFDocument.create();
       const pageIndices = Array.from({ length: endIndex - i }, (_, k) => i + k);
       const copiedPages = await chunkPdf.copyPages(originalPdf, pageIndices);
@@ -1075,11 +1084,9 @@
             console.log(`Retrying chunk ${chunkNum} (Attempt ${attempt})...`);
             if (chunkNum === 1) updateOverlay(`⏳ API Overloaded. Retrying Chunk 1 (Attempt ${attempt})…`, pct, '');
             else DOM.itemCount.textContent = `⏳ API Overloaded. Retrying chunk ${chunkNum}/${totalChunks} (Attempt ${attempt})…`;
-            // Wait 8 seconds before retrying to let the API cool down
             await new Promise(r => setTimeout(r, 8000));
           }
 
-          // Call Multimodal extraction
           articles = await summariseChunk(base64Pdf, chunkNum, totalChunks, docType, statusSetter);
 
         } catch (err) {
@@ -1092,7 +1099,6 @@
       }
 
       if (articles) {
-        // Map array of extracted JSON objects to UI Feed Cards
         articles.forEach(article => {
            const idx = feedItems.length;
            const item = {
@@ -1124,7 +1130,6 @@
         }
 
       } else {
-        // All attempts failed
         const idx = feedItems.length;
         const errorItem = {
           title: `Chunk ${chunkNum} — Extraction Error`,
