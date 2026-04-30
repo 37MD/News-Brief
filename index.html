@@ -74,7 +74,7 @@
     }
     .km-save.active { background: #009e70 !important; color: #fff !important; border-color: #009e70 !important; }
     .km-status { font-size: 8.5px; color: #404060; line-height: 1.6; margin-bottom: 6px; }
-    .km-footer { font-size: 7.5px; color: #7090b0; margin-top: 4px; }
+    .km-footer { font-size: 7.5px; color: #7090b0; margin-top: 4px; line-height: 1.4; }
     .km-footer span { color: #009e70; font-weight: 600; }
     .km-bottom { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; }
     .km-model-select {
@@ -299,7 +299,8 @@
       </div>
 
       <div class="km-footer">
-        Get free keys at <span>aistudio.google.com/apikey</span> · Buttons turn green when key is saved
+        Get free keys at <span>aistudio.google.com/apikey</span> · Buttons turn green when key is saved<br><br>
+        The Gemini API free tier provides access to three models: Gemini 2.5 Pro, Gemini 2.5 Flash, and Gemini 2.5 Flash-Lite. The limits are as follows: Gemini 2.5 Pro allows 5 requests per minute (RPM) and 100 requests per day (RPD), Gemini 2.5 Flash allows 10 RPM and 500 RPD, while Gemini 2.5 Flash-Lite allows 15 RPM and 1,000 RPD.
       </div>
     </div>
   </div>
@@ -696,7 +697,6 @@
 
     const payload = {
       contents: [{ role: 'user', parts: parts }],
-      // Increased token limit to allow extraction of multiple articles in structured JSON format
       generationConfig: { temperature: 0.1, maxOutputTokens: 8192 }
     };
 
@@ -928,7 +928,6 @@
         : '';
       const fullPrompt = `You are a smart assistant in a PDF reader app.\n${articleCtx}USER: ${userPrompt}`;
 
-      // Passing null for base64Pdf as this is a standard text chat request
       const res     = await callGemini(fullPrompt, null, statusDiv);
       const rawText = await parseGeminiResponse(res);
 
@@ -982,7 +981,6 @@
     const text = cleanAiResponse(await parseGeminiResponse(res));
 
     try {
-        // Attempt to parse the array safely
         const jsonMatch = text.match(/\[\s*\{[\s\S]*\}\s*\]/);
         const jsonString = jsonMatch ? jsonMatch[0] : text;
         const articles = JSON.parse(jsonString);
@@ -1015,7 +1013,6 @@
     let originalPdf, totalPages;
     try {
       const arrayBuffer = await file.arrayBuffer();
-      // Load using pdf-lib instead of pdf.js
       originalPdf = await PDFLib.PDFDocument.load(arrayBuffer);
       totalPages = originalPdf.getPageCount();
     } catch (err) {
@@ -1051,27 +1048,50 @@
         DOM.itemCount.textContent = `⚙ Visual Processing chunk ${chunkNum} of ${totalChunks}… (${feedItems.length} articles found)`;
       }
 
-      try {
-        // Create local PDF chunk using pdf-lib
-        const chunkPdf = await PDFLib.PDFDocument.create();
-        const pageIndices = Array.from({ length: endIndex - i }, (_, k) => i + k);
-        const copiedPages = await chunkPdf.copyPages(originalPdf, pageIndices);
-        copiedPages.forEach(p => chunkPdf.addPage(p));
-        
-        // Convert chunk directly to Base64
-        const base64Pdf = await chunkPdf.saveAsBase64({ dataUri: false });
+      let articles = null;
+      let attempt = 0;
+      const maxAttempts = 3;
+      let lastError = "";
 
-        const statusSetter = {
-          set textContent(v) {
-            if (!v) return;
-            if (chunkNum === 1) updateOverlay(`⚡ ${v}`, undefined, undefined);
-            else DOM.itemCount.textContent = `⚡ ${v} (chunk ${chunkNum}/${totalChunks})`;
+      // Create local PDF chunk using pdf-lib once per loop iteration
+      const chunkPdf = await PDFLib.PDFDocument.create();
+      const pageIndices = Array.from({ length: endIndex - i }, (_, k) => i + k);
+      const copiedPages = await chunkPdf.copyPages(originalPdf, pageIndices);
+      copiedPages.forEach(p => chunkPdf.addPage(p));
+      const base64Pdf = await chunkPdf.saveAsBase64({ dataUri: false });
+
+      while (attempt < maxAttempts && !articles) {
+        attempt++;
+        try {
+          const statusSetter = {
+            set textContent(v) {
+              if (!v) return;
+              if (chunkNum === 1) updateOverlay(`⚡ ${v}`, undefined, undefined);
+              else DOM.itemCount.textContent = `⚡ ${v} (chunk ${chunkNum}/${totalChunks})`;
+            }
+          };
+
+          if (attempt > 1) {
+            console.log(`Retrying chunk ${chunkNum} (Attempt ${attempt})...`);
+            if (chunkNum === 1) updateOverlay(`⏳ API Overloaded. Retrying Chunk 1 (Attempt ${attempt})…`, pct, '');
+            else DOM.itemCount.textContent = `⏳ API Overloaded. Retrying chunk ${chunkNum}/${totalChunks} (Attempt ${attempt})…`;
+            // Wait 8 seconds before retrying to let the API cool down
+            await new Promise(r => setTimeout(r, 8000));
           }
-        };
 
-        // Call Multimodal extraction
-        const articles = await summariseChunk(base64Pdf, chunkNum, totalChunks, docType, statusSetter);
+          // Call Multimodal extraction
+          articles = await summariseChunk(base64Pdf, chunkNum, totalChunks, docType, statusSetter);
 
+        } catch (err) {
+          console.warn(`Chunk ${chunkNum} attempt ${attempt} failed:`, err.message);
+          lastError = err.message;
+          if (attempt >= maxAttempts) {
+            break; 
+          }
+        }
+      }
+
+      if (articles) {
         // Map array of extracted JSON objects to UI Feed Cards
         articles.forEach(article => {
            const idx = feedItems.length;
@@ -1103,12 +1123,12 @@
           }, 1800);
         }
 
-      } catch (err) {
-        console.warn(`Chunk ${chunkNum} failed:`, err.message);
+      } else {
+        // All attempts failed
         const idx = feedItems.length;
         const errorItem = {
           title: `Chunk ${chunkNum} — Extraction Error`,
-          description: `Could not process payload: ${err.message.substring(0, 120)}`,
+          description: `Could not process payload after ${maxAttempts} attempts: ${lastError.substring(0, 120)}`,
           full_text: '',
           full_text_english: '',
           summary_english: ''
