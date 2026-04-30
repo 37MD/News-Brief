@@ -663,7 +663,7 @@
      SECTION 5 — GEMINI API ENGINE (Multimodal Integration)
   ═══════════════════════════════════════════════════════════════════ */
 
-  const GEMINI_GAP_MS  = 6_000; // Fixed from 100_000 to 6_000 (10 RPM)
+  const GEMINI_GAP_MS  = 10_000; // Updated to 10 seconds for safer side
   let   _lastGeminiCallAt = 0;
 
   async function callGemini(promptText, base64Pdf = null, statusEl, isJson = false) {
