@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pulse v3 — PDF Intelligence</title>
+  <title>Pulse v3B — PDF Intelligence</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
     /* ═══ BASE ═══ */
@@ -244,6 +244,19 @@
     .proc-note {
       font-size: 9px; color: #7090b0; text-align: center; max-width: 260px; line-height: 1.5;
     }
+
+    /* ── Doc Type Confirm Bar ── */
+    #doctype-confirm-bar {
+      background: #1a2636; border: 1px solid #2e9e70;
+      border-radius: 6px; padding: 8px 12px;
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      font-size: 12px; color: #b0c8d8;
+      margin: 6px 12px 0;
+    }
+    #doctype-confirm-msg { flex: 1; min-width: 160px; }
+
+    /* ── Reader paragraph text ── */
+    .reader-text-para { margin-bottom: 0.8em; line-height: 1.7; }
   </style>
 
   <!-- pdf.js v3.11.174 — UMD build, exposes pdfjsLib as a global reliably -->
@@ -318,7 +331,7 @@
 
   <!-- ═══ MASTHEAD ═══ -->
   <div class="masthead">
-    <div class="masthead-title">Pulse v3</div>
+    <div class="masthead-title">Pulse v3B</div>
     <div class="tagline">PDF Intelligence Terminal</div>
   </div>
 
@@ -381,6 +394,13 @@
 
   <!-- ═══ SUMMARY MODAL ═══ -->
   <div id="summary-backdrop" aria-hidden="true"></div>
+
+  <!-- ═══ DOC TYPE CONFIRM BAR ═══ -->
+  <div id="doctype-confirm-bar" style="display:none;">
+    <span id="doctype-confirm-msg"></span>
+    <select id="doctype-confirm-select" class="btn-outline" style="font-size:12px;padding:3px 6px;"></select>
+    <button id="doctype-confirm-btn" class="btn-outline" style="font-size:12px;padding:4px 10px;background:#009e70;color:#fff;border-color:#009e70;">✓ Confirm &amp; Process</button>
+  </div>
   <div id="summary-modal" role="dialog" aria-modal="true">
     <div class="summary-header">
       <div class="summary-title">Overall PDF Intelligence</div>
@@ -471,7 +491,13 @@
     aiInput:           document.getElementById('ai-input'),
     aiSubmit:          document.getElementById('ai-submit'),
     aiQuotaStatus:     document.getElementById('ai-quota-status'),
-    aiPromptBtns:      document.querySelectorAll('.ai-prompt-btn')
+    aiPromptBtns:      document.querySelectorAll('.ai-prompt-btn'),
+
+    // Rate limit ticker + doctype confirm
+    doctypeBar:        document.getElementById('doctype-confirm-bar'),
+    doctypeMsg:        document.getElementById('doctype-confirm-msg'),
+    doctypeSelect:     document.getElementById('doctype-confirm-select'),
+    doctypeConfirmBtn: document.getElementById('doctype-confirm-btn')
   };
 
   /* ═══════════════════════════════════════════════════════════════════
@@ -706,28 +732,12 @@
   window.openKeyManager    = openKeyManager;
 
   /* ═══════════════════════════════════════════════════════════════════
-     SECTION 5 — GEMINI API ENGINE  (LD246PAI pattern)
-     Model: user-selected (2.5-flash or 2.0-flash)
-     Key cascade: K1 → K2 on 429 (exact LD246PAI dualKeyFetch pattern)
+     SECTION 5 — GEMINI API ENGINE  (AI chat panel only — user triggered)
+     K1 → K2 on 429. No batch throttle — user-triggered only.
   ═══════════════════════════════════════════════════════════════════ */
 
-  // ── 100-second rolling throttle between every Gemini API call ──────
-  const GEMINI_GAP_MS  = 100_000;
-  let   _lastGeminiCallAt = 0;
-
   async function callGemini(promptText, statusEl) {
-    // Enforce 100s gap from last call
-    const sinceLastCall = Date.now() - _lastGeminiCallAt;
-    if (sinceLastCall < GEMINI_GAP_MS) {
-      let wait = Math.ceil((GEMINI_GAP_MS - sinceLastCall) / 1000);
-      for (; wait > 0; wait--) {
-        const msg = `⏱ Rate limit — next request in ${wait}s…`;
-        if (statusEl)      statusEl.textContent      = msg;
-        if (DOM.itemCount) DOM.itemCount.textContent = msg;
-        await new Promise(r => setTimeout(r, 1000));
-      }
-    }
-    const model = getGeminiModel();
+    const model   = getGeminiModel();
     const payload = {
       contents:         [{ role: 'user', parts: [{ text: promptText }] }],
       generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
@@ -788,7 +798,6 @@
       throw new Error(`Gemini error: ${msg}`);
     }
     const data         = await res.json();
-    _lastGeminiCallAt  = Date.now(); // ← 100s gap starts NOW (after full JSON received)
     const candidate    = data.candidates?.[0];
     const finishReason = candidate?.finishReason || '';
 
@@ -886,10 +895,17 @@
 
       if (item) {
         currentArticleText = item.full_text || '';
+        // Render raw extracted text as paragraphs (preserving original paragraph breaks)
+        const rawParas = (item.full_text || '')
+          .split(/\n\n+/)
+          .map(p => p.replace(/\n/g, ' ').trim())
+          .filter(Boolean)
+          .map(p => `<p class="reader-text-para">${escapeHtml(p)}</p>`)
+          .join('');
         let fullRender =
           `<h1 class="reader-article-title">${escapeHtml(item.title)}</h1>` +
           `<div class="reader-article-meta">PDF Extraction</div>` +
-          `<div class="reader-body">${parseMarkdown(item.full_text || '')}</div>`;
+          `<div class="reader-body">${rawParas || parseMarkdown(item.full_text || '')}</div>`;
         if (item.full_text_english && item.full_text_english.trim().length > 0) {
           currentArticleText += '\n\nEnglish Translation:\n' + item.full_text_english;
           fullRender += `<div class="translation-header">English Translation</div>` +
@@ -990,9 +1006,9 @@
     return 'generic';
   }
 
-  async function routeDocumentProcessing(file) {
-    localStorage.removeItem(STORAGE_KEY);
-    return processPdf(file);
+  async function routeDocumentProcessing(file, confirmedType) {
+    // Do NOT clear storage here — old data stays visible until new page 1 succeeds
+    return processPdf(file, confirmedType);
   }
 
   // Open the PDF and return a pdfjsLib document object (keeps file open for page-by-page access)
@@ -1006,32 +1022,161 @@
     return pdfjsLib.getDocument({ data: arrayBuffer }).promise;
   }
 
-  // Extract text from a single page — keeps token count small
+  // Extract text from a single page — preserves paragraph breaks via y-position grouping
   async function extractPageText(pdfDoc, pageNum) {
     const page    = await pdfDoc.getPage(pageNum);
     const content = await page.getTextContent();
-    return content.items.map(it => it.str).join(' ').replace(/\s+/g, ' ').trim();
+
+    if (!content.items.length) return '';
+
+    // Group text items by approximate y-position (same line = within 3px)
+    const lines = [];
+    let   curLine = null;
+    let   curY    = null;
+
+    for (const item of content.items) {
+      if (!item.str) continue;
+      const y = Math.round(item.transform[5]);  // vertical position
+      if (curY === null || Math.abs(y - curY) > 3) {
+        curLine = { y, text: item.str };
+        lines.push(curLine);
+        curY = y;
+      } else {
+        curLine.text += item.str;
+      }
+    }
+
+    // Sort lines top-to-bottom (PDF coords are bottom-up)
+    lines.sort((a, b) => b.y - a.y);
+
+    // Group lines into paragraphs: gap > 14px = new paragraph
+    const paragraphs = [];
+    let   para        = [];
+    let   prevY       = null;
+
+    for (const line of lines) {
+      if (prevY !== null && Math.abs(prevY - line.y) > 14) {
+        if (para.length) { paragraphs.push(para.join(' ')); para = []; }
+      }
+      const t = line.text.trim();
+      if (t) para.push(t);
+      prevY = line.y;
+    }
+    if (para.length) paragraphs.push(para.join(' '));
+
+    return paragraphs.join('\n\n').replace(/[ \t]+/g, ' ').trim();
   }
 
   // Summarise a single page's text via Gemini — small prompt, never hits token limit
-  async function summarisePage(pageText, pageNum, totalPages, docType, statusSetter) {
-    const prompt =
-      `You are summarising page ${pageNum} of ${totalPages} from a "${docType}" document.\n\n` +
-      `INSTRUCTIONS:\n` +
-      `1. TITLE: Detect the actual article or section heading on this page. If none, infer a short descriptive title (max 8 words). Output on the FIRST line as "TITLE: <title>".\n` +
-      `2. SUMMARY: Write 3-5 concise bullet points of key ideas on this page.\n` +
-      `3. INSIGHT: One sentence — the single most important takeaway.\n\n` +
-      `Keep your total response under 300 words.\n\n` +
-      `Page text:\n${pageText.substring(0, 6000)}`;
+  /* ═══════════════════════════════════════════════════════════════════
+     SECTION 5B — LOCAL EXTRACTIVE SUMMARISER (no AI, no network)
+     Algorithm:
+       1. Title  — first short heading-like line on the page
+       2. Sentences scored by TF-IDF-lite word frequency + position bonus
+       3. Top 4 sentences → bullet points
+       4. Highest-scoring sentence → Insight line
+  ═══════════════════════════════════════════════════════════════════ */
 
-    const res  = await callGemini(prompt, statusSetter);
-    const text = cleanAiResponse(await parseGeminiResponse(res));
+  const STOP_WORDS = new Set([
+    'a','an','the','and','or','but','in','on','at','to','for','of','with',
+    'by','from','is','are','was','were','be','been','being','have','has',
+    'had','do','does','did','will','would','could','should','may','might',
+    'shall','can','this','that','these','those','it','its','i','we','you',
+    'he','she','they','them','their','our','your','his','her','as','if',
+    'not','also','so','than','then','each','about','into','which','there',
+    'more','when','who','what','how','all','any','both','such','other',
+    'only','over','after','before','where','while','through','during',
+    'between','however','therefore','thus','hence','whereas','since'
+  ]);
 
-    const titleMatch = text.match(/^TITLE:\s*(.+)/im);
-    const title      = titleMatch
-      ? titleMatch[1].trim().replace(/^["']|["']$/g, '')
+  function _tokenWords(text) {
+    return text.toLowerCase().replace(/[^a-z0-9\s]/g, ' ').split(/\s+/).filter(w => w.length > 2 && !STOP_WORDS.has(w));
+  }
+
+  function _detectTitle(paragraphs) {
+    for (const para of paragraphs) {
+      const line = para.split('\n')[0].trim();
+      if (!line || line.length < 3) continue;
+      // Heading signals: short, no trailing period, Title Case or ALL CAPS
+      const words      = line.split(/\s+/);
+      const isShort    = words.length <= 12;
+      const noEndPunct = !/[.!?]$/.test(line);
+      const isTitle    = /^[A-Z]/.test(line);
+      const allCaps    = line === line.toUpperCase() && line.length > 3;
+      const titleCase  = words.filter(w => /^[A-Z]/.test(w)).length >= Math.ceil(words.length * 0.5);
+      if (isShort && noEndPunct && isTitle && (allCaps || titleCase)) return line;
+    }
+    // Fallback: first non-empty short line
+    for (const para of paragraphs) {
+      const line = para.split('\n')[0].trim();
+      if (line && line.split(/\s+/).length <= 10 && line.length > 4) return line;
+    }
+    return null;
+  }
+
+  function _splitSentences(text) {
+    // Split on . ! ? followed by space+capital, or newline
+    return text
+      .replace(/\n+/g, ' ')
+      .split(/(?<=[.!?])\s+(?=[A-Z])|(?<=\n)/)
+      .map(s => s.trim())
+      .filter(s => s.length > 20 && s.split(/\s+/).length >= 4);
+  }
+
+  function summarisePageLocal(pageText, pageNum, docType) {
+    const paragraphs = pageText.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
+    const fullText   = paragraphs.join(' ');
+
+    // ── Title detection ──────────────────────────────────────────
+    const detectedTitle = _detectTitle(paragraphs);
+    const title = detectedTitle
+      ? detectedTitle.substring(0, 90)
       : `Page ${pageNum}`;
-    const body       = text.replace(/^TITLE:.*$/im, '').trim();
+
+    // Remove title line from body for scoring
+    const bodyText = detectedTitle
+      ? fullText.replace(detectedTitle, '').trim()
+      : fullText;
+
+    // ── TF-IDF-lite word frequency ────────────────────────────────
+    const allWords  = _tokenWords(bodyText);
+    const freq      = {};
+    for (const w of allWords) freq[w] = (freq[w] || 0) + 1;
+    const maxFreq   = Math.max(...Object.values(freq), 1);
+    // Normalise
+    for (const w in freq) freq[w] /= maxFreq;
+
+    // ── Score sentences ───────────────────────────────────────────
+    const sentences = _splitSentences(bodyText);
+    const scored    = sentences.map((s, idx) => {
+      const words   = _tokenWords(s);
+      if (!words.length) return { s, score: 0 };
+      const tfScore = words.reduce((sum, w) => sum + (freq[w] || 0), 0) / words.length;
+
+      // Bonuses
+      const posBonus    = idx === 0 ? 0.25 : idx <= 2 ? 0.1 : 0;   // early sentences
+      const numBonus    = /\d/.test(s) ? 0.12 : 0;                   // contains numbers/stats
+      const lenPenalty  = words.length < 6 || words.length > 45 ? -0.15 : 0;
+      const keyBonus    = /key|important|significant|critical|major|result|conclude|show|find|reveal/i.test(s) ? 0.1 : 0;
+
+      return { s, score: tfScore + posBonus + numBonus + lenPenalty + keyBonus, idx };
+    });
+
+    // Sort by score desc, pick top 4 for bullets + 1 for insight
+    const ranked  = [...scored].sort((a, b) => b.score - a.score);
+    const topFour = ranked.slice(0, 4);
+    // Re-sort top 4 back into original order for readability
+    topFour.sort((a, b) => (a.idx || 0) - (b.idx || 0));
+
+    const bullets  = topFour.map(r => `• ${r.s}`).join('\n');
+    const insight  = ranked[0]?.s
+      ? `\n\n💡 Key Insight: ${ranked[0].s}`
+      : '';
+
+    // If not enough sentences, fall back to first 3 paragraphs truncated
+    const body = bullets.length > 20
+      ? bullets + insight
+      : paragraphs.slice(0, 3).map(p => `• ${p.substring(0, 200)}`).join('\n');
 
     return { title, body };
   }
@@ -1066,15 +1211,8 @@
     }
   }
 
-  async function processPdf(file) {
-    const apiKey = getGeminiKey();
-    if (!apiKey) {
-      openKeyManager();
-      DOM.output.innerHTML = '<div class="system-msg">⚠ No API key found. Please add one via 🔑 Keys.</div>';
-      return;
-    }
-
-    const docType         = detectDocumentType(file);
+  async function processPdf(file, confirmedType) {
+    const docType         = confirmedType || detectDocumentType(file);
     const originalBtnText = DOM.uploadPdfBtn.textContent;
     DOM.uploadPdfBtn.textContent = '⏫ Uploading…';
     DOM.uploadPdfBtn.disabled    = true;
@@ -1096,9 +1234,7 @@
     updateOverlay(`📄 ${totalPages} pages found — processing page 1 first…`, 10, '');
     DOM.uploadPdfBtn.textContent = '⚙ Processing…';
 
-    // Clear output and set up the session state
-    DOM.output.innerHTML = '';
-    DOM.itemCount.textContent = `0 / ${totalPages} pages processed`;
+    DOM.itemCount.textContent = `0 / ${totalPages} pages processing…`;
     DOM.overallSummaryBtn.style.display = 'none';
 
     const feedItems = [];
@@ -1133,16 +1269,8 @@
           continue;
         }
 
-        // Status setter for cascade messages — show in overlay (page 1) or item count (rest)
-        const statusSetter = {
-          set textContent(v) {
-            if (!v) return;
-            if (pageNum === 1) updateOverlay(`⚡ ${v}`, undefined, undefined);
-            else DOM.itemCount.textContent = `⚡ ${v} (page ${pageNum}/${totalPages})`;
-          }
-        };
-
-        const { title, body } = await summarisePage(pageText, pageNum, totalPages, docType, statusSetter);
+        // ── Local extractive summary — instant, no network ──────────
+        const { title, body } = summarisePageLocal(pageText, pageNum, docType);
 
         const idx  = feedItems.length;
         const item = {
@@ -1162,31 +1290,30 @@
         renderOneFeedItem(item, idx, file.name, true);
         DOM.itemCount.textContent = `${feedItems.length} of ${totalPages} pages processed`;
 
-        // Page 1 done — hide overlay immediately so user can start reading
+        // Page 1 done — NOW clear old session and show new content
         if (pageNum === 1) {
-          updateOverlay('✅ Page 1 ready — processing rest in background…', 20, '');
-          await new Promise(r => setTimeout(r, 600));
+          localStorage.removeItem(STORAGE_KEY);
+          DOM.output.innerHTML = '';
+          renderOneFeedItem(item, idx, file.name, true);
+          updateOverlay('✅ Page 1 ready — processing rest…', 20, '');
+          await new Promise(r => setTimeout(r, 300));
           hideOverlay();
           DOM.uploadPdfBtn.textContent = '✅ Ready';
           DOM.overallSummaryBtn.style.display = 'inline-flex';
           setTimeout(() => {
             DOM.uploadPdfBtn.textContent = originalBtnText;
             DOM.uploadPdfBtn.disabled    = false;
-          }, 1800);
+          }, 1200);
         }
-        // ⏱ No manual delay here — callGemini enforces 100s gap after JSON received
 
       } catch (err) {
         // Auto-retry once after 6s before giving up on this page
         console.warn(`Page ${pageNum} failed (will retry once):`, err.message);
-        let retryText = null;
+        let retryResult = null;
         try {
-          await new Promise(r => setTimeout(r, 6000));
-          DOM.itemCount.textContent = `⚙ Retrying page ${pageNum}…`;
           const retryPageText = await extractPageText(pdfDoc, pageNum);
           if (retryPageText && retryPageText.length >= 30) {
-            const retryResult = await summarisePage(retryPageText, pageNum, totalPages, docType, { set textContent(v){} });
-            retryText = retryResult;
+            retryResult = summarisePageLocal(retryPageText, pageNum, docType);
           }
         } catch (retryErr) {
           console.warn(`Page ${pageNum} retry also failed:`, retryErr.message);
@@ -1194,17 +1321,16 @@
 
         const idx = feedItems.length;
         let item;
-        if (retryText) {
-          // Retry succeeded
+        if (retryResult) {
           item = {
-            title:             retryText.title,
-            description:       retryText.body.substring(0, CONFIG.MAX_DESC_CHARS),
+            title:             retryResult.title,
+            description:       retryResult.body.substring(0, CONFIG.MAX_DESC_CHARS),
             full_text:         '',
             full_text_english: '',
             summary_english:   ''
           };
-          titles.push(retryText.title);
-          summaries.push(retryText.body);
+          titles.push(retryResult.title);
+          summaries.push(retryResult.body);
         } else {
           // Both attempts failed — show soft error card
           item = {
@@ -1226,7 +1352,6 @@
           DOM.uploadPdfBtn.textContent = originalBtnText;
           DOM.uploadPdfBtn.disabled    = false;
         }
-        // ⏱ No manual delay — callGemini 100s throttle handles next page pacing
       }
     }
 
@@ -1287,14 +1412,48 @@
       _updateKmStatus();
     });
 
-    // ── PDF Upload ────────────────────────────────────────────────
+    // ── PDF Upload — with auto-detect confirm ─────────────────────
+    const DOC_TYPES = [
+      { val: 'auto',         label: 'Auto Detect' },
+      { val: 'onepager',     label: '1-Pager' },
+      { val: 'presentation', label: 'Presentation' },
+      { val: 'editorial',    label: 'Editorial Bundle' },
+      { val: 'book',         label: 'Book / Long PDF' },
+      { val: 'generic',      label: 'Generic Report' }
+    ];
+    // Populate confirm select
+    DOC_TYPES.filter(d => d.val !== 'auto').forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d.val; opt.textContent = d.label;
+      DOM.doctypeSelect.appendChild(opt);
+    });
+
+    let _pendingFile = null;
+
+    function showDoctypeConfirm(file, detected) {
+      _pendingFile = file;
+      DOM.doctypeSelect.value = detected;
+      DOM.doctypeMsg.textContent =
+        `📄 "${file.name}" — Auto-detected: ${DOC_TYPES.find(d=>d.val===detected)?.label || detected}`;
+      DOM.doctypeBar.style.display = 'flex';
+    }
+
+    DOM.doctypeConfirmBtn.addEventListener('click', () => {
+      if (!_pendingFile) return;
+      const chosen = DOM.doctypeSelect.value;
+      DOM.doctypeBar.style.display = 'none';
+      routeDocumentProcessing(_pendingFile, chosen);
+      _pendingFile = null;
+    });
+
     DOM.uploadPdfBtn.addEventListener('click', () => DOM.pdfFileInput.click());
     DOM.pdfFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      // Capture file reference FIRST, then clear input so same file can be re-selected later
       setTimeout(() => { e.target.value = ''; }, 100);
-      routeDocumentProcessing(file);
+      // Detect type and ask user to confirm before processing
+      const detected = detectDocumentType(file);
+      showDoctypeConfirm(file, detected);
     });
 
     // ── Summary modal ─────────────────────────────────────────────
