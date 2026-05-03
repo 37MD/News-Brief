@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pulse v3B — PDF Intelligence</title>
+  <title>Pulse v5 — PDF Intelligence</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
     /* ═══ BASE ═══ */
@@ -114,8 +114,8 @@
 
     .headline { font-family: 'Playfair Display', serif; font-size: 20px; text-decoration: none; font-weight: 700; display: block; line-height: 1.2; margin-bottom: 8px; word-break: break-word; cursor: pointer; }
     .headline:hover { text-decoration: underline; }
-    .description { font-size: 14px; margin-bottom: 6px; line-height: 1.5; }
-    .description.translation { border-left: 3px solid var(--accent); background: rgba(26,92,58,0.05); padding: 6px 10px; border-radius: 0 4px 4px 0; }
+    .description { font-size: 14px; margin-bottom: 6px; line-height: 1.5; color: #000000; font-weight: 400; }
+    .description.translation { border-left: 3px solid var(--accent); background: rgba(26,92,58,0.05); padding: 6px 10px; border-radius: 0 4px 4px 0; font-weight: 400; }
     .meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 8px; }
     .system-msg { font-family: 'IBM Plex Mono', monospace; font-size: 12px; text-align: center; margin-top: 30px; line-height: 1.5; }
 
@@ -149,9 +149,11 @@
     .reader-scroll { overflow-y: auto; flex: 1; padding: 20px 25px 40px; position: relative; z-index: 10; }
     .reader-article-title { font-family: 'Playfair Display', serif; font-size: clamp(20px,3vw,28px); font-weight: 700; line-height: 1.2; margin-bottom: 10px; }
     .reader-article-meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--rule); }
-    .reader-body { font-size: var(--reader-font-sz); line-height: 1.7; padding-bottom: 20px; }
-    .reader-body h1,.reader-body h2,.reader-body h3,.reader-body h4 { font-family: 'Playfair Display', serif; margin: 1.2em 0 0.5em; line-height: 1.2; }
-    .reader-body p { margin-bottom: 1em; }
+    .reader-body { font-size: var(--reader-font-sz); line-height: 1.7; padding-bottom: 20px; color: #000000; font-weight: 400; }
+    .reader-body h1,.reader-body h2,.reader-body h3,.reader-body h4 { font-family: 'Playfair Display', serif; margin: 1.2em 0 0.5em; line-height: 1.2; color: #000000; font-weight: 700; }
+    .reader-body p { margin-bottom: 1em; font-weight: 400; color: #000000; }
+    .reader-body strong, .reader-body b { font-weight: 400; }
+    .reader-body em, .reader-body i { font-style: normal; }
     .translation-header { font-family: 'Playfair Display', serif; font-size: 1.2em; font-weight: bold; margin: 30px 0 15px; padding-top: 20px; border-top: 2px dashed var(--rule); }
 
     /* ═══ SUMMARY MODAL ═══ */
@@ -168,7 +170,8 @@
     .summary-content-area { padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
     .summary-box { border: 1px solid var(--rule); border-radius: 6px; background: #fff; overflow: hidden; }
     .summary-box-title { background: #e4eaf2; padding: 8px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid var(--rule); text-align: center; }
-    .summary-box-content { padding: 12px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; background: #fff; }
+    .summary-box-content { padding: 12px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; background: #fff; color: #000000; font-weight: 400; }
+    .summary-box-content strong, .summary-box-content b { font-weight: 400; }
 
     /* ═══ AI CHAT PANEL ═══ */
     #ai-panel {
@@ -265,18 +268,23 @@
       -webkit-hyphens: auto;
     }
     .reader-text-para {
-      margin-bottom: 0.9em;
-      line-height: 1.75;
+      margin-bottom: 1em;
+      line-height: 1.7;
       text-align: justify;
+      font-size: var(--reader-font-sz);
+      font-weight: 400;
+      color: #000000;
       hanging-punctuation: first last;
     }
+    .reader-extract strong, .reader-extract b { font-weight: 400; }
+    .reader-extract em, .reader-extract i    { font-style: normal; }
     .reader-extract-heading {
       font-family: 'Playfair Display', serif;
-      font-size: 1.05em;
+      font-size: 1.1em;
       font-weight: 700;
-      margin: 1.4em 0 0.4em;
+      color: #000000;
+      margin: 1.4em 0 0.5em;
       line-height: 1.25;
-      color: var(--accent);
       letter-spacing: 0.01em;
     }
   </style>
@@ -853,9 +861,10 @@
 
   function parseMarkdown(md) {
     if (!md) return '';
-    let html = md.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-    html = html.replace(/\*(.*?)\*/g,  '<em>$1</em>');
-    html = html.replace(/^- (.*)$/gm,  '<ul><li>$1</li></ul>');
+    // Strip bold and italic markers — render plain text per spec
+    let html = md.replace(/\*\*(.*?)\*\*/g, '$1');
+    html = html.replace(/\*(.*?)\*/g, '$1');
+    html = html.replace(/^[-•]\s+(.*)$/gm, '<ul><li>$1</li></ul>');
     html = html.replace(/<\/ul>\n<ul>/g, '');
     html = html.replace(/\n\n/g, '</p><p>');
     return `<p>${html}</p>`;
