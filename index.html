@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width">
   <title>Pulse v5 — PDF Intelligence</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
@@ -115,6 +115,7 @@
     .headline { font-family: 'Playfair Display', serif; font-size: 20px; text-decoration: none; font-weight: 700; display: block; line-height: 1.2; margin-bottom: 8px; word-break: break-word; cursor: pointer; }
     .headline:hover { text-decoration: underline; }
     .description { font-size: 14px; margin-bottom: 6px; line-height: 1.5; color: #000000; font-weight: 400; }
+    .description.reader-trigger:hover { text-decoration: underline; }
     .description.translation { border-left: 3px solid var(--accent); background: rgba(26,92,58,0.05); padding: 6px 10px; border-radius: 0 4px 4px 0; font-weight: 400; }
     .meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 8px; }
     .system-msg { font-family: 'IBM Plex Mono', monospace; font-size: 12px; text-align: center; margin-top: 30px; line-height: 1.5; }
@@ -209,6 +210,35 @@
       .reader-source-url { display: none; }
       #ai-panel { top: 65px; right: 10px; max-width: calc(100vw - 20px); max-height: 70vh; }
     }
+
+    /* ═══ UPLOAD BUTTON SPINNER ═══ */
+    #upload-pdf-btn {
+      position: relative;
+      overflow: visible;
+      transition: background 0.2s, color 0.2s;
+    }
+    #upload-pdf-btn.uploading {
+      padding-left: 34px;
+      color: #1a5c3a;
+      border-color: #1a5c3a;
+      background: #e6f4ec;
+      cursor: wait;
+    }
+    #upload-pdf-btn .upload-ring {
+      display: none;
+      position: absolute;
+      left: 9px;
+      top: 50%;
+      transform: translateY(-50%);
+      width: 14px;
+      height: 14px;
+      border: 2px solid #b0d8be;
+      border-top-color: #1a5c3a;
+      border-radius: 50%;
+      animation: uploadSpin 0.75s linear infinite;
+    }
+    #upload-pdf-btn.uploading .upload-ring { display: block; }
+    @keyframes uploadSpin { to { transform: translateY(-50%) rotate(360deg); } }
 
     /* ═══ PROCESSING OVERLAY ═══ */
     #processing-overlay {
@@ -306,7 +336,7 @@
     <!-- Row 1: buttons -->
     <div class="controls-row1">
       <button class="btn-outline" id="overall-summary-btn" style="display:none;">📊 PDF Summary</button>
-      <button class="btn-outline" id="upload-pdf-btn">📄 Upload PDF</button>
+      <button class="btn-outline" id="upload-pdf-btn"><span class="upload-ring"></span>📄 Upload PDF</button>
       <input type="file" id="pdf-file-input" accept=".pdf,application/pdf" style="display:none;">
       <select id="doc-type-selector" class="btn-outline" title="Document Type">
         <option value="auto">Auto Detect</option>
@@ -361,7 +391,7 @@
 
   <!-- ═══ MASTHEAD ═══ -->
   <div class="masthead">
-    <div class="masthead-title">Pulse v3B</div>
+    <div class="masthead-title">Pulse<span style="font-size:10px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.6;">v5</span></div>
     <div class="tagline">PDF Intelligence Terminal</div>
   </div>
 
@@ -541,6 +571,63 @@
   // pulse_gemini_key1 = Primary (K1)
   // pulse_gemini_key2 = Backup  (K2) — auto-shifts on 429
   let _activeKeySlot = 1; // 1 = primary, 2 = backup
+
+  /* ═══════════════════════════════════════════════════════════════════
+     SECTION 3B — PERMANENT KEY STORAGE (IndexedDB backup)
+     Keys are saved to both localStorage AND IndexedDB.
+     On load, if localStorage is empty, keys are restored from IndexedDB.
+     This ensures keys survive browser cache clears that wipe localStorage.
+  ═══════════════════════════════════════════════════════════════════ */
+
+  const IDB_DB    = 'pulse_v3';
+  const IDB_STORE = 'keys';
+
+  function _idbOpen() {
+    return new Promise((resolve, reject) => {
+      const req = indexedDB.open(IDB_DB, 1);
+      req.onupgradeneeded = e => e.target.result.createObjectStore(IDB_STORE);
+      req.onsuccess = e => resolve(e.target.result);
+      req.onerror   = () => reject(req.error);
+    });
+  }
+
+  async function _idbSet(key, value) {
+    try {
+      const db = await _idbOpen();
+      return new Promise((resolve, reject) => {
+        const tx  = db.transaction(IDB_STORE, 'readwrite');
+        tx.objectStore(IDB_STORE).put(value, key);
+        tx.oncomplete = resolve;
+        tx.onerror    = () => reject(tx.error);
+      });
+    } catch (e) { /* silently ignore */ }
+  }
+
+  async function _idbGet(key) {
+    try {
+      const db = await _idbOpen();
+      return new Promise((resolve, reject) => {
+        const req = db.transaction(IDB_STORE, 'readonly').objectStore(IDB_STORE).get(key);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror   = () => reject(req.error);
+      });
+    } catch (e) { return null; }
+  }
+
+  // On page load: if localStorage is missing keys, restore them from IndexedDB
+  async function _restoreKeysFromIDB() {
+    const slots = [
+      { ls: 'pulse_gemini_key1', idb: 'k1' },
+      { ls: 'pulse_gemini_key2', idb: 'k2' },
+      { ls: 'pulse_gemini_model', idb: 'model' }
+    ];
+    for (const { ls, idb } of slots) {
+      if (!localStorage.getItem(ls)) {
+        const val = await _idbGet(idb);
+        if (val) localStorage.setItem(ls, val);
+      }
+    }
+  }
 
   /* ═══════════════════════════════════════════════════════════════════
      SECTION 4 — DUAL-KEY MANAGER
@@ -738,6 +825,7 @@
     }
     const storageKey = slot === 2 ? 'pulse_gemini_key2' : 'pulse_gemini_key1';
     localStorage.setItem(storageKey, val);
+    _idbSet(slot === 2 ? 'k2' : 'k1', val); // backup to IndexedDB permanently
 
     // Confirm save immediately in UI
     const btn = slot === 1 ? DOM.kmK1Save : DOM.kmK2Save;
@@ -816,10 +904,8 @@
       const msg     = errData?.error?.message || `HTTP ${res.status}`;
       const code    = errData?.error?.code;
       if (code === 400 || code === 403) {
-        localStorage.removeItem('pulse_gemini_key1');
-        _refreshKmButtonStates();
-        _updateKeyStatusBadge();
-        throw new Error(`API key error (${code}): ${msg} — Key cleared, please re-enter.`);
+        // Never auto-delete stored keys — just warn the user
+        throw new Error(`API key error (${code}): ${msg} — Check your key in the 🔑 panel.`);
       }
       // 503 / 529 = model overloaded — treat like 429, caller handles retry
       if (res.status === 503 || res.status === 529) {
@@ -895,7 +981,7 @@
       return (
         `<div class="feed-item" style="animation-delay:${idx*30}ms">` +
           `<span class="headline reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0">${escapeHtml(item.title || 'Untitled')}</span>` +
-          (desc ? `<p class="description">${desc}</p>` : '') +
+          (desc ? `<p class="description reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0" style="cursor:pointer;">${desc}</p>` : '') +
           engHtml +
           `<div class="meta">Section ${idx+1} · ${escapeHtml(feedName)}</div>` +
         `</div>`
@@ -905,7 +991,79 @@
   }
 
   /* ═══════════════════════════════════════════════════════════════════
-     SECTION 8 — READER PANEL
+     SECTION 8A — OPEN ARTICLE IN NEW WINDOW
+  ═══════════════════════════════════════════════════════════════════ */
+
+  function openArticleWindow(url) {
+    if (!url || !url.startsWith('pdf-local-file')) return;
+    const index = parseInt(url.split('-').pop(), 10);
+    const item  = feedCache['uploaded-pdf']?.items[index];
+    if (!item) return;
+
+    // Build paragraph HTML from full_text
+    const rawParas = (item.full_text || '')
+      .split(/\n\n+/)
+      .map(p => p.trim())
+      .filter(Boolean)
+      .map(p => {
+        if (p.startsWith('## ')) {
+          return `<h3 style="font-family:'Georgia',serif;font-size:1.15em;font-weight:700;color:#000;margin:1.4em 0 0.5em;line-height:1.25;">${escapeHtml(p.slice(3))}</h3>`;
+        }
+        return `<p style="margin-bottom:1em;line-height:1.75;text-align:justify;font-size:17px;color:#111;font-weight:400;">${escapeHtml(p.replace(/\n/g,' ').trim())}</p>`;
+      })
+      .join('');
+
+    const translationHtml = (item.full_text_english && item.full_text_english.trim().length > 0)
+      ? `<hr style="border:none;border-top:2px dashed #c8c0b0;margin:32px 0;">
+         <h2 style="font-family:'Georgia',serif;font-size:1.3em;margin-bottom:18px;">English Translation</h2>
+         <div style="font-size:17px;line-height:1.75;color:#111;">${parseMarkdown(item.full_text_english)}</div>`
+      : '';
+
+    const html = `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width">
+  <title>${escapeHtml(item.title)}</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+  <style>
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+    body{background:#f5f0e8;font-family:'IBM Plex Sans',sans-serif;padding:0 0 60px;}
+    .topbar{background:#e4eaf2;border-bottom:1px solid #c8c0b0;padding:10px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10;}
+    .close-btn{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;text-transform:uppercase;background:transparent;border:1px solid #000;padding:5px 12px;border-radius:4px;cursor:pointer;}
+    .close-btn:hover{background:#d0d7e0;}
+    .source-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#404060;letter-spacing:0.05em;text-transform:uppercase;}
+    .article{max-width:720px;margin:0 auto;padding:32px 24px 0;}
+    h1{font-family:'Playfair Display',serif;font-size:clamp(22px,4vw,32px);font-weight:700;line-height:1.2;margin-bottom:12px;color:#000;}
+    .meta{font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#404060;margin-bottom:24px;padding-bottom:14px;border-bottom:1px solid #c8c0b0;}
+    strong,b{font-weight:400;}em,i{font-style:normal;}
+    ul{padding-left:1.4em;margin-bottom:1em;}li{margin-bottom:0.4em;line-height:1.7;font-size:17px;}
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <button class="close-btn" onclick="window.close()">✕ Close</button>
+    <span class="source-label">PDF Extraction · Page ${index + 1}</span>
+  </div>
+  <div class="article">
+    <h1>${escapeHtml(item.title)}</h1>
+    <div class="meta">PDF Extraction</div>
+    <div>${rawParas || escapeHtml(item.full_text || '')}</div>
+    ${translationHtml}
+  </div>
+</body>
+</html>`;
+
+    const win = window.open('', '_blank', 'width=820,height=800,resizable=yes,scrollbars=yes');
+    if (win) {
+      win.document.open();
+      win.document.write(html);
+      win.document.close();
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════════
+     SECTION 8 — READER PANEL (kept for potential future use)
   ═══════════════════════════════════════════════════════════════════ */
 
   function openReader(url) {
@@ -1297,7 +1455,7 @@
     const desc     = item.description ? escapeHtml(item.description.substring(0, CONFIG.MAX_DESC_CHARS)) : '';
     const html     =
       `<span class="headline reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0">${escapeHtml(item.title)}</span>` +
-      (desc ? `<p class="description">${desc}</p>` : '') +
+      (desc ? `<p class="description reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0" style="cursor:pointer;">${desc}</p>` : '') +
       engHtml +
       `<div class="meta">Page ${idx + 1} · ${escapeHtml(fileName)}</div>`;
 
@@ -1317,11 +1475,19 @@
     }
   }
 
+  function _resetUploadBtn() {
+    DOM.uploadPdfBtn.innerHTML  = '<span class="upload-ring"></span>📄 Upload PDF';
+    DOM.uploadPdfBtn.classList.remove('uploading');
+    DOM.uploadPdfBtn.disabled   = false;
+  }
+
   async function processPdf(file, confirmedType) {
-    const docType         = confirmedType || detectDocumentType(file);
-    const originalBtnText = DOM.uploadPdfBtn.textContent;
-    DOM.uploadPdfBtn.textContent = '⏫ Uploading…';
-    DOM.uploadPdfBtn.disabled    = true;
+    const docType = confirmedType || detectDocumentType(file);
+
+    // Show spinner on button
+    DOM.uploadPdfBtn.innerHTML = '<span class="upload-ring"></span>Reading…';
+    DOM.uploadPdfBtn.classList.add('uploading');
+    DOM.uploadPdfBtn.disabled  = true;
 
     showOverlay('Opening PDF', `📄 "${file.name}"…`, 5, 'Loading pages…');
 
@@ -1332,13 +1498,12 @@
     } catch (err) {
       hideOverlay();
       DOM.output.innerHTML = `<div class="system-msg">Failed to open PDF: ${escapeHtml(err.message)}</div>`;
-      DOM.uploadPdfBtn.textContent = originalBtnText;
-      DOM.uploadPdfBtn.disabled    = false;
+      _resetUploadBtn();
       return;
     }
 
     updateOverlay(`📄 ${totalPages} pages found — processing page 1 first…`, 10, '');
-    DOM.uploadPdfBtn.textContent = '⚙ Processing…';
+    DOM.uploadPdfBtn.innerHTML = '<span class="upload-ring"></span>Processing…';
 
     DOM.itemCount.textContent = `0 / ${totalPages} pages processing…`;
     DOM.overallSummaryBtn.style.display = 'none';
@@ -1351,33 +1516,24 @@
     for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
       const pct = Math.round((pageNum / totalPages) * 90) + 5;
 
-      // After page 1 is done, hide overlay so user can browse
-      // Background pages update status bar only
       if (pageNum === 1) {
-        updateOverlay(`🧠 Summarising page 1 of ${totalPages}…`, pct,
-          `Gemini ${getGeminiModel()} · ${_activeKeySlot === 2 ? '⚡ K2' : 'K1'}`);
+        updateOverlay(`🧠 Summarising page 1 of ${totalPages}…`, pct, '');
       } else {
-        // Overlay hidden — update the item count bar instead
         DOM.itemCount.textContent = `⚙ Processing page ${pageNum} of ${totalPages}… (${pageNum - 1} ready)`;
       }
 
       try {
-        // Extract this page's text
         const pageText = await extractPageText(pdfDoc, pageNum);
 
-        // Skip blank/near-blank pages silently
         if (!pageText || pageText.length < 30) {
           if (pageNum === 1) {
             hideOverlay();
-            DOM.uploadPdfBtn.textContent = '✅ Ready';
-            setTimeout(() => { DOM.uploadPdfBtn.textContent = originalBtnText; DOM.uploadPdfBtn.disabled = false; }, 1800);
+            _resetUploadBtn();
           }
           continue;
         }
 
-        // ── Local extractive summary — instant, no network ──────────
         const { title, body } = summarisePageLocal(pageText, pageNum, docType);
-
         const idx  = feedItems.length;
         const item = {
           title,
@@ -1392,29 +1548,28 @@
         titles.push(title);
         feedCache['uploaded-pdf'] = { items: feedItems };
 
-        // Render this item immediately — user sees it appear
-        renderOneFeedItem(item, idx, file.name, true);
-        DOM.itemCount.textContent = `${feedItems.length} of ${totalPages} pages processed`;
-
-        // Page 1 done — NOW clear old session and show new content
+        // Page 1: clear old session, show new content, unlock UI
         if (pageNum === 1) {
           localStorage.removeItem(STORAGE_KEY);
           DOM.output.innerHTML = '';
           renderOneFeedItem(item, idx, file.name, true);
-          updateOverlay('✅ Page 1 ready — processing rest…', 20, '');
-          await new Promise(r => setTimeout(r, 300));
+          updateOverlay('✅ Page 1 ready — processing rest in background…', 20, '');
+          await new Promise(r => setTimeout(r, 280));
           hideOverlay();
-          DOM.uploadPdfBtn.textContent = '✅ Ready';
           DOM.overallSummaryBtn.style.display = 'inline-flex';
-          setTimeout(() => {
-            DOM.uploadPdfBtn.textContent = originalBtnText;
-            DOM.uploadPdfBtn.disabled    = false;
-          }, 1200);
+          // Keep spinner but show page count — button stays disabled while processing
+          DOM.uploadPdfBtn.innerHTML = '<span class="upload-ring"></span>Processing…';
+        } else {
+          renderOneFeedItem(item, idx, file.name, true);
         }
 
+        DOM.itemCount.textContent = `${feedItems.length} of ${totalPages} pages processed`;
+
+        // ── Incremental save after every page ──────────────────────
+        _saveSessionToStorage(file.name, feedItems, summaries, titles);
+
       } catch (err) {
-        // Auto-retry once after 6s before giving up on this page
-        console.warn(`Page ${pageNum} failed (will retry once):`, err.message);
+        console.warn(`Page ${pageNum} failed (will retry):`, err.message);
         let retryResult = null;
         try {
           const retryPageText = await extractPageText(pdfDoc, pageNum);
@@ -1438,10 +1593,9 @@
           titles.push(retryResult.title);
           summaries.push(retryResult.body);
         } else {
-          // Both attempts failed — show soft error card
           item = {
             title:             `Page ${pageNum} — skipped`,
-            description:       `Could not summarise: ${err.message.substring(0, 120)}`,
+            description:       `Could not process: ${err.message.substring(0, 120)}`,
             full_text:         '',
             full_text_english: '',
             summary_english:   ''
@@ -1452,35 +1606,38 @@
         feedItems.push(item);
         feedCache['uploaded-pdf'] = { items: feedItems };
         renderOneFeedItem(item, idx, file.name, true);
+        _saveSessionToStorage(file.name, feedItems, summaries, titles);
 
         if (pageNum === 1) {
           hideOverlay();
-          DOM.uploadPdfBtn.textContent = originalBtnText;
-          DOM.uploadPdfBtn.disabled    = false;
+          _resetUploadBtn();
         }
       }
     }
 
-    // All pages done
+    // ── All pages done ────────────────────────────────────────────
     DOM.itemCount.textContent = `✅ All ${feedItems.length} pages processed · ${file.name}`;
     DOM.overallSummaryBtn.style.display = 'inline-flex';
 
-    // Build summary modal with everything
     DOM.modalSummary.innerText   = summaries.map((s, i) => `${titles[i]}\n${s}`).join('\n\n─────────────────\n\n');
     DOM.modalTakeaways.innerText = summaries
       .map((s, i) => `${titles[i]}:\n${s.split('\n').slice(0,4).join('\n')}`)
       .join('\n\n');
 
-    // Persist full session
+    // Final save and reset button
     _saveSessionToStorage(file.name, feedItems, summaries, titles);
     _updateKeyStatusBadge();
+    _resetUploadBtn();
   }
 
   /* ═══════════════════════════════════════════════════════════════════
      SECTION 11 — EVENT WIRING
   ═══════════════════════════════════════════════════════════════════ */
 
-  window.addEventListener('load', () => {
+  window.addEventListener('load', async () => {
+
+    // ── Restore keys from IndexedDB if localStorage was cleared ──
+    await _restoreKeysFromIDB();
 
     // ── Key Manager wiring ────────────────────────────────────────
     DOM.keyMgrBtn.addEventListener('click', (e) => {
@@ -1514,6 +1671,7 @@
     DOM.kmModelSelect.value = activeModel;
     DOM.kmModelSelect.addEventListener('change', function() {
       localStorage.setItem('pulse_gemini_model', this.value);
+      _idbSet('model', this.value); // persist to IndexedDB
       _updateKeyStatusBadge();
       _updateKmStatus();
     });
@@ -1574,15 +1732,15 @@
       })
     );
 
-    // ── Feed → open reader ────────────────────────────────────────
+    // ── Feed → open article in new window ────────────────────────
     DOM.output.addEventListener('click', (e) => {
       const t = e.target.closest('.reader-trigger');
-      if (t) openReader(t.getAttribute('data-url'));
+      if (t) openArticleWindow(t.getAttribute('data-url'));
     });
     DOM.output.addEventListener('keydown', (e) => {
       if (e.key !== 'Enter' && e.key !== ' ') return;
       const t = e.target.closest('.reader-trigger');
-      if (t) { e.preventDefault(); t.click(); }
+      if (t) { e.preventDefault(); openArticleWindow(t.getAttribute('data-url')); }
     });
 
     // ── Reader panel ──────────────────────────────────────────────
