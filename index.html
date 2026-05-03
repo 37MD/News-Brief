@@ -255,8 +255,30 @@
     }
     #doctype-confirm-msg { flex: 1; min-width: 160px; }
 
-    /* ── Reader paragraph text ── */
-    .reader-text-para { margin-bottom: 0.8em; line-height: 1.7; }
+    /* ── Reader paragraph text (PDF extract) ── */
+    .reader-extract {
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      white-space: normal;
+      word-break: normal;
+      hyphens: auto;
+      -webkit-hyphens: auto;
+    }
+    .reader-text-para {
+      margin-bottom: 0.9em;
+      line-height: 1.75;
+      text-align: justify;
+      hanging-punctuation: first last;
+    }
+    .reader-extract-heading {
+      font-family: 'Playfair Display', serif;
+      font-size: 1.05em;
+      font-weight: 700;
+      margin: 1.4em 0 0.4em;
+      line-height: 1.25;
+      color: var(--accent);
+      letter-spacing: 0.01em;
+    }
   </style>
 
   <!-- pdf.js v3.11.174 — UMD build, exposes pdfjsLib as a global reliably -->
@@ -895,17 +917,26 @@
 
       if (item) {
         currentArticleText = item.full_text || '';
-        // Render raw extracted text as paragraphs (preserving original paragraph breaks)
+
+        // Render extracted text: ## lines → headings, rest → paragraphs with wrap
         const rawParas = (item.full_text || '')
           .split(/\n\n+/)
-          .map(p => p.replace(/\n/g, ' ').trim())
+          .map(p => p.trim())
           .filter(Boolean)
-          .map(p => `<p class="reader-text-para">${escapeHtml(p)}</p>`)
+          .map(p => {
+            if (p.startsWith('## ')) {
+              return `<h3 class="reader-extract-heading">${escapeHtml(p.slice(3))}</h3>`;
+            }
+            // Join soft-wrapped lines and render as paragraph
+            const text = p.replace(/\n/g, ' ').trim();
+            return `<p class="reader-text-para">${escapeHtml(text)}</p>`;
+          })
           .join('');
+
         let fullRender =
           `<h1 class="reader-article-title">${escapeHtml(item.title)}</h1>` +
           `<div class="reader-article-meta">PDF Extraction</div>` +
-          `<div class="reader-body">${rawParas || parseMarkdown(item.full_text || '')}</div>`;
+          `<div class="reader-body reader-extract">${rawParas || escapeHtml(item.full_text || '')}</div>`;
         if (item.full_text_english && item.full_text_english.trim().length > 0) {
           currentArticleText += '\n\nEnglish Translation:\n' + item.full_text_english;
           fullRender += `<div class="translation-header">English Translation</div>` +
@@ -1025,46 +1056,112 @@
   // Extract text from a single page — preserves paragraph breaks via y-position grouping
   async function extractPageText(pdfDoc, pageNum) {
     const page    = await pdfDoc.getPage(pageNum);
-    const content = await page.getTextContent();
+    const content = await page.getTextContent({ includeMarkedContent: false });
+    const vp      = page.getViewport({ scale: 1 });
+    const pgH     = vp.height;
 
     if (!content.items.length) return '';
 
-    // Group text items by approximate y-position (same line = within 3px)
+    // ── Step 1: Enrich each item with font metrics ───────────────────
+    const items = content.items
+      .filter(it => it.str && it.str.trim())
+      .map(it => ({
+        str:    it.str,
+        x:      it.transform[4],
+        y:      pgH - it.transform[5],        // flip to top-down
+        w:      it.width,
+        h:      Math.abs(it.transform[0]) || Math.abs(it.transform[3]) || 10,
+        fontH:  Math.round(Math.abs(it.transform[3]) || Math.abs(it.transform[0]) || 10),
+        bold:   it.fontName ? /bold|black|heavy/i.test(it.fontName) : false,
+        hasEOL: it.hasEOL || false
+      }));
+
+    if (!items.length) return '';
+
+    // ── Step 2: Compute median font height (body text size) ──────────
+    const fontHeights = items.map(i => i.fontH).sort((a, b) => a - b);
+    const medFontH    = fontHeights[Math.floor(fontHeights.length / 2)] || 10;
+    const lineGap     = medFontH * 0.4;   // same line tolerance
+    const paraGap     = medFontH * 1.2;   // new paragraph threshold
+
+    // ── Step 3: Group items into visual lines (by y proximity) ───────
     const lines = [];
-    let   curLine = null;
-    let   curY    = null;
+    let   cur   = null;
 
-    for (const item of content.items) {
-      if (!item.str) continue;
-      const y = Math.round(item.transform[5]);  // vertical position
-      if (curY === null || Math.abs(y - curY) > 3) {
-        curLine = { y, text: item.str };
-        lines.push(curLine);
-        curY = y;
+    for (const it of items) {
+      if (!cur || Math.abs(it.y - cur.y) > lineGap) {
+        cur = { y: it.y, items: [it], fontH: it.fontH };
+        lines.push(cur);
       } else {
-        curLine.text += item.str;
+        cur.items.push(it);
+        cur.fontH = Math.max(cur.fontH, it.fontH);
       }
     }
 
-    // Sort lines top-to-bottom (PDF coords are bottom-up)
-    lines.sort((a, b) => b.y - a.y);
+    // Sort lines top-to-bottom
+    lines.sort((a, b) => a.y - b.y);
 
-    // Group lines into paragraphs: gap > 14px = new paragraph
-    const paragraphs = [];
-    let   para        = [];
-    let   prevY       = null;
+    // Within each line, sort items left-to-right and merge text
+    for (const ln of lines) {
+      ln.items.sort((a, b) => a.x - b.x);
 
-    for (const line of lines) {
-      if (prevY !== null && Math.abs(prevY - line.y) > 14) {
-        if (para.length) { paragraphs.push(para.join(' ')); para = []; }
+      // Smart space insertion: add space between items if gap > half a char width
+      let text = '';
+      for (let i = 0; i < ln.items.length; i++) {
+        const it   = ln.items[i];
+        const prev = ln.items[i - 1];
+        if (prev) {
+          const gap = it.x - (prev.x + prev.w);
+          if (gap > medFontH * 0.25) text += ' ';  // visible gap → insert space
+        }
+        text += it.str;
       }
-      const t = line.text.trim();
-      if (t) para.push(t);
-      prevY = line.y;
-    }
-    if (para.length) paragraphs.push(para.join(' '));
 
-    return paragraphs.join('\n\n').replace(/[ \t]+/g, ' ').trim();
+      ln.text    = text.replace(/\s+/g, ' ').trim();
+      ln.isLarge = ln.fontH > medFontH * 1.3;   // heading-size text
+      ln.isBold  = ln.items.some(i => i.bold);
+    }
+
+    // ── Step 4: Classify lines and group into paragraphs ─────────────
+    const blocks = [];
+    let   block  = null;
+    let   prevLn = null;
+
+    for (const ln of lines) {
+      if (!ln.text) continue;
+
+      const yGap      = prevLn ? ln.y - (prevLn.y + prevLn.fontH) : 0;
+      const isHeading = ln.isLarge || (ln.isBold && ln.text.split(' ').length <= 12 && !/[.!?]$/.test(ln.text));
+      const newBlock  = !block || yGap > paraGap || isHeading;
+
+      if (newBlock) {
+        block = { lines: [ln.text], isHeading, fontH: ln.fontH };
+        blocks.push(block);
+      } else {
+        // Check if previous line looks like it ends mid-sentence (soft wrap)
+        const prev      = block.lines[block.lines.length - 1];
+        const softWrap  = prev && !/[-–—.!?:;,]$/.test(prev.trim()) && /^[a-z]/.test(ln.text);
+        block.lines.push(softWrap ? '\u00ad' + ln.text : ln.text); // soft-hyphen marker for wrap join
+      }
+      prevLn = ln;
+    }
+
+    // ── Step 5: Render blocks as clean paragraphs ────────────────────
+    const paragraphs = blocks.map(blk => {
+      // Join lines: soft-wrapped lines join with space, hard-wrapped with newline
+      const text = blk.lines.reduce((acc, ln) => {
+        if (ln.startsWith('\u00ad')) return acc + ' ' + ln.slice(1); // continuation
+        if (acc)                     return acc + '\n' + ln;
+        return ln;
+      }, '');
+      return { text: text.replace(/[ \t]+/g, ' ').trim(), isHeading: blk.isHeading };
+    }).filter(p => p.text.length > 1);
+
+    // ── Step 6: Output as annotated plain text ────────────────────────
+    return paragraphs.map(p => {
+      if (p.isHeading) return '## ' + p.text;   // heading marker
+      return p.text;
+    }).join('\n\n');
   }
 
   // Summarise a single page's text via Gemini — small prompt, never hits token limit
