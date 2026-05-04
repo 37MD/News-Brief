@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width">
-  <title>Pulse v5B — PDF Intelligence</title>
+  <title>Pulse v5 — PDF Intelligence</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
     /* ═══ BASE ═══ */
@@ -12,6 +12,7 @@
       --paper:          #f5f0e8;
       --accent:         #1a5c3a;
       --rule:           #c8c0b0;
+      --muted:          #111111;
       --error:          #8b0000;
       --reader-font-sz: 17px;
     }
@@ -20,13 +21,13 @@
 
     /* ═══ CONTROLS BAR ═══ */
     .controls-bar {
-      position: relative; padding: 5px 20px 0;
+      position: relative; padding: 8px 20px 0;
       display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;
       border-bottom: 1px solid var(--rule); background: #e4eaf2;
     }
     .controls-row1 {
       width: 100%; display: flex; justify-content: center; align-items: center;
-      gap: 8px; flex-wrap: wrap; padding-bottom: 5px;
+      gap: 8px; flex-wrap: wrap; padding-bottom: 8px;
     }
     /* Row 2 — hidden by default, shown only when key manager is open */
     .controls-row2 {
@@ -88,81 +89,73 @@
     .km-close:hover { background: #e0e6ef; }
 
     /* ═══ MASTHEAD ═══ */
-    .masthead { border-bottom: 2px solid var(--ink); padding: 7px 20px 6px; text-align: center; background: var(--paper); }
-    .masthead-title { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700; line-height: 1.1; }
-    .tagline { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; margin-top: 2px; }
+    .masthead { border-bottom: 2px solid var(--ink); padding: 15px 20px; text-align: center; background: var(--paper); }
+    .masthead-title { font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 700; line-height: 1.1; }
+    .tagline { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; margin-top: 4px; }
 
     /* ═══ KEY STATUS BADGE (under masthead) ═══ */
     #key-status-badge {
       font-family: 'IBM Plex Mono', monospace; font-size: 9px; text-align: center;
-      padding: 2px 0 1px; letter-spacing: 0.05em;
+      padding: 4px 0 2px; letter-spacing: 0.05em;
     }
 
     .feed-status-bar {
-      max-width: 800px; margin: 4px auto 0; padding: 0 15px;
+      max-width: 800px; margin: 8px auto 0; padding: 0 15px;
       font-family: 'IBM Plex Mono', monospace; font-size: 10px;
       text-transform: uppercase; letter-spacing: 0.05em; text-align: center;
     }
 
-    .container { max-width: 800px; margin: 0 auto; padding: 8px 15px 40px; }
+    .container { max-width: 800px; margin: 0 auto; padding: 15px 15px 40px; }
 
     /* ═══ FEED ITEMS ═══ */
-    .feed-item { margin-bottom: 14px; border-bottom: 1px solid var(--rule); padding-bottom: 12px; animation: fadeIn 0.3s ease forwards; }
+    .feed-item { margin-bottom: 20px; border-bottom: 1px solid var(--rule); padding-bottom: 15px; animation: fadeIn 0.3s ease forwards; }
     .feed-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
-    .headline { font-family: 'Playfair Display', serif; font-size: 19px; text-decoration: none; font-weight: 700; display: block; line-height: 1.2; margin-bottom: 5px; word-break: break-word; cursor: pointer; text-align: center; }
+    .headline { font-family: 'Playfair Display', serif; font-size: 20px; text-decoration: none; font-weight: 700; display: block; line-height: 1.2; margin-bottom: 8px; word-break: break-word; cursor: pointer; }
     .headline:hover { text-decoration: underline; }
-    .description { font-size: 14px; margin-bottom: 6px; line-height: 1.7; color: #000000; font-weight: 400; text-align: justify; hyphens: auto; -webkit-hyphens: auto; max-width: 65ch; }
+    .description { font-size: 14px; margin-bottom: 6px; line-height: 1.5; color: #000000; font-weight: 400; }
     .description.reader-trigger:hover { text-decoration: underline; }
     .description.translation { border-left: 3px solid var(--accent); background: rgba(26,92,58,0.05); padding: 6px 10px; border-radius: 0 4px 4px 0; font-weight: 400; }
     .meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 8px; }
     .system-msg { font-family: 'IBM Plex Mono', monospace; font-size: 12px; text-align: center; margin-top: 30px; line-height: 1.5; }
-    .feed-item-error .headline { color: #7090b0; font-style: italic; font-size: 16px; }
-    .feed-item-error .error-msg { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #7090b0; margin: 4px 0 8px; }
-    .view-original-btn { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #1a5c3a; text-decoration: underline; cursor: pointer; background: none; border: none; padding: 0; letter-spacing: 0.03em; }
-    .view-original-btn:hover { color: #000000; }
 
     /* ═══ READER PANEL ═══ */
-    #summary-backdrop {
+    #reader-backdrop, #summary-backdrop {
       display: none; position: fixed; inset: 0;
       background: rgba(26,26,24,0.45); z-index: 998; backdrop-filter: blur(2px);
     }
-    #summary-backdrop.open { display: block; }
-    #reader-backdrop { display: none; }
+    #reader-backdrop.open, #summary-backdrop.open { display: block; }
 
     #reader-panel {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      width: 100%; height: 100%;
-      background: var(--paper); z-index: 999;
-      display: flex; flex-direction: column;
-      opacity: 0; pointer-events: none;
-      transition: opacity 0.2s ease;
+      position: fixed; top: 0; right: 0; bottom: 0; width: 100%; max-width: 780px;
+      background: var(--paper); z-index: 999; display: flex; flex-direction: column;
+      transform: translateX(100%); transition: transform 0.35s cubic-bezier(.4,0,.2,1);
+      box-shadow: -4px 0 40px rgba(0,0,0,0.18);
     }
-    #reader-panel.open { opacity: 1; pointer-events: all; }
+    #reader-panel.open { transform: translateX(0); }
 
     #reader-progress { position: absolute; top: 0; left: 0; height: 3px; width: 0%; background: var(--ink); transition: width 0.2s; z-index: 5; }
 
     .reader-topbar { display: flex; align-items: center; gap: 10px; padding: 10px 15px; border-bottom: 1px solid var(--rule); background: #e4eaf2; flex-shrink: 0; position: relative; z-index: 20; }
-    .reader-back-btn { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; text-transform: uppercase; background: transparent; border: 1px solid var(--ink); padding: 5px 14px; border-radius: 4px; cursor: pointer; white-space: nowrap; transition: background 0.2s; letter-spacing: 0.04em; }
+    .reader-back-btn { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; text-transform: uppercase; background: transparent; border: 1px solid var(--ink); padding: 4px 10px; border-radius: 4px; cursor: pointer; white-space: nowrap; transition: background 0.2s; }
     .reader-back-btn:hover { background: #d0d7e0; }
     .reader-source-url { font-family: 'IBM Plex Mono', monospace; font-size: 10px; flex: 1; }
     .reader-font-ctrl { display: flex; gap: 4px; }
-    .reader-font-ctrl button { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 700; background: transparent; border: 1px solid var(--rule); width: 26px; height: 26px; border-radius: 4px; cursor: pointer; transition: border-color 0.2s; }
+    .reader-font-ctrl button { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: bold; background: transparent; border: 1px solid var(--rule); width: 26px; height: 26px; border-radius: 4px; cursor: pointer; transition: border-color 0.2s; }
     .reader-font-ctrl button:hover { border-color: var(--ink); background: #d0d7e0; }
     .reader-open-btn { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700; text-transform: uppercase; background: #e4eaf2; border: 1px solid var(--ink); padding: 4px 8px; border-radius: 4px; cursor: pointer; white-space: nowrap; }
     .reader-open-btn:hover { background: #d0d7e0; }
 
-    .reader-scroll { overflow-y: auto; flex: 1; padding: 28px 20px 60px; position: relative; z-index: 10; }
-    .reader-scroll-inner { max-width: 720px; margin: 0 auto; }
-    .reader-article-title { font-family: 'Playfair Display', serif; font-size: clamp(20px,3vw,28px); font-weight: 700; line-height: 1.2; margin-bottom: 10px; text-align: center; }
+    .reader-scroll { overflow-y: auto; flex: 1; padding: 20px 25px 40px; position: relative; z-index: 10; }
+    .reader-article-title { font-family: 'Playfair Display', serif; font-size: clamp(20px,3vw,28px); font-weight: 700; line-height: 1.2; margin-bottom: 10px; }
     .reader-article-meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--rule); }
     .reader-body { font-size: var(--reader-font-sz); line-height: 1.7; padding-bottom: 20px; color: #000000; font-weight: 400; }
-    .reader-body h1,.reader-body h2,.reader-body h3,.reader-body h4 { font-family: 'Playfair Display', serif; margin: 1.2em 0 0.5em; line-height: 1.2; color: #000000; font-weight: 700; text-align: center; }
-    .reader-body p { margin-bottom: 1em; font-weight: 400; color: #000000; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+    .reader-body h1,.reader-body h2,.reader-body h3,.reader-body h4 { font-family: 'Playfair Display', serif; margin: 1.2em 0 0.5em; line-height: 1.2; color: #000000; font-weight: 700; }
+    .reader-body p { margin-bottom: 1em; font-weight: 400; color: #000000; }
     .reader-body strong, .reader-body b { font-weight: 400; }
     .reader-body em, .reader-body i { font-style: normal; }
-    .translation-header { font-family: 'Playfair Display', serif; font-size: 1.2em; font-weight: 700; margin: 30px 0 15px; padding-top: 20px; border-top: 2px dashed var(--rule); text-align: center; }
+    .translation-header { font-family: 'Playfair Display', serif; font-size: 1.2em; font-weight: bold; margin: 30px 0 15px; padding-top: 20px; border-top: 2px dashed var(--rule); }
 
     /* ═══ SUMMARY MODAL ═══ */
     #summary-modal {
@@ -174,11 +167,11 @@
     }
     #summary-modal.open { visibility: visible; }
     .summary-header { display: flex; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--rule); align-items: center; background: #e4eaf2; border-radius: 8px 8px 0 0; }
-    .summary-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; text-align: center; }
+    .summary-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: bold; }
     .summary-content-area { padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
     .summary-box { border: 1px solid var(--rule); border-radius: 6px; background: #fff; overflow: hidden; }
-    .summary-box-title { background: #e4eaf2; padding: 8px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; text-transform: uppercase; border-bottom: 1px solid var(--rule); text-align: center; }
-    .summary-box-content { padding: 12px; font-size: 13px; line-height: 1.7; white-space: pre-line; background: #fff; color: #000000; font-weight: 400; text-align: justify; hyphens: auto; -webkit-hyphens: auto; max-width: 65ch; margin: 0 auto; }
+    .summary-box-title { background: #e4eaf2; padding: 8px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid var(--rule); text-align: center; }
+    .summary-box-content { padding: 12px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; background: #fff; color: #000000; font-weight: 400; }
     .summary-box-content strong, .summary-box-content b { font-weight: 400; }
 
     /* ═══ AI CHAT PANEL ═══ */
@@ -195,16 +188,14 @@
     /* ═══ AI QUOTA STATUS BAR (inside AI panel header) ═══ */
     #ai-quota-status { font-size: 8px; font-family: 'IBM Plex Mono', monospace; font-weight: 400; text-transform: none; letter-spacing: 0; color: #404060; flex: 1; text-align: right; padding-right: 6px; }
 
-    .ai-close-btn { background: transparent; border: none; font-size: 18px; cursor: pointer; font-weight: 700; }
+    .ai-close-btn { background: transparent; border: none; font-size: 18px; cursor: pointer; font-weight: bold; }
     .ai-chat-area { padding: 12px; overflow-y: auto; flex: 1; font-size: 13px; line-height: 1.5; background: #fff; }
-    .ai-message { margin-bottom: 12px; padding: 10px 12px; border-radius: 6px; background: #f0f0f0; font-weight: 400; text-align: justify; hyphens: auto; -webkit-hyphens: auto; line-height: 1.7; }
+    .ai-message { margin-bottom: 12px; padding: 10px 12px; border-radius: 6px; background: #f0f0f0; }
     .ai-message.user   { background: #e4eaf2; border-left: 3px solid var(--ink); }
     .ai-message.system { font-style: italic; background: transparent; padding: 0; }
-    .ai-message.status { font-size: 11px; color: #f59e0b; background: #fffbeb; border-left: 3px solid #f59e0b; padding: 6px 10px; font-style: italic; text-align: left; }
-    .ai-message strong, .ai-message b { font-weight: 400; }
-    .ai-message p { margin-bottom: 0.8em; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+    .ai-message.status { font-size: 11px; color: #f59e0b; background: #fffbeb; border-left: 3px solid #f59e0b; padding: 6px 10px; font-style: italic; }
     .ai-quick-prompts { display: flex; gap: 6px; padding: 0 12px 10px; overflow-x: auto; background: #fff; }
-    .ai-quick-prompts button { background: #f0f0f0; border: 1px solid var(--rule); padding: 4px 10px; border-radius: 15px; font-size: 11px; font-weight: 700; cursor: pointer; }
+    .ai-quick-prompts button { background: #f0f0f0; border: 1px solid var(--rule); padding: 4px 10px; border-radius: 15px; font-size: 11px; font-weight: bold; cursor: pointer; }
     .ai-quick-prompts button:hover { background: #d0d7e0; border-color: var(--ink); }
     .ai-input-area { display: flex; padding: 10px 12px; border-top: 1px solid var(--rule); background: #e4eaf2; border-radius: 0 0 8px 8px; }
     .ai-input-area input { flex: 1; border: 1px solid var(--rule); border-radius: 4px; padding: 8px 10px; font-size: 13px; outline: none; }
@@ -214,7 +205,7 @@
     /* ═══ MOBILE ═══ */
     @media (max-width: 520px) {
       .controls-bar { padding: 12px 16px; justify-content: flex-end; flex-wrap: wrap; }
-      .masthead { padding: 7px 16px 6px; }
+      .masthead { padding: 20px 16px; }
       .reader-scroll { padding: 20px 18px 0px; }
       .reader-source-url { display: none; }
       #ai-panel { top: 65px; right: 10px; max-width: calc(100vw - 20px); max-height: 70vh; }
@@ -293,7 +284,7 @@
       border-radius: 6px; padding: 8px 12px;
       display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
       font-size: 12px; color: #b0c8d8;
-      margin: 3px 12px 0;
+      margin: 6px 12px 0;
     }
     #doctype-confirm-msg { flex: 1; min-width: 160px; }
 
@@ -305,16 +296,11 @@
       word-break: normal;
       hyphens: auto;
       -webkit-hyphens: auto;
-      max-width: 65ch;
-      margin-left: auto;
-      margin-right: auto;
     }
     .reader-text-para {
       margin-bottom: 1em;
-      line-height: 1.75;
+      line-height: 1.7;
       text-align: justify;
-      hyphens: auto;
-      -webkit-hyphens: auto;
       font-size: var(--reader-font-sz);
       font-weight: 400;
       color: #000000;
@@ -330,9 +316,10 @@
       margin: 1.4em 0 0.5em;
       line-height: 1.25;
       letter-spacing: 0.01em;
-      text-align: center;
     }
   </style>
+
+  <!-- pdf.js v3.11.174 — UMD build, exposes pdfjsLib as a global reliably -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
     if (window.pdfjsLib) {
@@ -346,6 +333,7 @@
 
   <!-- ═══ CONTROLS BAR ═══ -->
   <div class="controls-bar">
+    <!-- Row 1: buttons -->
     <div class="controls-row1">
       <button class="btn-outline" id="overall-summary-btn" style="display:none;">📊 PDF Summary</button>
       <button class="btn-outline" id="upload-pdf-btn"><span class="upload-ring"></span>📄 Upload PDF</button>
@@ -358,8 +346,11 @@
         <option value="book">Book / Long PDF</option>
         <option value="generic">Generic Report</option>
       </select>
+      <!-- 🔑 KEY MANAGER BUTTON — symbol only -->
       <button class="btn-outline" id="key-mgr-btn" title="Manage Gemini API Keys" style="padding:6px 10px;font-size:15px;line-height:1;">🔑</button>
     </div>
+
+    <!-- Row 2: live Gemini key/model status -->
     <div class="controls-row2" id="key-status-badge"></div>
 
     <!-- ═══ INLINE KEY MANAGER PANEL (drops down from controls bar) ═══ -->
@@ -384,9 +375,9 @@
         <div>
           <div class="km-label" style="margin-bottom:3px;">Gemini Model</div>
           <select id="km-model-select" class="km-model-select">
-            <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite — Default (auto-cascades to Flash → Pro on quota)</option>
-            <option value="gemini-2.5-flash">Gemini 2.5 Flash (skip Lite, cascade to Pro on quota)</option>
-            <option value="gemini-2.5-pro">Gemini 2.5 Pro (no cascade — final tier)</option>
+            <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite (default)</option>
+            <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+            <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
           </select>
         </div>
         <button id="km-close-btn" class="km-close">✕ Close</button>
@@ -400,9 +391,11 @@
 
   <!-- ═══ MASTHEAD ═══ -->
   <div class="masthead">
-    <div class="masthead-title">Pulse<span style="font-size:10px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.6;">v5B</span></div>
+    <div class="masthead-title">Pulse<span style="font-size:10px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.6;">v5</span></div>
     <div class="tagline">PDF Intelligence Terminal</div>
   </div>
+
+  <!-- Key status is now in controls-bar row 2 -->
   <div class="feed-status-bar"><span id="item-count"></span></div>
 
   <div class="container">
@@ -435,12 +428,10 @@
     </div>
 
     <div class="reader-scroll" id="reader-scroll">
-      <div class="reader-scroll-inner">
-        <div id="reader-content"></div>
-      </div>
+      <div id="reader-content"></div>
     </div>
 
-    <!-- ═══ AI CHAT PANEL ═══ -->
+    <!-- ═══ AI CHAT PANEL (inside reader) ═══ -->
     <div id="ai-panel">
       <div class="ai-header">
         <span>✨ Gemini Assistant</span>
@@ -498,7 +489,9 @@
     READER_FONT_MIN: 13,
     READER_FONT_MAX: 24,
     READER_FONT_DEF: 17,
-    GEMINI_MODELS:   ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-pro']
+    // Gemini model cascade: primary → first fallback → second fallback
+    // On 429 from any model, system tries next automatically
+    GEMINI_CASCADE: ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-pro']
   });
 
   /* ═══════════════════════════════════════════════════════════════════
@@ -521,6 +514,7 @@
     pdfFileInput:      document.getElementById('pdf-file-input'),
     docTypeSelector:   document.getElementById('doc-type-selector'),
 
+    // Key manager
     keyMgrBtn:         document.getElementById('key-mgr-btn'),
     keyManagerBox:     document.getElementById('key-manager-box'),
     kmK1Input:         document.getElementById('km-k1-input'),
@@ -531,12 +525,14 @@
     kmModelSelect:     document.getElementById('km-model-select'),
     kmCloseBtn:        document.getElementById('km-close-btn'),
 
+    // Processing overlay
     procOverlay:       document.getElementById('processing-overlay'),
     procTitle:         document.getElementById('proc-title'),
     procStep:          document.getElementById('proc-step'),
     procBar:           document.getElementById('proc-bar'),
     procNote:          document.getElementById('proc-note'),
 
+    // Reader
     readerPanel:       document.getElementById('reader-panel'),
     readerBackdrop:    document.getElementById('reader-backdrop'),
     readerContent:     document.getElementById('reader-content'),
@@ -547,6 +543,7 @@
     fontUp:            document.getElementById('font-up'),
     fontDown:          document.getElementById('font-down'),
 
+    // AI panel
     aiToggle:          document.getElementById('reader-ai-toggle'),
     aiPanel:           document.getElementById('ai-panel'),
     aiCloseBtn:        document.getElementById('ai-close-btn'),
@@ -556,6 +553,7 @@
     aiQuotaStatus:     document.getElementById('ai-quota-status'),
     aiPromptBtns:      document.querySelectorAll('.ai-prompt-btn'),
 
+    // Rate limit ticker + doctype confirm
     doctypeBar:        document.getElementById('doctype-confirm-bar'),
     doctypeMsg:        document.getElementById('doctype-confirm-msg'),
     doctypeSelect:     document.getElementById('doctype-confirm-select'),
@@ -568,33 +566,26 @@
   const feedCache          = {};
   let   readerFontSize     = CONFIG.READER_FONT_DEF;
   let   currentArticleText = '';
-  let   currentPdfDoc      = null;
-  let   currentPdfFile     = null;
 
   // ── Dual-Key State ──────────────────────────────────────────────
-  let _activeKeySlot      = 1;
-  let _activeCascadeModel = null;
+  // pulse_gemini_key1 = Primary (K1)
+  // pulse_gemini_key2 = Backup  (K2) — auto-shifts on 429
+  let _activeKeySlot = 1; // 1 = primary, 2 = backup
 
-  /* ──────────────────────────────────────────────────────────────────
-     SECTION 3B — INDEXEDDB STORAGE ENGINE
-     Single DB (pulse_v5a) with two object stores: keys + sessions.
-     Keys survive localStorage clears. Sessions support up to ~100 MB.
-  ────────────────────────────────────────────────────────────────── */
+  /* ═══════════════════════════════════════════════════════════════════
+     SECTION 3B — PERMANENT KEY STORAGE (IndexedDB backup)
+     Keys are saved to both localStorage AND IndexedDB.
+     On load, if localStorage is empty, keys are restored from IndexedDB.
+     This ensures keys survive browser cache clears that wipe localStorage.
+  ═══════════════════════════════════════════════════════════════════ */
 
-  const PULSE_DB       = 'pulse_v5a';
-  const PULSE_DB_VER   = 1;
-  const STORE_KEYS     = 'keys';
-  const STORE_SESSIONS = 'sessions';
+  const IDB_DB    = 'pulse_v3';
+  const IDB_STORE = 'keys';
 
   function _idbOpen() {
     return new Promise((resolve, reject) => {
-      const req = indexedDB.open(PULSE_DB, 1);
-      req.onupgradeneeded = e => {
-        const db = e.target.result;
-        try { if (!db.objectStoreNames.contains(STORE_KEYS))     db.createObjectStore(STORE_KEYS); } catch(_) {}
-        try { if (!db.objectStoreNames.contains(STORE_SESSIONS)) db.createObjectStore(STORE_SESSIONS); } catch(_) {}
-      };
-      req.onblocked = () => req.result && req.result.close();
+      const req = indexedDB.open(IDB_DB, 1);
+      req.onupgradeneeded = e => e.target.result.createObjectStore(IDB_STORE);
       req.onsuccess = e => resolve(e.target.result);
       req.onerror   = () => reject(req.error);
     });
@@ -603,30 +594,27 @@
   async function _idbSet(key, value) {
     try {
       const db = await _idbOpen();
-      await new Promise((res, rej) => {
-        const tx = db.transaction(STORE_KEYS, 'readwrite');
-        tx.objectStore(STORE_KEYS).put(value, key);
-        tx.oncomplete = res;
-        tx.onerror    = () => rej(tx.error);
+      return new Promise((resolve, reject) => {
+        const tx  = db.transaction(IDB_STORE, 'readwrite');
+        tx.objectStore(IDB_STORE).put(value, key);
+        tx.oncomplete = resolve;
+        tx.onerror    = () => reject(tx.error);
       });
-      db.close();
-    } catch (_) {}
+    } catch (e) { /* silently ignore */ }
   }
 
   async function _idbGet(key) {
     try {
       const db = await _idbOpen();
-      const result = await new Promise((res, rej) => {
-        const tx  = db.transaction(STORE_KEYS, 'readonly');
-        const req = tx.objectStore(STORE_KEYS).get(key);
-        req.onsuccess = () => res(req.result ?? null);
-        req.onerror   = () => rej(req.error);
+      return new Promise((resolve, reject) => {
+        const req = db.transaction(IDB_STORE, 'readonly').objectStore(IDB_STORE).get(key);
+        req.onsuccess = () => resolve(req.result || null);
+        req.onerror   = () => reject(req.error);
       });
-      db.close();
-      return result;
-    } catch (_) { return null; }
+    } catch (e) { return null; }
   }
 
+  // On page load: if localStorage is missing keys, restore them from IndexedDB
   async function _restoreKeysFromIDB() {
     const slots = [
       { ls: 'pulse_gemini_key1', idb: 'k1' },
@@ -634,12 +622,9 @@
       { ls: 'pulse_gemini_model', idb: 'model' }
     ];
     for (const { ls, idb } of slots) {
-      const lsVal  = (localStorage.getItem(ls) || '').trim();
-      const idbVal = (await _idbGet(idb) || '').trim();
-      if (!lsVal && idbVal) {
-        localStorage.setItem(ls, idbVal);
-      } else if (lsVal && lsVal !== idbVal) {
-        await _idbSet(idb, lsVal);
+      if (!localStorage.getItem(ls)) {
+        const val = await _idbGet(idb);
+        if (val) localStorage.setItem(ls, val);
       }
     }
   }
@@ -656,6 +641,7 @@
   }
 
   function getGeminiKey() {
+    // Return active key; fall back to the other slot if missing
     const primary = _getRawKey(1);
     const backup  = _getRawKey(2);
     if (_activeKeySlot === 2 && backup) return backup;
@@ -665,7 +651,7 @@
   }
 
   function getGeminiModel() {
-    return localStorage.getItem('pulse_gemini_model') || CONFIG.GEMINI_MODELS[0];
+    return localStorage.getItem('pulse_gemini_model') || CONFIG.GEMINI_CASCADE[0];
   }
 
   function shiftToBackupKey() {
@@ -703,47 +689,29 @@
   ═══════════════════════════ */
   const STORAGE_KEY = 'pulse_pdf_session';
 
-  async function _saveSessionToStorage(fileName, feedItems, summaries, titles) {
+  function _saveSessionToStorage(fileName, feedItems, summaries, titles) {
     try {
-      const payload = { fileName, feedItems, summaries, titles, savedAt: Date.now() };
-      const db = await _idbOpen();
-      await new Promise((res, rej) => {
-        const tx = db.transaction(STORE_SESSIONS, 'readwrite');
-        tx.objectStore(STORE_SESSIONS).put(payload, STORAGE_KEY);
-        tx.oncomplete = res;
-        tx.onerror    = () => rej(tx.error);
-      });
-      db.close();
-    } catch (_) {
-      try {
-        const slim = feedItems.map(({ full_text, full_text_english, ...rest }) => rest);
-        localStorage.setItem(STORAGE_KEY,
-          JSON.stringify({ fileName, feedItems: slim, summaries, titles, savedAt: Date.now() }));
-      } catch (_2) {}
+      const payload = JSON.stringify({ fileName, feedItems, summaries, titles, savedAt: Date.now() });
+      localStorage.setItem(STORAGE_KEY, payload);
+    } catch (e) {
+      // Silently fail if storage is full (large PDFs)
+      console.warn('Could not persist session:', e.message);
     }
   }
 
-  async function _loadSessionFromStorage() {
-    try {
-      const db = await _idbOpen();
-      const result = await new Promise((res, rej) => {
-        const tx  = db.transaction(STORE_SESSIONS, 'readonly');
-        const req = tx.objectStore(STORE_SESSIONS).get(STORAGE_KEY);
-        req.onsuccess = () => res(req.result ?? null);
-        req.onerror   = () => rej(req.error);
-      });
-      db.close();
-      if (result) return result;
-    } catch (_) {}
+  function _loadSessionFromStorage() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch (_) { return null; }
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (e) { return null; }
   }
 
   function _restoreSession(session) {
     if (!session || !session.feedItems || !session.feedItems.length) return false;
+    // Rebuild feedCache so reader panel works
     feedCache['uploaded-pdf'] = { items: session.feedItems };
+    // Rebuild modal content
     const { summaries, titles, feedItems, fileName } = session;
     DOM.modalSummary.innerText   = summaries.map((s, i) => `${titles[i]}\n${s}`).join('\n\n─────────────────\n\n');
     DOM.modalTakeaways.innerText = summaries
@@ -751,6 +719,7 @@
       .join('\n\n');
     renderFeedItems(feedItems, fileName);
     DOM.overallSummaryBtn.style.display = 'inline-flex';
+    // Show restore notice
     DOM.itemCount.textContent =
       `${feedItems.length} section${feedItems.length !== 1 ? 's' : ''} restored · ${fileName}`;
     return true;
@@ -759,8 +728,6 @@
   function clearGeminiKeys() {
     localStorage.removeItem('pulse_gemini_key1');
     localStorage.removeItem('pulse_gemini_key2');
-    _idbSet('k1', '');
-    _idbSet('k2', '');
     _activeKeySlot = 1;
     _refreshKmButtonStates();
     _updateKmStatus();
@@ -771,6 +738,7 @@
     return k ? `${k.slice(0,6)}…${k.slice(-4)} (${k.length}c)` : '— not saved';
   }
 
+  // Green/default colouring on Save buttons based on stored state
   function _refreshKmButtonStates() {
     const k1 = _getRawKey(1), k2 = _getRawKey(2);
     if (DOM.kmK1Save) {
@@ -794,10 +762,12 @@
       slot;
   }
 
+  // Updates the status text in row2 — visibility controlled by openKeyManager/closeKeyManager
   function _updateKeyStatusBadge() {
     if (!DOM.keyStatusBadge) return;
     const k1 = _getRawKey(1), k2 = _getRawKey(2);
 
+    // Welcome message on main page — only prompt for key when none saved
     if (DOM.welcomeMsg && DOM.welcomeMsg.parentElement === DOM.output) {
       if (!k1 && !k2) {
         DOM.welcomeMsg.innerHTML =
@@ -805,11 +775,11 @@
           'Tap <strong>🔑</strong> above to add your Gemini API key before uploading.';
       } else {
         DOM.welcomeMsg.innerHTML =
-          'API key active — tap <strong>📄 Upload PDF</strong> to begin.<br>' +
-          '<span style="font-size:9px;color:#7090b0;letter-spacing:0.03em;">Key is stored permanently and will be available next session.</span>';
+          'Keys saved — tap <strong>📄 Upload PDF</strong> to begin.';
       }
     }
 
+    // Build status text shown inside row2 (only visible when key panel is open)
     if (!k1 && !k2) {
       DOM.keyStatusBadge.innerHTML = '<span style="color:#c8102e">⚠ No keys saved</span>';
       return;
@@ -821,7 +791,7 @@
       ? '<span style="color:#009e70"> · K2 Backup Ready</span>'
       : '<span style="color:#7090b0"> · K2 not set</span>';
     DOM.keyStatusBadge.innerHTML =
-      `Gemini: ${slotLabel}${k2label}  ·  Model: <strong>${getGeminiModel()}</strong>  ·  <span style="color:#7090b0;font-size:8px;">Stored permanently</span>`;
+      `Gemini: ${slotLabel}${k2label}  ·  Model: <strong>${getGeminiModel()}</strong>`;
   }
 
   function openKeyManager() {
@@ -830,11 +800,7 @@
     DOM.kmK2Input.value = '';
     _refreshKmButtonStates();
     _updateKmStatus();
-    const k1 = _getRawKey(1), k2 = _getRawKey(2);
-    if (k1 || k2) {
-      DOM.kmK1Input.placeholder = k1 ? `Key stored (${_maskKey(k1)}) — paste to replace` : 'AIza… (paste Key 1 here)';
-      DOM.kmK2Input.placeholder = k2 ? `Key stored (${_maskKey(k2)}) — paste to replace` : 'AIza… (paste Key 2 here)';
-    }
+    // Show the status row when key panel is open
     if (DOM.keyStatusBadge) DOM.keyStatusBadge.classList.add('visible');
     setTimeout(() => DOM.kmK1Input.focus(), 80);
   }
@@ -843,10 +809,12 @@
     DOM.keyManagerBox.classList.remove('open');
     DOM.kmK1Input.value = '';
     DOM.kmK2Input.value = '';
+    // Hide status row when key panel closes
     if (DOM.keyStatusBadge) DOM.keyStatusBadge.classList.remove('visible');
   }
 
   function _saveKey(slot, val) {
+    // Validate — Gemini keys start with "AIza" and are 39 chars
     if (!val) {
       DOM.kmStatus.innerHTML = '<span style="color:#c8102e;font-weight:700">⚠ Nothing to save — paste your AIza… key first.</span>';
       return;
@@ -855,25 +823,26 @@
       DOM.kmStatus.innerHTML = '<span style="color:#c8102e;font-weight:700">⚠ Key should start with "AIza…" — check and paste again.</span>';
       return;
     }
-    const lsKey = slot === 2 ? 'pulse_gemini_key2' : 'pulse_gemini_key1';
-    const idbKey = slot === 2 ? 'k2' : 'k1';
-    localStorage.setItem(lsKey, val);
-    _idbSet(idbKey, val);
+    const storageKey = slot === 2 ? 'pulse_gemini_key2' : 'pulse_gemini_key1';
+    localStorage.setItem(storageKey, val);
+    _idbSet(slot === 2 ? 'k2' : 'k1', val); // backup to IndexedDB permanently
 
+    // Confirm save immediately in UI
     const btn = slot === 1 ? DOM.kmK1Save : DOM.kmK2Save;
     const inp = slot === 1 ? DOM.kmK1Input : DOM.kmK2Input;
-    if (btn) { btn.textContent = `✅ K${slot} Active`; btn.classList.add('active'); }
+    if (btn) { btn.textContent = `✅ K${slot} Saved`; btn.classList.add('active'); }
     if (inp) inp.value = '';
 
     _updateKmStatus();
     _updateKeyStatusBadge();
 
-    DOM.kmStatus.innerHTML =
-      `<span style="color:#009e70;font-weight:700">✅ K${slot} saved permanently.</span>` +
-      `<br><span style="color:#404060;font-size:8px;">Stored in IndexedDB — survives browser restarts and cache clears.</span>` +
-      (slot === 1 && !_getRawKey(2) ? '<br><span style="color:#7090b0;">Optionally add K2 as a backup key.</span>' : '');
+    // Show success in status bar — do NOT auto-close so user can optionally add K2
+    DOM.kmStatus.innerHTML +=
+      `<br><span style="color:#009e70;font-weight:700">✅ K${slot} saved successfully.</span>` +
+      (slot === 1 && !_getRawKey(2) ? ' You can also add K2 as a backup.' : '');
   }
 
+  // Expose as globals (referenced by any future sub-scripts, pattern from reference)
   window.getGeminiKey      = getGeminiKey;
   window.getGeminiModel    = getGeminiModel;
   window.shiftToBackupKey  = shiftToBackupKey;
@@ -881,77 +850,64 @@
   window.openKeyManager    = openKeyManager;
 
   /* ═══════════════════════════════════════════════════════════════════
-     SECTION 5 — GEMINI API ENGINE
-     Full cascade on 429 quota:
-       Flash-Lite/K1 → Flash-Lite/K2 → Flash/K1 → Flash/K2 → Pro/K1 → Pro/K2
-     Starting model = user selection (default: Flash-Lite).
-     On each 429, tries the same model with the other key first,
-     then escalates to the next model tier.
+     SECTION 5 — GEMINI API ENGINE  (AI chat panel only — user triggered)
+     K1 → K2 on 429. No batch throttle — user-triggered only.
   ═══════════════════════════════════════════════════════════════════ */
 
   async function callGemini(promptText, statusEl) {
-    const k1 = _getRawKey(1);
-    const k2 = _getRawKey(2);
-    if (!k1 && !k2) throw new Error('No API key saved. Tap 🔑 to add one.');
-
+    const model   = getGeminiModel();
     const payload = {
       contents:         [{ role: 'user', parts: [{ text: promptText }] }],
       generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
     };
 
-    const selectedModel = getGeminiModel();
-    const allModels     = CONFIG.GEMINI_MODELS;
-    const startIdx      = allModels.indexOf(selectedModel);
-    const modelQueue    = allModels.slice(startIdx >= 0 ? startIdx : 0);
+    // ── Exact LD246PAI dualKeyFetch pattern ──────────────────────────
+    // Try K1 first. On 429, switch to K2. If both quota → throw clear error.
+    const slots = [1, 2];
+    for (const slot of slots) {
+      const k = _getRawKey(slot);
+      if (!k) continue; // skip missing slot silently
 
-    function _notify(msg) {
-      if (statusEl)      statusEl.textContent      = msg;
-      if (DOM.itemCount) DOM.itemCount.textContent = msg;
-    }
-
-    for (const model of modelQueue) {
-      for (const slot of [1, 2]) {
-        const k = slot === 1 ? k1 : k2;
-        if (!k) continue;
-
-        if (model !== selectedModel || slot === 2) {
-          const modelLabel = model === 'gemini-2.5-flash-lite' ? 'Flash-Lite'
-                           : model === 'gemini-2.5-flash'      ? 'Flash'
-                           : 'Pro';
-          _notify(`⚡ Quota hit — trying ${modelLabel} / K${slot}…`);
-        }
-
-        const ep = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${k}`;
-        let res;
-        try {
-          res = await fetch(ep, {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify(payload)
-          });
-        } catch (netErr) {
-          throw new Error(`Network error: ${netErr.message}`);
-        }
-
-        if (res.status === 429) continue;
-
-        _activeKeySlot = slot;
-        _activeCascadeModel = model;
-        return res;
+      if (slot === 2) {
+        const msg = '⚡ K1 quota hit — switching to K2…';
+        if (statusEl)      statusEl.textContent      = msg;
+        if (DOM.itemCount) DOM.itemCount.textContent = msg;
       }
+
+      const ep = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${k}`;
+      let res;
+      try {
+        res = await fetch(ep, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(payload)
+        });
+      } catch (netErr) {
+        throw new Error(`Network error: ${netErr.message}`);
+      }
+
+      if (res.status === 429 && slot === 1) continue; // try K2
+      _activeKeySlot = slot;                          // remember working slot
+      return res;                                     // success or error — caller handles
     }
 
-    throw new Error('All API keys and model tiers hit quota (429). Wait a minute and retry.');
+    // Both slots exhausted (no key saved, or both 429)
+    const k1 = _getRawKey(1), k2 = _getRawKey(2);
+    if (!k1 && !k2) throw new Error('No API key saved. Tap 🔑 to add one.');
+    throw new Error('Both API keys hit quota (429). Wait ~1 minute and retry.');
   }
 
+  // Parse and extract text from a Gemini response
   async function parseGeminiResponse(res) {
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
       const msg     = errData?.error?.message || `HTTP ${res.status}`;
       const code    = errData?.error?.code;
       if (code === 400 || code === 403) {
+        // Never auto-delete stored keys — just warn the user
         throw new Error(`API key error (${code}): ${msg} — Check your key in the 🔑 panel.`);
       }
+      // 503 / 529 = model overloaded — treat like 429, caller handles retry
       if (res.status === 503 || res.status === 529) {
         throw new Error(`OVERLOADED:${res.status}`);
       }
@@ -961,12 +917,14 @@
     const candidate    = data.candidates?.[0];
     const finishReason = candidate?.finishReason || '';
 
+    // Safety block / recitation block — return a placeholder, not an error
     if (finishReason === 'SAFETY' || finishReason === 'RECITATION' || finishReason === 'OTHER') {
       return `[Page skipped — Gemini content filter: ${finishReason}]`;
     }
 
     const text = candidate?.content?.parts?.[0]?.text;
     if (!text) {
+      // Empty response but no error — could be a blank page result
       return '[No summary generated for this page]';
     }
     return text;
@@ -978,6 +936,7 @@
 
   function escapeHtml(str) {
     if (str == null) return '';
+    // Build entity strings via concatenation — keeps & out of source
     return String(str)
       .replace(/&/g,  '&amp;')
       .replace(/</g,  '&lt;')
@@ -988,6 +947,7 @@
 
   function parseMarkdown(md) {
     if (!md) return '';
+    // Strip bold and italic markers — render plain text per spec
     let html = md.replace(/\*\*(.*?)\*\*/g, '$1');
     html = html.replace(/\*(.*?)\*/g, '$1');
     html = html.replace(/^[-•]\s+(.*)$/gm, '<ul><li>$1</li></ul>');
@@ -1012,31 +972,20 @@
   ═══════════════════════════════════════════════════════════════════ */
 
   function renderFeedItems(items, feedName) {
+    // Replace entire output (clears welcome message)
     DOM.output.innerHTML = items.map((item, idx) => {
-      const pNum = item.pageNum ?? (idx + 1);
-      let inner;
-      if (item.error) {
-        inner =
-          `<span class="headline">${escapeHtml(item.title || `Page ${pNum}`)}</span>` +
-          `<p class="error-msg">${escapeHtml(item.title || `Page ${pNum}`)} could not be converted due to a technical error. ` +
-          `If you want to view the original article, ` +
-          `<button class="view-original-btn" onclick="openPdfPageView(${pNum})">View original PDF page →</button></p>` +
-          `<div class="meta">Page ${pNum} · ${escapeHtml(feedName)}</div>`;
-      } else {
-        const desc    = item.description ? escapeHtml(item.description.substring(0, CONFIG.MAX_DESC_CHARS)) : '';
-        const engHtml = (item.summary_english && item.summary_english.trim().length > 0)
-          ? `<p class="description translation">English Summary:<br>${escapeHtml(item.summary_english.substring(0, CONFIG.MAX_DESC_CHARS))}</p>`
-          : '';
-        inner =
+      const desc    = item.description ? escapeHtml(item.description.substring(0, CONFIG.MAX_DESC_CHARS)) : '';
+      const engHtml = (item.summary_english && item.summary_english.trim().length > 0)
+        ? `<p class="description translation"><strong>English Summary:</strong><br>${escapeHtml(item.summary_english.substring(0, CONFIG.MAX_DESC_CHARS))}</p>`
+        : '';
+      return (
+        `<div class="feed-item" style="animation-delay:${idx*30}ms">` +
           `<span class="headline reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0">${escapeHtml(item.title || 'Untitled')}</span>` +
           (desc ? `<p class="description reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0" style="cursor:pointer;">${desc}</p>` : '') +
           engHtml +
-          `<div class="meta" style="display:flex;justify-content:space-between;align-items:center;">` +
-            `<span>Page ${pNum} · ${escapeHtml(feedName)}</span>` +
-            `<button class="view-original-btn" onclick="openPdfPageView(${pNum})">View original PDF page →</button>` +
-          `</div>`;
-      }
-      return `<div class="feed-item${item.error ? ' feed-item-error' : ''}" style="animation-delay:${idx*30}ms">${inner}</div>`;
+          `<div class="meta">Section ${idx+1} · ${escapeHtml(feedName)}</div>` +
+        `</div>`
+      );
     }).join('');
     DOM.itemCount.textContent = `${items.length} section${items.length !== 1 ? 's' : ''} extracted`;
   }
@@ -1051,22 +1000,23 @@
     const item  = feedCache['uploaded-pdf']?.items[index];
     if (!item) return;
 
+    // Build paragraph HTML from full_text
     const rawParas = (item.full_text || '')
       .split(/\n\n+/)
       .map(p => p.trim())
       .filter(Boolean)
       .map(p => {
         if (p.startsWith('## ')) {
-          return `<h3 style="font-family:'Georgia',serif;font-size:1.15em;font-weight:700;color:#000000;margin:1.4em 0 0.5em;line-height:1.25;">${escapeHtml(p.slice(3))}</h3>`;
+          return `<h3 style="font-family:'Georgia',serif;font-size:1.15em;font-weight:700;color:#000;margin:1.4em 0 0.5em;line-height:1.25;">${escapeHtml(p.slice(3))}</h3>`;
         }
-        return `<p style="margin-bottom:1em;line-height:1.75;text-align:justify;hyphens:auto;-webkit-hyphens:auto;font-size:17px;color:#000000;font-weight:400;">${escapeHtml(p.replace(/\n/g,' ').trim())}</p>`;
+        return `<p style="margin-bottom:1em;line-height:1.75;text-align:justify;font-size:17px;color:#111;font-weight:400;">${escapeHtml(p.replace(/\n/g,' ').trim())}</p>`;
       })
       .join('');
 
     const translationHtml = (item.full_text_english && item.full_text_english.trim().length > 0)
       ? `<hr style="border:none;border-top:2px dashed #c8c0b0;margin:32px 0;">
          <h2 style="font-family:'Georgia',serif;font-size:1.3em;margin-bottom:18px;">English Translation</h2>
-         <div style="font-size:17px;line-height:1.75;color:#000000;">${parseMarkdown(item.full_text_english)}</div>`
+         <div style="font-size:17px;line-height:1.75;color:#111;">${parseMarkdown(item.full_text_english)}</div>`
       : '';
 
     const html = `<!DOCTYPE html>
@@ -1084,20 +1034,16 @@
     .close-btn:hover{background:#d0d7e0;}
     .source-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#404060;letter-spacing:0.05em;text-transform:uppercase;}
     .article{max-width:720px;margin:0 auto;padding:32px 24px 0;}
-    h1{font-family:'Playfair Display',serif;font-size:clamp(22px,4vw,32px);font-weight:700;line-height:1.2;margin-bottom:12px;color:#000000;text-align:center;}
+    h1{font-family:'Playfair Display',serif;font-size:clamp(22px,4vw,32px);font-weight:700;line-height:1.2;margin-bottom:12px;color:#000;}
     .meta{font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#404060;margin-bottom:24px;padding-bottom:14px;border-bottom:1px solid #c8c0b0;}
-    strong,b{font-weight:400;color:#000000;}em,i{font-style:normal;color:#000000;}
+    strong,b{font-weight:400;}em,i{font-style:normal;}
     ul{padding-left:1.4em;margin-bottom:1em;}li{margin-bottom:0.4em;line-height:1.7;font-size:17px;}
-    p{hyphens:auto;-webkit-hyphens:auto;}
-    h3{text-align:center;font-weight:700;}
-    .article{max-width:65ch;}
   </style>
 </head>
 <body>
   <div class="topbar">
     <button class="close-btn" onclick="window.close()">✕ Close</button>
     <span class="source-label">PDF Extraction · Page ${index + 1}</span>
-    <button class="close-btn" style="margin-left:auto;" onclick="window.opener && window.opener.openPdfPageView(${index + 1})">📄 View Original Page</button>
   </div>
   <div class="article">
     <h1>${escapeHtml(item.title)}</h1>
@@ -1116,102 +1062,13 @@
     }
   }
 
-
   /* ═══════════════════════════════════════════════════════════════════
-     SECTION 8B — ORIGINAL PDF PAGE VIEWER
-     Renders the raw PDF page as a high-res canvas in a popup window.
-     Uses the in-memory pdfDoc kept from the last upload.
-  ═══════════════════════════════════════════════════════════════════ */
-
-  window.openPdfPageView = async function(pageNum) {
-    if (!currentPdfDoc) {
-      alert('Original PDF is no longer in memory. Please re-upload the file to view the original page.');
-      return;
-    }
-
-    const win = window.open('', '_blank', 'width=900,height=900,resizable=yes,scrollbars=yes');
-    if (!win) return;
-
-    const fileName = currentPdfFile ? currentPdfFile.name : 'PDF';
-
-    win.document.open();
-    win.document.write(`<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width">
-  <title>Page ${pageNum} — ${escapeHtml(fileName)}</title>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0;}
-    body{background:#333;display:flex;flex-direction:column;min-height:100vh;font-family:'IBM Plex Mono',monospace;}
-    .topbar{background:#1a2636;color:#b0c8d8;padding:10px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10;font-size:11px;}
-    .close-btn{background:transparent;border:1px solid #b0c8d8;color:#b0c8d8;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:10px;font-family:inherit;text-transform:uppercase;}
-    .close-btn:hover{background:#b0c8d8;color:#1a2636;}
-    .nav-btn{background:transparent;border:1px solid #b0c8d8;color:#b0c8d8;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:10px;font-family:inherit;}
-    .nav-btn:hover{background:#b0c8d8;color:#1a2636;}
-    .page-label{flex:1;text-align:center;}
-    .canvas-wrap{display:flex;justify-content:center;align-items:flex-start;padding:20px;flex:1;}
-    canvas{background:#fff;box-shadow:0 4px 24px rgba(0,0,0,0.5);max-width:100%;}
-    .loading{color:#b0c8d8;text-align:center;padding:60px 20px;font-size:13px;}
-  </style>
-</head>
-<body>
-  <div class="topbar">
-    <button class="close-btn" onclick="window.close()">✕ Close</button>
-    <button class="nav-btn" id="prev-btn">← Prev</button>
-    <span class="page-label" id="page-label">Page ${pageNum}</span>
-    <button class="nav-btn" id="next-btn">Next →</button>
-  </div>
-  <div class="canvas-wrap" id="canvas-wrap">
-    <div class="loading" id="loading-msg">Rendering page ${pageNum}…</div>
-  </div>
-</body>
-</html>`);
-    win.document.close();
-
-    const pdfDoc = currentPdfDoc;
-    const total  = pdfDoc.numPages;
-    let   cur    = Math.max(1, Math.min(pageNum, total));
-
-    async function renderPage(n) {
-      const wrap  = win.document.getElementById('canvas-wrap');
-      const label = win.document.getElementById('page-label');
-      if (!wrap || !label) return;
-      wrap.innerHTML = '<div class="loading">Rendering…</div>';
-      label.textContent = `Page ${n} of ${total}`;
-
-      try {
-        const page     = await pdfDoc.getPage(n);
-        const scale    = Math.min(2.0, (win.innerWidth - 40) / page.getViewport({ scale: 1 }).width);
-        const vp       = page.getViewport({ scale });
-        const canvas   = win.document.createElement('canvas');
-        canvas.width   = vp.width;
-        canvas.height  = vp.height;
-        const ctx      = canvas.getContext('2d');
-        await page.render({ canvasContext: ctx, viewport: vp }).promise;
-        wrap.innerHTML = '';
-        wrap.appendChild(canvas);
-      } catch (e) {
-        wrap.innerHTML = `<div class="loading">Could not render page ${n}: ${e.message}</div>`;
-      }
-    }
-
-    await renderPage(cur);
-
-    win.document.getElementById('prev-btn').addEventListener('click', async () => {
-      if (cur > 1) { cur--; await renderPage(cur); }
-    });
-    win.document.getElementById('next-btn').addEventListener('click', async () => {
-      if (cur < total) { cur++; await renderPage(cur); }
-    });
-  };
-
-  /* ═══════════════════════════════════════════════════════════════════
-     SECTION 8 — READER PANEL (full-page overlay; Escape/back to close)
+     SECTION 8 — READER PANEL (kept for potential future use)
   ═══════════════════════════════════════════════════════════════════ */
 
   function openReader(url) {
     DOM.readerPanel.classList.add('open');
+    DOM.readerBackdrop.classList.add('open');
     document.body.style.overflow = 'hidden';
     DOM.aiToggle.style.display   = 'none';
     closeAiPanel();
@@ -1228,6 +1085,7 @@
       if (item) {
         currentArticleText = item.full_text || '';
 
+        // Render extracted text: ## lines → headings, rest → paragraphs with wrap
         const rawParas = (item.full_text || '')
           .split(/\n\n+/)
           .map(p => p.trim())
@@ -1236,6 +1094,7 @@
             if (p.startsWith('## ')) {
               return `<h3 class="reader-extract-heading">${escapeHtml(p.slice(3))}</h3>`;
             }
+            // Join soft-wrapped lines and render as paragraph
             const text = p.replace(/\n/g, ' ').trim();
             return `<p class="reader-text-para">${escapeHtml(text)}</p>`;
           })
@@ -1260,6 +1119,7 @@
 
   function closeReader() {
     DOM.readerPanel.classList.remove('open');
+    DOM.readerBackdrop.classList.remove('open');
     document.body.style.overflow = '';
     closeAiPanel();
     DOM.aiToggle.style.display = 'none';
@@ -1292,6 +1152,7 @@
     DOM.aiSubmit.disabled    = true;
     DOM.aiSubmit.textContent = '…';
 
+    // Status message that we update live during cascade
     const statusDiv = addChatMessage('status', 'Thinking…');
     DOM.aiQuotaStatus.textContent = '';
 
@@ -1312,10 +1173,7 @@
 
       DOM.aiChatArea.removeChild(statusDiv);
       addChatMessage('assistant', cleanAiResponse(rawText));
-      const _qModel = _activeCascadeModel && _activeCascadeModel !== getGeminiModel()
-        ? ` · ${_activeCascadeModel.replace('gemini-2.5-flash-lite','Lite').replace('gemini-2.5-flash','Flash').replace('gemini-2.5-pro','Pro')}`
-        : '';
-      DOM.aiQuotaStatus.textContent = _activeKeySlot === 2 ? `⚡ K2${_qModel}` : (_qModel ? `⚡${_qModel}` : '');
+      DOM.aiQuotaStatus.textContent = _activeKeySlot === 2 ? '⚡ K2' : '';
 
     } catch (err) {
       statusDiv.textContent  = `⚠ ${err.message}`;
@@ -1347,16 +1205,11 @@
   }
 
   async function routeDocumentProcessing(file, confirmedType) {
-    try {
-      await processPdf(file, confirmedType);
-    } catch (fatalErr) {
-      hideOverlay();
-      _resetUploadBtn();
-      DOM.output.innerHTML =
-        `<div class="system-msg">❌ Upload failed: ${escapeHtml(fatalErr.message || String(fatalErr))}</div>`;
-    }
+    // Do NOT clear storage here — old data stays visible until new page 1 succeeds
+    return processPdf(file, confirmedType);
   }
 
+  // Open the PDF and return a pdfjsLib document object (keeps file open for page-by-page access)
   async function openPdfDocument(file) {
     if (!window.pdfjsLib) throw new Error('PDF engine failed to load. Check internet connection and refresh.');
     if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
@@ -1367,6 +1220,7 @@
     return pdfjsLib.getDocument({ data: arrayBuffer }).promise;
   }
 
+  // Extract text from a single page — preserves paragraph breaks via y-position grouping
   async function extractPageText(pdfDoc, pageNum) {
     const page    = await pdfDoc.getPage(pageNum);
     const content = await page.getTextContent({ includeMarkedContent: false });
@@ -1411,11 +1265,14 @@
       }
     }
 
+    // Sort lines top-to-bottom
     lines.sort((a, b) => a.y - b.y);
 
+    // Within each line, sort items left-to-right and merge text
     for (const ln of lines) {
       ln.items.sort((a, b) => a.x - b.x);
 
+      // Smart space insertion: add space between items if gap > half a char width
       let text = '';
       for (let i = 0; i < ln.items.length; i++) {
         const it   = ln.items[i];
@@ -1448,6 +1305,7 @@
         block = { lines: [ln.text], isHeading, fontH: ln.fontH };
         blocks.push(block);
       } else {
+        // Check if previous line looks like it ends mid-sentence (soft wrap)
         const prev      = block.lines[block.lines.length - 1];
         const softWrap  = prev && !/[-–—.!?:;,]$/.test(prev.trim()) && /^[a-z]/.test(ln.text);
         block.lines.push(softWrap ? '\u00ad' + ln.text : ln.text); // soft-hyphen marker for wrap join
@@ -1457,6 +1315,7 @@
 
     // ── Step 5: Render blocks as clean paragraphs ────────────────────
     const paragraphs = blocks.map(blk => {
+      // Join lines: soft-wrapped lines join with space, hard-wrapped with newline
       const text = blk.lines.reduce((acc, ln) => {
         if (ln.startsWith('\u00ad')) return acc + ' ' + ln.slice(1); // continuation
         if (acc)                     return acc + '\n' + ln;
@@ -1472,11 +1331,14 @@
     }).join('\n\n');
   }
 
+  // Summarise a single page's text via Gemini — small prompt, never hits token limit
   /* ═══════════════════════════════════════════════════════════════════
-     SECTION 10B — LOCAL EXTRACTIVE SUMMARISER
-     No AI, no network. TF-IDF sentence scoring:
-     Title from first heading-like line; top 4 sentences → bullets;
-     highest-scoring sentence → Key Insight.
+     SECTION 5B — LOCAL EXTRACTIVE SUMMARISER (no AI, no network)
+     Algorithm:
+       1. Title  — first short heading-like line on the page
+       2. Sentences scored by TF-IDF-lite word frequency + position bonus
+       3. Top 4 sentences → bullet points
+       4. Highest-scoring sentence → Insight line
   ═══════════════════════════════════════════════════════════════════ */
 
   const STOP_WORDS = new Set([
@@ -1499,6 +1361,7 @@
     for (const para of paragraphs) {
       const line = para.split('\n')[0].trim();
       if (!line || line.length < 3) continue;
+      // Heading signals: short, no trailing period, Title Case or ALL CAPS
       const words      = line.split(/\s+/);
       const isShort    = words.length <= 12;
       const noEndPunct = !/[.!?]$/.test(line);
@@ -1507,6 +1370,7 @@
       const titleCase  = words.filter(w => /^[A-Z]/.test(w)).length >= Math.ceil(words.length * 0.5);
       if (isShort && noEndPunct && isTitle && (allCaps || titleCase)) return line;
     }
+    // Fallback: first non-empty short line
     for (const para of paragraphs) {
       const line = para.split('\n')[0].trim();
       if (line && line.split(/\s+/).length <= 10 && line.length > 4) return line;
@@ -1515,20 +1379,12 @@
   }
 
   function _splitSentences(text) {
-    const flat = text.replace(/\n+/g, ' ');
-    const parts = [];
-    let start = 0;
-    for (let i = 1; i < flat.length; i++) {
-      if (/[.!?]/.test(flat[i - 1]) && /\s/.test(flat[i])) {
-        const ahead = flat.slice(i).trimStart();
-        if (/^[A-Z]/.test(ahead)) {
-          parts.push(flat.slice(start, i).trim());
-          start = i;
-        }
-      }
-    }
-    parts.push(flat.slice(start).trim());
-    return parts.filter(s => s.length > 20 && s.split(/\s+/).length >= 4);
+    // Split on . ! ? followed by space+capital, or newline
+    return text
+      .replace(/\n+/g, ' ')
+      .split(/(?<=[.!?])\s+(?=[A-Z])|(?<=\n)/)
+      .map(s => s.trim())
+      .filter(s => s.length > 20 && s.split(/\s+/).length >= 4);
   }
 
   function summarisePageLocal(pageText, pageNum, docType) {
@@ -1541,6 +1397,7 @@
       ? detectedTitle.substring(0, 90)
       : `Page ${pageNum}`;
 
+    // Remove title line from body for scoring
     const bodyText = detectedTitle
       ? fullText.replace(detectedTitle, '').trim()
       : fullText;
@@ -1550,6 +1407,7 @@
     const freq      = {};
     for (const w of allWords) freq[w] = (freq[w] || 0) + 1;
     const maxFreq   = Math.max(...Object.values(freq), 1);
+    // Normalise
     for (const w in freq) freq[w] /= maxFreq;
 
     // ── Score sentences ───────────────────────────────────────────
@@ -1559,6 +1417,7 @@
       if (!words.length) return { s, score: 0 };
       const tfScore = words.reduce((sum, w) => sum + (freq[w] || 0), 0) / words.length;
 
+      // Bonuses
       const posBonus    = idx === 0 ? 0.25 : idx <= 2 ? 0.1 : 0;   // early sentences
       const numBonus    = /\d/.test(s) ? 0.12 : 0;                   // contains numbers/stats
       const lenPenalty  = words.length < 6 || words.length > 45 ? -0.15 : 0;
@@ -1567,8 +1426,10 @@
       return { s, score: tfScore + posBonus + numBonus + lenPenalty + keyBonus, idx };
     });
 
+    // Sort by score desc, pick top 4 for bullets + 1 for insight
     const ranked  = [...scored].sort((a, b) => b.score - a.score);
     const topFour = ranked.slice(0, 4);
+    // Re-sort top 4 back into original order for readability
     topFour.sort((a, b) => (a.idx || 0) - (b.idx || 0));
 
     const bullets  = topFour.map(r => `• ${r.s}`).join('\n');
@@ -1576,6 +1437,7 @@
       ? `\n\n💡 Key Insight: ${ranked[0].s}`
       : '';
 
+    // If not enough sentences, fall back to first 3 paragraphs truncated
     const body = bullets.length > 20
       ? bullets + insight
       : paragraphs.slice(0, 3).map(p => `• ${p.substring(0, 200)}`).join('\n');
@@ -1583,49 +1445,32 @@
     return { title, body };
   }
 
-  function _makeViewOriginalBtn(pageNum) {
-    return `<button class="view-original-btn" onclick="openPdfPageView(${pageNum})">View original PDF page →</button>`;
-  }
-
+  // Add or update a single feed item card in the DOM
   function renderOneFeedItem(item, idx, fileName, isNew) {
-    const id       = `feed-item-${idx}`;
+    const id      = `feed-item-${idx}`;
     const existing = document.getElementById(id);
-    const pNum     = item.pageNum ?? (idx + 1);
-
-    let html;
-    if (item.error) {
-      html =
-        `<span class="headline">${escapeHtml(item.title)}</span>` +
-        `<p class="error-msg">${escapeHtml(item.title)} could not be converted due to a technical error. ` +
-        `If you want to view the original article, ` +
-        _makeViewOriginalBtn(pNum) + `</p>` +
-        `<div class="meta">Page ${pNum} · ${escapeHtml(fileName)}</div>`;
-    } else {
-      const engHtml = (item.summary_english && item.summary_english.trim().length > 0)
-        ? `<p class="description translation">English:<br>${escapeHtml(item.summary_english.substring(0, CONFIG.MAX_DESC_CHARS))}</p>`
-        : '';
-      const desc = item.description ? escapeHtml(item.description.substring(0, CONFIG.MAX_DESC_CHARS)) : '';
-      html =
-        `<span class="headline reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0">${escapeHtml(item.title)}</span>` +
-        (desc ? `<p class="description reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0" style="cursor:pointer;">${desc}</p>` : '') +
-        engHtml +
-        `<div class="meta" style="display:flex;justify-content:space-between;align-items:center;">` +
-          `<span>Page ${pNum} · ${escapeHtml(fileName)}</span>` +
-          _makeViewOriginalBtn(pNum) +
-        `</div>`;
-    }
+    const engHtml  = (item.summary_english && item.summary_english.trim().length > 0)
+      ? `<p class="description translation"><strong>English:</strong><br>${escapeHtml(item.summary_english.substring(0, CONFIG.MAX_DESC_CHARS))}</p>`
+      : '';
+    const desc     = item.description ? escapeHtml(item.description.substring(0, CONFIG.MAX_DESC_CHARS)) : '';
+    const html     =
+      `<span class="headline reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0">${escapeHtml(item.title)}</span>` +
+      (desc ? `<p class="description reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0" style="cursor:pointer;">${desc}</p>` : '') +
+      engHtml +
+      `<div class="meta">Page ${idx + 1} · ${escapeHtml(fileName)}</div>`;
 
     if (existing) {
       existing.innerHTML = html;
       existing.style.opacity = '1';
     } else {
       const div        = document.createElement('div');
-      div.className    = 'feed-item' + (item.error ? ' feed-item-error' : '');
+      div.className    = 'feed-item';
       div.id           = id;
       div.style.animationDelay = `${Math.min(idx * 30, 300)}ms`;
       if (isNew) div.style.opacity = '0';
       div.innerHTML    = html;
       DOM.output.appendChild(div);
+      // Fade in
       if (isNew) requestAnimationFrame(() => { div.style.transition = 'opacity 0.4s'; div.style.opacity = '1'; });
     }
   }
@@ -1639,6 +1484,7 @@
   async function processPdf(file, confirmedType) {
     const docType = confirmedType || detectDocumentType(file);
 
+    // Show spinner on button
     DOM.uploadPdfBtn.innerHTML = '<span class="upload-ring"></span>Reading…';
     DOM.uploadPdfBtn.classList.add('uploading');
     DOM.uploadPdfBtn.disabled  = true;
@@ -1656,9 +1502,6 @@
       return;
     }
 
-    currentPdfDoc       = pdfDoc;
-    currentPdfFile      = file;
-    _activeCascadeModel = null;
     updateOverlay(`📄 ${totalPages} pages found — processing page 1 first…`, 10, '');
     DOM.uploadPdfBtn.innerHTML = '<span class="upload-ring"></span>Processing…';
 
@@ -1685,9 +1528,6 @@
         if (!pageText || pageText.length < 30) {
           if (pageNum === 1) {
             hideOverlay();
-            DOM.output.innerHTML =
-              '<div class="system-msg">⚠️ Page 1 appears to be blank or image-only (no extractable text). ' +
-              'Try a text-based PDF or a different file.</div>';
             _resetUploadBtn();
           }
           continue;
@@ -1708,24 +1548,17 @@
         titles.push(title);
         feedCache['uploaded-pdf'] = { items: feedItems };
 
+        // Page 1: clear old session, show new content, unlock UI
         if (pageNum === 1) {
           localStorage.removeItem(STORAGE_KEY);
-          _idbOpen().then(db => {
-            const tx = db.transaction(STORE_SESSIONS, 'readwrite');
-            tx.objectStore(STORE_SESSIONS).delete(STORAGE_KEY);
-            tx.oncomplete = () => db.close();
-          }).catch(() => {});
           DOM.output.innerHTML = '';
           renderOneFeedItem(item, idx, file.name, true);
           updateOverlay('✅ Page 1 ready — processing rest in background…', 20, '');
           await new Promise(r => setTimeout(r, 280));
           hideOverlay();
           DOM.overallSummaryBtn.style.display = 'inline-flex';
-          if (totalPages === 1) {
-            _resetUploadBtn(); // single-page PDF — done immediately
-          } else {
-            DOM.uploadPdfBtn.innerHTML = '<span class="upload-ring"></span>Processing…';
-          }
+          // Keep spinner but show page count — button stays disabled while processing
+          DOM.uploadPdfBtn.innerHTML = '<span class="upload-ring"></span>Processing…';
         } else {
           renderOneFeedItem(item, idx, file.name, true);
         }
@@ -1733,9 +1566,10 @@
         DOM.itemCount.textContent = `${feedItems.length} of ${totalPages} pages processed`;
 
         // ── Incremental save after every page ──────────────────────
-        void _saveSessionToStorage(file.name, feedItems, summaries, titles);
+        _saveSessionToStorage(file.name, feedItems, summaries, titles);
 
       } catch (err) {
+        console.warn(`Page ${pageNum} failed (will retry):`, err.message);
         let retryResult = null;
         try {
           const retryPageText = await extractPageText(pdfDoc, pageNum);
@@ -1743,6 +1577,7 @@
             retryResult = summarisePageLocal(retryPageText, pageNum, docType);
           }
         } catch (retryErr) {
+          console.warn(`Page ${pageNum} retry also failed:`, retryErr.message);
         }
 
         const idx = feedItems.length;
@@ -1759,13 +1594,11 @@
           summaries.push(retryResult.body);
         } else {
           item = {
-            title:             `Page ${pageNum}`,
-            description:       '',
+            title:             `Page ${pageNum} — skipped`,
+            description:       `Could not process: ${err.message.substring(0, 120)}`,
             full_text:         '',
             full_text_english: '',
-            summary_english:   '',
-            error:             true,
-            pageNum
+            summary_english:   ''
           };
           titles.push(`Page ${pageNum}`);
           summaries.push('');
@@ -1773,7 +1606,7 @@
         feedItems.push(item);
         feedCache['uploaded-pdf'] = { items: feedItems };
         renderOneFeedItem(item, idx, file.name, true);
-        void _saveSessionToStorage(file.name, feedItems, summaries, titles);
+        _saveSessionToStorage(file.name, feedItems, summaries, titles);
 
         if (pageNum === 1) {
           hideOverlay();
@@ -1791,7 +1624,8 @@
       .map((s, i) => `${titles[i]}:\n${s.split('\n').slice(0,4).join('\n')}`)
       .join('\n\n');
 
-    void _saveSessionToStorage(file.name, feedItems, summaries, titles);
+    // Final save and reset button
+    _saveSessionToStorage(file.name, feedItems, summaries, titles);
     _updateKeyStatusBadge();
     _resetUploadBtn();
   }
@@ -1801,9 +1635,9 @@
   ═══════════════════════════════════════════════════════════════════ */
 
   window.addEventListener('load', async () => {
-  try {
 
-    try { await _restoreKeysFromIDB(); } catch (_) {}
+    // ── Restore keys from IndexedDB if localStorage was cleared ──
+    await _restoreKeysFromIDB();
 
     // ── Key Manager wiring ────────────────────────────────────────
     DOM.keyMgrBtn.addEventListener('click', (e) => {
@@ -1822,6 +1656,7 @@
       });
     });
 
+    // Close key manager if clicking outside
     document.addEventListener('click', (e) => {
       if (!DOM.keyManagerBox.contains(e.target) && e.target !== DOM.keyMgrBtn) {
         closeKeyManager();
@@ -1829,7 +1664,7 @@
     });
 
     // ── Model selector ────────────────────────────────────────────
-    const VALID_MODELS  = CONFIG.GEMINI_MODELS;
+    const VALID_MODELS  = CONFIG.GEMINI_CASCADE;
     const savedModel    = localStorage.getItem('pulse_gemini_model');
     const activeModel   = VALID_MODELS.includes(savedModel) ? savedModel : VALID_MODELS[0];
     if (!VALID_MODELS.includes(savedModel)) localStorage.setItem('pulse_gemini_model', VALID_MODELS[0]);
@@ -1850,6 +1685,7 @@
       { val: 'book',         label: 'Book / Long PDF' },
       { val: 'generic',      label: 'Generic Report' }
     ];
+    // Populate confirm select
     DOC_TYPES.filter(d => d.val !== 'auto').forEach(d => {
       const opt = document.createElement('option');
       opt.value = d.val; opt.textContent = d.label;
@@ -1879,6 +1715,7 @@
       const file = e.target.files[0];
       if (!file) return;
       setTimeout(() => { e.target.value = ''; }, 100);
+      // Detect type and ask user to confirm before processing
       const detected = detectDocumentType(file);
       showDoctypeConfirm(file, detected);
     });
@@ -1945,13 +1782,10 @@
     _updateKeyStatusBadge();
 
     // ── Restore last session if available ─────────────────────────
-    const saved = await _loadSessionFromStorage();
+    const saved = _loadSessionFromStorage();
     if (saved) {
       _restoreSession(saved);
     }
-  } catch (fatalErr) {
-    document.body.innerHTML += `<div style="position:fixed;top:0;left:0;right:0;padding:10px;background:#c8102e;color:#fff;font-family:monospace;font-size:12px;z-index:9999;">Startup error: ${fatalErr.message}</div>`;
-  }
   });
 
   </script>
