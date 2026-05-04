@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width">
-  <title>Pulse v6E — PDF Intelligence</title>
+  <title>Pulse v6F — PDF Intelligence</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&family=Noto+Sans:wght@400;500&family=Noto+Sans+Devanagari:wght@400;500&display=swap" rel="stylesheet">
   <style>
     /* ═══ BASE ═══ */
@@ -398,7 +398,7 @@
   </div>
 
   <div class="masthead">
-    <div class="masthead-title">Pulse<span style="font-size:10px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.6;">v6E</span></div>
+    <div class="masthead-title">Pulse<span style="font-size:10px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.6;">v6F</span></div>
     <div class="tagline">PDF Intelligence Terminal</div>
   </div>
   <div class="feed-status-bar"><span id="item-count"></span></div>
@@ -1298,7 +1298,7 @@
   }
 
   /* ═══════════════════════════════════════════════════════════════════
-     SECTION 10 — NATIVE STREAM PDF EXTRACTOR (NEWSPAPER SAFE)
+     SECTION 10 — FRAGMENT & GUTTER-DETECTION PDF EXTRACTOR
   ═══════════════════════════════════════════════════════════════════ */
 
   function detectDocumentType(file) {
@@ -1332,49 +1332,151 @@
 
   async function extractPageText(pdfDoc, pageNum) {
     const page    = await pdfDoc.getPage(pageNum);
-    const content = await page.getTextContent();
+    const content = await page.getTextContent({ includeMarkedContent: false });
+    const vp      = page.getViewport({ scale: 1 });
+    const pgH     = vp.height;
+
+    if (!content.items.length) return '';
+
+    // ── Step 1: Create Atomic Geometric Items ────────────────────────
+    const items = content.items
+      .filter(it => it.str && it.str.trim())
+      .map(it => ({
+        str:    it.str,
+        x:      it.transform[4],
+        y:      pgH - it.transform[5], // standard top-down Y
+        w:      it.width,
+        h:      Math.abs(it.transform[3]) || Math.abs(it.transform[0]) || 10,
+        fontH:  Math.round(Math.abs(it.transform[3]) || Math.abs(it.transform[0]) || 10),
+        bold:   it.fontName ? /bold|black|heavy/i.test(it.fontName) : false
+      }));
+
+    if (!items.length) return '';
+
+    const fontHeights = items.map(i => i.fontH).sort((a, b) => a - b);
+    const medFontH    = fontHeights[Math.floor(fontHeights.length / 2)] || 10;
     
-    let textContent = '';
-    let lastY = -1;
-    let lastX = -1;
-    let lastFontH = 10;
-    
-    // Digital PDFs write streams column-by-column natively. 
-    // We trust the loop order instead of coordinate-sorting to preserve columns.
-    for (let item of content.items) {
-      if (!item.str || (!item.str.trim() && item.str !== ' ')) continue;
-      
-      let currentY = item.transform[5];
-      let currentX = item.transform[4];
-      let fontH    = Math.abs(item.transform[3]) || Math.abs(item.transform[0]) || 10;
-      
-      if (lastY !== -1 && Math.abs(currentY - lastY) > fontH * 0.4) {
-        // Changed Y axis - it's a new line in the stream.
-        // Look for broken newspaper hyphens at the end of the previous line
-        let trimmed = textContent.trimEnd();
-        if (trimmed.endsWith('-')) {
-           textContent = trimmed.slice(0, -1); // remove hyphen, stitch together
+    // ── Step 2: Sort purely Top-to-Bottom, then Left-to-Right ────────
+    items.sort((a, b) => {
+        if (Math.abs(a.y - b.y) > medFontH * 0.4) return a.y - b.y;
+        return a.x - b.x;
+    });
+
+    // ── Step 3: Group into distinct Visual Lines (Detecting Gutters) ──
+    const visualLines = [];
+    let currentLine = null;
+
+    for (const it of items) {
+        if (!currentLine) {
+            currentLine = [it];
+            visualLines.push(currentLine);
         } else {
-           // Is it a new paragraph (large Y gap) or a new column (large X gap)?
-           if (Math.abs(currentY - lastY) > fontH * 1.5 || Math.abs(currentX - lastX) > fontH * 8) {
-              textContent += '\n\n';
-           } else {
-              textContent += ' ';
-           }
+            const lastIt = currentLine[currentLine.length - 1];
+            // Same line if Y is very close
+            if (Math.abs(it.y - lastIt.y) < medFontH * 0.5) {
+                // If the X gap is larger than 2.5em, it's a newspaper gutter. Break the line.
+                if ((it.x - (lastIt.x + lastIt.w)) < medFontH * 2.5) {
+                    currentLine.push(it);
+                } else {
+                    currentLine = [it];
+                    visualLines.push(currentLine);
+                }
+            } else {
+                currentLine = [it];
+                visualLines.push(currentLine);
+            }
         }
-      } else if (lastX !== -1 && (currentX - lastX) > fontH * 0.3) {
-         // Gap on the same horizontal line
-         if (!textContent.endsWith(' ')) textContent += ' ';
-      }
-      
-      textContent += item.str;
-      lastY = currentY;
-      lastX = currentX + (item.width || 0);
-      lastFontH = fontH;
+    }
+
+    // ── Step 4: Convert lines into Bounding Box Fragments ────────────
+    const fragments = visualLines.map(line => {
+        const minX = Math.min(...line.map(i => i.x));
+        const maxX = Math.max(...line.map(i => i.x + i.w));
+        const minY = Math.min(...line.map(i => i.y));
+        const maxY = Math.max(...line.map(i => i.y));
+        const fontH = Math.max(...line.map(i => i.fontH));
+        // Put a space between words if there's a gap
+        let text = '';
+        for (let i=0; i<line.length; i++) {
+           if (i>0 && (line[i].x - (line[i-1].x + line[i-1].w) > fontH * 0.2)) text += ' ';
+           text += line[i].str;
+        }
+        text = text.replace(/\s+/g, ' ').trim();
+        const isBold = line.some(i => i.bold);
+        return { minX, maxX, minY, maxY, fontH, text, isBold };
+    });
+
+    // ── Step 5: Cluster Fragments into Vertical Column Blocks ────────
+    const blocks = [];
+    for (const frag of fragments) {
+        let placed = false;
+        for (const b of blocks) {
+            // Frag belongs to block if it sits vertically below it
+            const vGap = frag.minY - b.maxY;
+            if (vGap > -medFontH && vGap < medFontH * 3) {
+                // Check if centers are aligned, or heavily overlap (column check)
+                const fragCenter = (frag.minX + frag.maxX) / 2;
+                const bCenter = (b.minX + b.maxX) / 2;
+                
+                // If it aligns within 4ems, it's the same column
+                if (Math.abs(fragCenter - bCenter) < medFontH * 4 || 
+                    (frag.minX >= b.minX - medFontH * 2 && frag.maxX <= b.maxX + medFontH * 2)) {
+                    b.fragments.push(frag);
+                    b.minX = Math.min(b.minX, frag.minX);
+                    b.maxX = Math.max(b.maxX, frag.maxX);
+                    b.maxY = Math.max(b.maxY, frag.maxY);
+                    b.fontH = Math.max(b.fontH, frag.fontH);
+                    placed = true;
+                    break;
+                }
+            }
+        }
+        if (!placed) {
+            blocks.push({
+                fragments: [frag],
+                minX: frag.minX, maxX: frag.maxX,
+                minY: frag.minY, maxY: frag.maxY,
+                fontH: frag.fontH
+            });
+        }
+    }
+
+    // ── Step 6: Sort Columns (Left-to-Right, then Top-to-Bottom) ─────
+    blocks.sort((a, b) => {
+        const aCenter = (a.minX + a.maxX) / 2;
+        const bCenter = (b.minX + b.maxX) / 2;
+        // If distinctly in different columns
+        if (Math.abs(aCenter - bCenter) > medFontH * 5) return aCenter - bCenter;
+        return a.minY - b.minY;
+    });
+
+    // ── Step 7: Clean Text Assembly & Hyphen Stitching ───────────────
+    const finalParagraphs = [];
+    for (const b of blocks) {
+        b.fragments.sort((a, b) => a.minY - b.minY);
+        let paraText = '';
+        
+        for (let i = 0; i < b.fragments.length; i++) {
+            const f = b.fragments[i];
+            if (i > 0) {
+                // Broken newspaper hyphen detection
+                const hyphenMatch = paraText.match(/([a-zA-Z])[-\u2010-\u2015\u00AD]\s*$/);
+                if (hyphenMatch) {
+                    paraText = paraText.replace(/[-\u2010-\u2015\u00AD]\s*$/, '');
+                } else {
+                    paraText += ' ';
+                }
+            }
+            paraText += f.text;
+        }
+        
+        if (paraText.length > 2) {
+            const isHeading = b.fontH > medFontH * 1.3 || (paraText.split(' ').length <= 12 && b.fragments.some(f => f.isBold) && !/[.!?]$/.test(paraText));
+            finalParagraphs.push(isHeading ? '## ' + paraText : paraText);
+        }
     }
     
-    // Final cleanup
-    return textContent.replace(/ \n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+    return finalParagraphs.join('\n\n');
   }
 
   /* ═══════════════════════════════════════════════════════════════════
