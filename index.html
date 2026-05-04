@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width">
-  <title>Pulse v8A — Lightning Vision OCR</title>
+  <title>Pulse v8B — Hybrid AI Intelligence</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&family=Noto+Sans:wght@400;500&family=Noto+Sans+Devanagari:wght@400;500&display=swap" rel="stylesheet">
   <style>
     /* ═══ BASE ═══ */
@@ -398,8 +398,8 @@
   </div>
 
   <div class="masthead">
-    <div class="masthead-title">Pulse<span style="font-size:10px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.6;">v8A</span></div>
-    <div class="tagline">PDF Intelligence Terminal</div>
+    <div class="masthead-title">Pulse<span style="font-size:10px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.6;">v8B</span></div>
+    <div class="tagline">Hybrid AI Intelligence</div>
   </div>
   <div class="feed-status-bar"><span id="item-count"></span></div>
 
@@ -859,7 +859,7 @@
   window.openKeyManager    = openKeyManager;
 
   /* ═══════════════════════════════════════════════════════════════════
-     SECTION 5 — GEMINI MULTIMODAL API ENGINE (Vision OCR Upgrade)
+     SECTION 5 — GEMINI MULTIMODAL API ENGINE (Vision OCR)
   ═══════════════════════════════════════════════════════════════════ */
 
   async function callGemini(promptText, statusEl, base64Image = null) {
@@ -867,7 +867,6 @@
     const k2 = _getRawKey(2);
     if (!k1 && !k2) throw new Error('No API key saved. Tap 🔑 to add one.');
 
-    // Construct the payload to support optional image data
     const parts = [{ text: promptText }];
     if (base64Image) {
       const b64Data = base64Image.replace(/^data:image\/(png|jpeg);base64,/, "");
@@ -878,7 +877,6 @@
 
     const payload = {
       contents:         [{ role: 'user', parts: parts }],
-      // Increased maxOutputTokens to 8192 to accommodate full broadsheet OCR extraction
       generationConfig: { temperature: 0.1, maxOutputTokens: 8192 }
     };
 
@@ -997,6 +995,7 @@
   function renderFeedItems(items, feedName) {
     DOM.output.innerHTML = items.map((item, idx) => {
       const pNum = item.pageNum ?? (idx + 1);
+      const extMethod = item.extractionMethod ? ` · ${item.extractionMethod}` : '';
       let inner;
       if (item.error) {
         inner =
@@ -1004,7 +1003,7 @@
           `<p class="error-msg">${escapeHtml(item.title || `Page ${pNum}`)} could not be converted due to a technical error. ` +
           `If you want to view the original article, ` +
           `<button class="view-original-btn" onclick="openPdfPageView(${pNum})">View original PDF page →</button></p>` +
-          `<div class="meta">Page ${pNum} · ${escapeHtml(feedName)}</div>`;
+          `<div class="meta">Page ${pNum} · ${escapeHtml(feedName)}${extMethod}</div>`;
       } else {
         const desc    = item.description ? escapeHtml(item.description.substring(0, CONFIG.MAX_DESC_CHARS)) : '';
         const engHtml = (item.summary_english && item.summary_english.trim().length > 0)
@@ -1015,7 +1014,7 @@
           (desc ? `<p class="description reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0" style="cursor:pointer;">${desc}</p>` : '') +
           engHtml +
           `<div class="meta" style="display:flex;justify-content:space-between;align-items:center;">` +
-            `<span>Page ${pNum} · ${escapeHtml(feedName)}</span>` +
+            `<span>Page ${pNum} · ${escapeHtml(feedName)}${extMethod}</span>` +
             `<button class="view-original-btn" onclick="openPdfPageView(${pNum})">View original PDF page →</button>` +
           `</div>`;
       }
@@ -1308,7 +1307,10 @@
   }
 
   /* ═══════════════════════════════════════════════════════════════════
-     SECTION 10 — LIGHTNING OCR PDF EXTRACTOR (GEMINI VISION)
+     SECTION 10 — HYBRID EXTRACTION ENGINE (V8B)
+     Local Engine handles clean pages instantly.
+     Defect Sensor checks for column merging.
+     Vision API deployed automatically if defect > 4%.
   ═══════════════════════════════════════════════════════════════════ */
 
   function detectDocumentType(file) {
@@ -1319,31 +1321,189 @@
     return 'generic';
   }
 
-  async function routeDocumentProcessing(file, confirmedType) {
-    try {
-      await processPdf(file, confirmedType);
-    } catch (fatalErr) {
-      hideOverlay();
-      _resetUploadBtn();
-      DOM.output.innerHTML =
-        `<div class="system-msg">❌ Upload failed: ${escapeHtml(fatalErr.message || String(fatalErr))}</div>`;
-    }
-  }
+  // Defect Sensor Heuristic
+  function isTextGarbled(text) {
+    if (!text || text.trim().length < 50) return true;
+    const words = text.trim().split(/\s+/);
+    const numWords = words.length;
 
-  async function openPdfDocument(file) {
-    if (!window.pdfjsLib) throw new Error('PDF engine failed to load. Check internet connection and refresh.');
-    if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc =
-        '[https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js](https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js)';
-    }
-    const arrayBuffer = await file.arrayBuffer();
-    return pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-  }
-
-  async function extractPageText(pdfDoc, pageNum) {
-    const page = await pdfDoc.getPage(pageNum);
+    // 1. Giant merged words (missing spaces from merged columns)
+    const longWords = words.filter(w => w.length > 16).length;
     
-    // Render to Canvas with 1.5 Scale (Optimal resolution for Gemini Vision OCR)
+    // 2. Mid-word capitals (e.g. "theRoute", "SaturDay")
+    const midCaps = (text.match(/[a-z][A-Z][a-z]/g) || []).length;
+    
+    // 3. High density of orphaned hyphens or weird breaks
+    const badHyphens = (text.match(/[a-zA-Z]-\s+[a-zA-Z]/g) || []).length;
+    
+    // 4. Orphaned single letters that aren't 'a' or 'i' (e.g. 'c', 't', 'm')
+    const orphans = (text.match(/\b[b-hj-z]\b/ig) || []).length;
+
+    const garbageScore = (longWords * 2) + (midCaps * 2) + (badHyphens * 3) + orphans;
+    
+    // If defect ratio > 4% of total words, consider it garbled.
+    return (garbageScore / numWords > 0.04);
+  }
+
+  // 10.1: LOCAL EXTRACTION ENGINE (Lightning Fast)
+  async function extractPageTextLocal(page) {
+    const content = await page.getTextContent({ includeMarkedContent: false });
+    const vp = page.getViewport({ scale: 1 });
+    const pgH = vp.height;
+
+    const items = content.items
+      .filter(it => it.str && it.str.trim())
+      .map(it => {
+        const fontH = Math.round(Math.abs(it.transform[3]) || Math.abs(it.transform[0]) || 10);
+        return {
+          text: it.str,
+          x: it.transform[4],
+          y: pgH - it.transform[5],
+          w: it.width,
+          h: fontH,
+          fontH: fontH,
+          bold: it.fontName ? /bold|black|heavy/i.test(it.fontName) : false
+        };
+      });
+
+    if (!items.length) return '';
+
+    const fontHeights = items.map(i => i.fontH).sort((a, b) => a - b);
+    const medFontH = Math.max(fontHeights[Math.floor(fontHeights.length / 2)] || 10, 5);
+
+    items.sort((a, b) => a.y - b.y);
+    const lines = [];
+    let currentLine = [];
+
+    for (const it of items) {
+      if (!currentLine.length) {
+        currentLine.push(it);
+      } else {
+        const lineY = currentLine.reduce((sum, i) => sum + i.y, 0) / currentLine.length;
+        if (Math.abs(it.y - lineY) < medFontH * 0.4) {
+          currentLine.push(it);
+        } else {
+          lines.push(currentLine);
+          currentLine = [it];
+        }
+      }
+    }
+    if (currentLine.length) lines.push(currentLine);
+
+    const segments = [];
+    for (const line of lines) {
+      line.sort((a, b) => a.x - b.x);
+      let currentSeg = null;
+
+      for (const it of line) {
+        if (!currentSeg) {
+          currentSeg = { text: it.text, x: it.x, y: it.y, w: it.w, h: it.h, fontH: it.fontH, bold: it.bold };
+          segments.push(currentSeg);
+        } else {
+          const gap = it.x - (currentSeg.x + currentSeg.w);
+          if (gap > medFontH * 2.0) {
+            currentSeg = { text: it.text, x: it.x, y: it.y, w: it.w, h: it.h, fontH: it.fontH, bold: it.bold };
+            segments.push(currentSeg);
+          } else {
+            currentSeg.w = (it.x + it.w) - currentSeg.x;
+            currentSeg.h = Math.max(currentSeg.h, it.h);
+            if (gap > medFontH * 0.2) currentSeg.text += ' ';
+            currentSeg.text += it.text;
+            currentSeg.bold = currentSeg.bold || it.bold;
+          }
+        }
+      }
+    }
+
+    segments.sort((a, b) => a.y - b.y);
+    let blocks = [];
+    for (const seg of segments) {
+      let placed = false;
+      for (const block of blocks) {
+        const vGap = seg.y - block.bottomY;
+        if (vGap > -medFontH && vGap < medFontH * 4) {
+          const segCenter = seg.x + seg.w / 2;
+          const blkCenter = block.x + block.w / 2;
+          if (Math.abs(segCenter - blkCenter) < medFontH * 3 || 
+              (seg.x >= block.x - medFontH && seg.x + seg.w <= block.x + block.w + medFontH)) {
+            block.segments.push(seg);
+            block.bottomY = Math.max(block.bottomY, seg.y + seg.h);
+            block.x = Math.min(block.x, seg.x);
+            block.w = Math.max(block.x + block.w, seg.x + seg.w) - block.x;
+            placed = true;
+            break;
+          }
+        }
+      }
+      if (!placed) {
+        blocks.push({
+          segments: [seg],
+          topY: seg.y, bottomY: seg.y + seg.h,
+          x: seg.x, w: seg.w,
+          fontH: seg.fontH, bold: seg.bold
+        });
+      }
+    }
+
+    const sortedBlocks = [];
+    let remaining = [...blocks];
+    
+    while (remaining.length > 0) {
+      remaining.sort((a, b) => a.topY - b.topY);
+      const topBlock = remaining[0];
+      
+      const row = remaining.filter(b => {
+        const overlapY = Math.max(0, Math.min(topBlock.bottomY, b.bottomY) - Math.max(topBlock.topY, b.topY));
+        const minH = Math.min(topBlock.bottomY - topBlock.topY, b.bottomY - b.topY) || 1;
+        return overlapY > medFontH || overlapY > minH * 0.25;
+      });
+      
+      row.sort((a, b) => a.x - b.x);
+      sortedBlocks.push(...row);
+      remaining = remaining.filter(b => !row.includes(b));
+    }
+    blocks = sortedBlocks;
+
+    const finalParagraphs = [];
+    for (const block of blocks) {
+      let paraText = '';
+      block.segments.sort((a, b) => a.y - b.y);
+      
+      for (let i = 0; i < block.segments.length; i++) {
+        const seg = block.segments[i];
+        const segText = seg.text.trim();
+        
+        if (i === 0) {
+           paraText += segText;
+        } else {
+           const prevSeg = block.segments[i - 1];
+           const vGap = seg.y - prevSeg.y;
+           
+           if (vGap > medFontH * 1.6) {
+              paraText += '\n\n' + segText;
+           } else {
+              const match = paraText.match(/([a-zA-Z])[-\u2010-\u2015\u00AD]\s*$/);
+              if (match) {
+                 paraText = paraText.replace(/[-\u2010-\u2015\u00AD]\s*$/, '') + segText;
+              } else {
+                 paraText += ' ' + segText;
+              }
+           }
+        }
+      }
+      
+      const subParas = paraText.split('\n\n').filter(p => p.trim().length > 2);
+      for (const sp of subParas) {
+        const isHeading = block.fontH > medFontH * 1.3 || (sp.split(' ').length <= 15 && block.bold && !/[.!?]$/.test(sp));
+        finalParagraphs.push(isHeading ? '## ' + sp : sp);
+      }
+    }
+
+    return finalParagraphs.join('\n\n');
+  }
+
+  // 10.2: CLOUD VISION ENGINE (Fallback for Garbled Text)
+  async function extractPageTextVision(page, pageNum) {
     const baseVp = page.getViewport({ scale: 1 });
     const safeScale = Math.min(1.5, 1600 / baseVp.width);
     const viewport = page.getViewport({ scale: safeScale });
@@ -1353,20 +1513,13 @@
     canvas.width = viewport.width;
     canvas.height = viewport.height;
 
-    // Fill background color to ensure text contrast
     ctx.fillStyle = '#f5f0e8';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-
     await page.render({ canvasContext: ctx, viewport: viewport }).promise;
 
-    updateOverlay(`⚡ Gemini Vision scanning Page ${pageNum}...`, 40, `Running Cloud OCR...`);
-
-    // Convert Canvas to a lightweight JPEG to send to the API
     const base64Image = canvas.toDataURL('image/jpeg', 0.8);
+    const prompt = "You are a high-precision OCR engine. Extract all the text from this newspaper page image exactly as written. Read the newspaper columns in the correct natural order (top-to-bottom, left-to-right). Fix any broken words or hyphens that span across lines. Return ONLY the raw extracted text separated by clean paragraph breaks. Do not include any formatting tags.";
 
-    const prompt = "You are a high-precision OCR engine. Extract all the text from this newspaper page image exactly as written. Read the newspaper columns in the correct natural order (top-to-bottom, left-to-right). Fix any broken words or hyphens that span across lines. Do not hallucinate or summarize. Return ONLY the raw extracted text separated by clean paragraph breaks. Do not include any introductory or concluding conversational text or markdown formatting tags.";
-
-    // Send directly to the existing Gemini Multimodal call
     const dummyStatus = document.createElement('span');
     const res = await callGemini(prompt, dummyStatus, base64Image);
     let text = await parseGeminiResponse(res);
@@ -1486,51 +1639,29 @@
     return { title, body };
   }
 
-  function _makeViewOriginalBtn(pageNum) {
-    return `<button class="view-original-btn" onclick="openPdfPageView(${pageNum})">View original PDF page →</button>`;
+  /* ═══════════════════════════════════════════════════════════════════
+     SECTION 10C — ROUTING & MASTER PROCESSING
+  ═══════════════════════════════════════════════════════════════════ */
+
+  async function routeDocumentProcessing(file, confirmedType) {
+    try {
+      await processPdf(file, confirmedType);
+    } catch (fatalErr) {
+      hideOverlay();
+      _resetUploadBtn();
+      DOM.output.innerHTML =
+        `<div class="system-msg">❌ Upload failed: ${escapeHtml(fatalErr.message || String(fatalErr))}</div>`;
+    }
   }
 
-  function renderOneFeedItem(item, idx, fileName, isNew) {
-    const id       = `feed-item-${idx}`;
-    const existing = document.getElementById(id);
-    const pNum     = item.pageNum ?? (idx + 1);
-
-    let html;
-    if (item.error) {
-      html =
-        `<span class="headline">${escapeHtml(item.title)}</span>` +
-        `<p class="error-msg">${escapeHtml(item.title)} could not be converted due to a technical error. ` +
-        `If you want to view the original article, ` +
-        _makeViewOriginalBtn(pNum) + `</p>` +
-        `<div class="meta">Page ${pNum} · ${escapeHtml(fileName)}</div>`;
-    } else {
-      const engHtml = (item.summary_english && item.summary_english.trim().length > 0)
-        ? `<p class="description translation">English:<br>${escapeHtml(item.summary_english.substring(0, CONFIG.MAX_DESC_CHARS))}</p>`
-        : '';
-      const desc = item.description ? escapeHtml(item.description.substring(0, CONFIG.MAX_DESC_CHARS)) : '';
-      html =
-        `<span class="headline reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0">${escapeHtml(item.title)}</span>` +
-        (desc ? `<p class="description reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0" style="cursor:pointer;">${desc}</p>` : '') +
-        engHtml +
-        `<div class="meta" style="display:flex;justify-content:space-between;align-items:center;">` +
-          `<span>Page ${pNum} · ${escapeHtml(fileName)}</span>` +
-          _makeViewOriginalBtn(pNum) +
-        `</div>`;
+  async function openPdfDocument(file) {
+    if (!window.pdfjsLib) throw new Error('PDF engine failed to load.');
+    if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        '[https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js](https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js)';
     }
-
-    if (existing) {
-      existing.innerHTML = html;
-      existing.style.opacity = '1';
-    } else {
-      const div        = document.createElement('div');
-      div.className    = 'feed-item' + (item.error ? ' feed-item-error' : '');
-      div.id           = id;
-      div.style.animationDelay = `${Math.min(idx * 30, 300)}ms`;
-      if (isNew) div.style.opacity = '0';
-      div.innerHTML    = html;
-      DOM.output.appendChild(div);
-      if (isNew) requestAnimationFrame(() => { div.style.transition = 'opacity 0.4s'; div.style.opacity = '1'; });
-    }
+    const arrayBuffer = await file.arrayBuffer();
+    return pdfjsLib.getDocument({ data: arrayBuffer }).promise;
   }
 
   function _resetUploadBtn() {
@@ -1590,14 +1721,33 @@
       }
 
       try {
-        const pageText = await extractPageText(pdfDoc, pageNum);
+        const page = await pdfDoc.getPage(pageNum);
+        let extractionMethod = 'Local Engine';
+        
+        // 1. Try local, lightning-fast extraction
+        let pageText = await extractPageTextLocal(page);
+
+        // 2. Hybrid Handoff: Defect Sensor checks for scrambled columns
+        if (isTextGarbled(pageText)) {
+            extractionMethod = 'Cloud Vision OCR';
+            updateOverlay(`⚠️ Page ${pageNum} is visually complex. Routing to Gemini Vision OCR...`, pct, '');
+            try {
+                // If defects found, take a high-res snapshot and offload to Gemini
+                const visionText = await extractPageTextVision(page, pageNum);
+                if (visionText && visionText.length > 50) {
+                    pageText = visionText;
+                }
+            } catch (visionErr) {
+                console.warn(`Vision fallback failed for page ${pageNum}`, visionErr);
+                // Gracefully fallback to the best local attempt if network fails
+            }
+        }
 
         if (!pageText || pageText.length < 30) {
           if (pageNum === 1) {
             hideOverlay();
             DOM.output.innerHTML =
-              '<div class="system-msg">⚠️ Page 1 appears to be blank or image-only (no extractable text). ' +
-              'Try a text-based PDF or a different file.</div>';
+              '<div class="system-msg">⚠️ Page 1 appears to be blank or image-only. Try a different file.</div>';
             _resetUploadBtn();
           }
           continue;
@@ -1610,7 +1760,8 @@
           description:       body.substring(0, CONFIG.MAX_DESC_CHARS),
           full_text:         pageText,
           full_text_english: '',
-          summary_english:   ''
+          summary_english:   '',
+          extractionMethod:  extractionMethod
         };
 
         feedItems.push(item);
@@ -1632,7 +1783,7 @@
           hideOverlay();
           DOM.overallSummaryBtn.style.display = 'inline-flex';
           if (totalPages === 1) {
-            _resetUploadBtn(); // single-page PDF — done immediately
+            _resetUploadBtn();
           } else {
             DOM.uploadPdfBtn.innerHTML = '<span class="upload-ring"></span>Processing…';
           }
@@ -1641,34 +1792,11 @@
         }
 
         DOM.itemCount.textContent = `${feedItems.length} of ${totalPages} pages processed`;
-
-        // ── Incremental save after every page ──────────────────────
         void _saveSessionToStorage(file.name, feedItems, summaries, titles);
 
       } catch (err) {
-        let retryResult = null;
-        try {
-          const retryPageText = await extractPageText(pdfDoc, pageNum);
-          if (retryPageText && retryPageText.length >= 30) {
-            retryResult = summarisePageLocal(retryPageText, pageNum, docType);
-          }
-        } catch (retryErr) {
-        }
-
         const idx = feedItems.length;
-        let item;
-        if (retryResult) {
-          item = {
-            title:             retryResult.title,
-            description:       retryResult.body.substring(0, CONFIG.MAX_DESC_CHARS),
-            full_text:         '',
-            full_text_english: '',
-            summary_english:   ''
-          };
-          titles.push(retryResult.title);
-          summaries.push(retryResult.body);
-        } else {
-          item = {
+        const item = {
             title:             `Page ${pageNum}`,
             description:       '',
             full_text:         '',
@@ -1676,10 +1804,9 @@
             summary_english:   '',
             error:             true,
             pageNum
-          };
-          titles.push(`Page ${pageNum}`);
-          summaries.push('');
-        }
+        };
+        titles.push(`Page ${pageNum}`);
+        summaries.push('');
         feedItems.push(item);
         feedCache['uploaded-pdf'] = { items: feedItems };
         renderOneFeedItem(item, idx, file.name, true);
@@ -1712,7 +1839,6 @@
 
   window.addEventListener('load', async () => {
   try {
-
     try {
       await Promise.race([
         _restoreKeysFromIDB(),
