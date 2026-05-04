@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width">
-  <title>Pulse v8B — Hybrid AI Intelligence</title>
+  <title>Pulse v9 — Pure Local Intelligence</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&family=Noto+Sans:wght@400;500&family=Noto+Sans+Devanagari:wght@400;500&display=swap" rel="stylesheet">
   <style>
     /* ═══ BASE ═══ */
@@ -398,8 +398,8 @@
   </div>
 
   <div class="masthead">
-    <div class="masthead-title">Pulse<span style="font-size:10px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.6;">v8B</span></div>
-    <div class="tagline">Hybrid AI Intelligence</div>
+    <div class="masthead-title">Pulse<span style="font-size:10px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.6;">v9</span></div>
+    <div class="tagline">Pure Local Intelligence</div>
   </div>
   <div class="feed-status-bar"><span id="item-count"></span></div>
 
@@ -859,25 +859,17 @@
   window.openKeyManager    = openKeyManager;
 
   /* ═══════════════════════════════════════════════════════════════════
-     SECTION 5 — GEMINI MULTIMODAL API ENGINE (Vision OCR)
+     SECTION 5 — GEMINI API ENGINE (Text Only)
   ═══════════════════════════════════════════════════════════════════ */
 
-  async function callGemini(promptText, statusEl, base64Image = null) {
+  async function callGemini(promptText, statusEl) {
     const k1 = _getRawKey(1);
     const k2 = _getRawKey(2);
     if (!k1 && !k2) throw new Error('No API key saved. Tap 🔑 to add one.');
 
-    const parts = [{ text: promptText }];
-    if (base64Image) {
-      const b64Data = base64Image.replace(/^data:image\/(png|jpeg);base64,/, "");
-      parts.push({
-        inlineData: { mimeType: "image/jpeg", data: b64Data }
-      });
-    }
-
     const payload = {
-      contents:         [{ role: 'user', parts: parts }],
-      generationConfig: { temperature: 0.1, maxOutputTokens: 8192 }
+      contents:         [{ role: 'user', parts: [{ text: promptText }] }],
+      generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
     };
 
     const selectedModel = getGeminiModel();
@@ -995,7 +987,6 @@
   function renderFeedItems(items, feedName) {
     DOM.output.innerHTML = items.map((item, idx) => {
       const pNum = item.pageNum ?? (idx + 1);
-      const extMethod = item.extractionMethod ? ` · ${item.extractionMethod}` : '';
       let inner;
       if (item.error) {
         inner =
@@ -1003,7 +994,7 @@
           `<p class="error-msg">${escapeHtml(item.title || `Page ${pNum}`)} could not be converted due to a technical error. ` +
           `If you want to view the original article, ` +
           `<button class="view-original-btn" onclick="openPdfPageView(${pNum})">View original PDF page →</button></p>` +
-          `<div class="meta">Page ${pNum} · ${escapeHtml(feedName)}${extMethod}</div>`;
+          `<div class="meta">Page ${pNum} · ${escapeHtml(feedName)}</div>`;
       } else {
         const desc    = item.description ? escapeHtml(item.description.substring(0, CONFIG.MAX_DESC_CHARS)) : '';
         const engHtml = (item.summary_english && item.summary_english.trim().length > 0)
@@ -1014,7 +1005,7 @@
           (desc ? `<p class="description reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0" style="cursor:pointer;">${desc}</p>` : '') +
           engHtml +
           `<div class="meta" style="display:flex;justify-content:space-between;align-items:center;">` +
-            `<span>Page ${pNum} · ${escapeHtml(feedName)}${extMethod}</span>` +
+            `<span>Page ${pNum} · ${escapeHtml(feedName)}</span>` +
             `<button class="view-original-btn" onclick="openPdfPageView(${pNum})">View original PDF page →</button>` +
           `</div>`;
       }
@@ -1307,10 +1298,7 @@
   }
 
   /* ═══════════════════════════════════════════════════════════════════
-     SECTION 10 — HYBRID EXTRACTION ENGINE (V8B)
-     Local Engine handles clean pages instantly.
-     Defect Sensor checks for column merging.
-     Vision API deployed automatically if defect > 4%.
+     SECTION 10 — PURE LOCAL RECURSIVE XY-CUT PDF EXTRACTOR (V6H Base)
   ═══════════════════════════════════════════════════════════════════ */
 
   function detectDocumentType(file) {
@@ -1321,32 +1309,29 @@
     return 'generic';
   }
 
-  // Defect Sensor Heuristic
-  function isTextGarbled(text) {
-    if (!text || text.trim().length < 50) return true;
-    const words = text.trim().split(/\s+/);
-    const numWords = words.length;
-
-    // 1. Giant merged words (missing spaces from merged columns)
-    const longWords = words.filter(w => w.length > 16).length;
-    
-    // 2. Mid-word capitals (e.g. "theRoute", "SaturDay")
-    const midCaps = (text.match(/[a-z][A-Z][a-z]/g) || []).length;
-    
-    // 3. High density of orphaned hyphens or weird breaks
-    const badHyphens = (text.match(/[a-zA-Z]-\s+[a-zA-Z]/g) || []).length;
-    
-    // 4. Orphaned single letters that aren't 'a' or 'i' (e.g. 'c', 't', 'm')
-    const orphans = (text.match(/\b[b-hj-z]\b/ig) || []).length;
-
-    const garbageScore = (longWords * 2) + (midCaps * 2) + (badHyphens * 3) + orphans;
-    
-    // If defect ratio > 4% of total words, consider it garbled.
-    return (garbageScore / numWords > 0.04);
+  async function routeDocumentProcessing(file, confirmedType) {
+    try {
+      await processPdf(file, confirmedType);
+    } catch (fatalErr) {
+      hideOverlay();
+      _resetUploadBtn();
+      DOM.output.innerHTML =
+        `<div class="system-msg">❌ Upload failed: ${escapeHtml(fatalErr.message || String(fatalErr))}</div>`;
+    }
   }
 
-  // 10.1: LOCAL EXTRACTION ENGINE (Lightning Fast)
-  async function extractPageTextLocal(page) {
+  async function openPdfDocument(file) {
+    if (!window.pdfjsLib) throw new Error('PDF engine failed to load. Check internet connection and refresh.');
+    if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
+      pdfjsLib.GlobalWorkerOptions.workerSrc =
+        '[https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js](https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js)';
+    }
+    const arrayBuffer = await file.arrayBuffer();
+    return pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+  }
+
+  async function extractPageText(pdfDoc, pageNum) {
+    const page = await pdfDoc.getPage(pageNum);
     const content = await page.getTextContent({ includeMarkedContent: false });
     const vp = page.getViewport({ scale: 1 });
     const pgH = vp.height;
@@ -1369,162 +1354,87 @@
     if (!items.length) return '';
 
     const fontHeights = items.map(i => i.fontH).sort((a, b) => a - b);
-    const medFontH = Math.max(fontHeights[Math.floor(fontHeights.length / 2)] || 10, 5);
+    const medH = Math.max(fontHeights[Math.floor(fontHeights.length / 2)] || 10, 5);
 
-    items.sort((a, b) => a.y - b.y);
-    const lines = [];
-    let currentLine = [];
-
-    for (const it of items) {
-      if (!currentLine.length) {
-        currentLine.push(it);
-      } else {
-        const lineY = currentLine.reduce((sum, i) => sum + i.y, 0) / currentLine.length;
-        if (Math.abs(it.y - lineY) < medFontH * 0.4) {
-          currentLine.push(it);
-        } else {
-          lines.push(currentLine);
-          currentLine = [it];
-        }
-      }
-    }
-    if (currentLine.length) lines.push(currentLine);
-
-    const segments = [];
-    for (const line of lines) {
-      line.sort((a, b) => a.x - b.x);
-      let currentSeg = null;
-
-      for (const it of line) {
-        if (!currentSeg) {
-          currentSeg = { text: it.text, x: it.x, y: it.y, w: it.w, h: it.h, fontH: it.fontH, bold: it.bold };
-          segments.push(currentSeg);
-        } else {
-          const gap = it.x - (currentSeg.x + currentSeg.w);
-          if (gap > medFontH * 2.0) {
-            currentSeg = { text: it.text, x: it.x, y: it.y, w: it.w, h: it.h, fontH: it.fontH, bold: it.bold };
-            segments.push(currentSeg);
-          } else {
-            currentSeg.w = (it.x + it.w) - currentSeg.x;
-            currentSeg.h = Math.max(currentSeg.h, it.h);
-            if (gap > medFontH * 0.2) currentSeg.text += ' ';
-            currentSeg.text += it.text;
-            currentSeg.bold = currentSeg.bold || it.bold;
-          }
-        }
-      }
-    }
-
-    segments.sort((a, b) => a.y - b.y);
-    let blocks = [];
-    for (const seg of segments) {
-      let placed = false;
-      for (const block of blocks) {
-        const vGap = seg.y - block.bottomY;
-        if (vGap > -medFontH && vGap < medFontH * 4) {
-          const segCenter = seg.x + seg.w / 2;
-          const blkCenter = block.x + block.w / 2;
-          if (Math.abs(segCenter - blkCenter) < medFontH * 3 || 
-              (seg.x >= block.x - medFontH && seg.x + seg.w <= block.x + block.w + medFontH)) {
-            block.segments.push(seg);
-            block.bottomY = Math.max(block.bottomY, seg.y + seg.h);
-            block.x = Math.min(block.x, seg.x);
-            block.w = Math.max(block.x + block.w, seg.x + seg.w) - block.x;
-            placed = true;
-            break;
-          }
-        }
-      }
-      if (!placed) {
-        blocks.push({
-          segments: [seg],
-          topY: seg.y, bottomY: seg.y + seg.h,
-          x: seg.x, w: seg.w,
-          fontH: seg.fontH, bold: seg.bold
-        });
-      }
-    }
-
-    const sortedBlocks = [];
-    let remaining = [...blocks];
-    
-    while (remaining.length > 0) {
-      remaining.sort((a, b) => a.topY - b.topY);
-      const topBlock = remaining[0];
+    // Recursive XY-Cut Engine
+    function getBlocks(nodes) {
+      if (nodes.length === 0) return [];
       
-      const row = remaining.filter(b => {
-        const overlapY = Math.max(0, Math.min(topBlock.bottomY, b.bottomY) - Math.max(topBlock.topY, b.topY));
-        const minH = Math.min(topBlock.bottomY - topBlock.topY, b.bottomY - b.topY) || 1;
-        return overlapY > medFontH || overlapY > minH * 0.25;
-      });
+      // 1. Horizontal Cut (Y-axis)
+      nodes.sort((a, b) => a.y - b.y);
+      let cutYIndex = -1;
+      let maxYSoFar = nodes[0].y + nodes[0].h;
       
-      row.sort((a, b) => a.x - b.x);
-      sortedBlocks.push(...row);
-      remaining = remaining.filter(b => !row.includes(b));
+      for (let i = 1; i < nodes.length; i++) {
+        if (nodes[i].y > maxYSoFar + medH * 0.8) {
+          cutYIndex = i;
+          break;
+        }
+        maxYSoFar = Math.max(maxYSoFar, nodes[i].y + nodes[i].h);
+      }
+      
+      if (cutYIndex !== -1) {
+        return [...getBlocks(nodes.slice(0, cutYIndex)), ...getBlocks(nodes.slice(cutYIndex))];
+      }
+      
+      // 2. Vertical Cut (X-axis)
+      nodes.sort((a, b) => a.x - b.x);
+      let cutXIndex = -1;
+      let maxXSoFar = nodes[0].x + nodes[0].w;
+      
+      for (let i = 1; i < nodes.length; i++) {
+        if (nodes[i].x > maxXSoFar + medH * 1.8) { 
+          cutXIndex = i;
+          break;
+        }
+        maxXSoFar = Math.max(maxXSoFar, nodes[i].x + nodes[i].w);
+      }
+      
+      if (cutXIndex !== -1) {
+        return [...getBlocks(nodes.slice(0, cutXIndex)), ...getBlocks(nodes.slice(cutXIndex))];
+      }
+      
+      return [nodes];
     }
-    blocks = sortedBlocks;
 
+    const blocks = getBlocks(items);
     const finalParagraphs = [];
+
     for (const block of blocks) {
+      block.sort((a, b) => {
+        if (Math.abs(a.y - b.y) > medH * 0.4) return a.y - b.y;
+        return a.x - b.x;
+      });
+
       let paraText = '';
-      block.segments.sort((a, b) => a.y - b.y);
-      
-      for (let i = 0; i < block.segments.length; i++) {
-        const seg = block.segments[i];
-        const segText = seg.text.trim();
-        
-        if (i === 0) {
-           paraText += segText;
-        } else {
-           const prevSeg = block.segments[i - 1];
-           const vGap = seg.y - prevSeg.y;
-           
-           if (vGap > medFontH * 1.6) {
-              paraText += '\n\n' + segText;
-           } else {
-              const match = paraText.match(/([a-zA-Z])[-\u2010-\u2015\u00AD]\s*$/);
-              if (match) {
-                 paraText = paraText.replace(/[-\u2010-\u2015\u00AD]\s*$/, '') + segText;
-              } else {
-                 paraText += ' ' + segText;
-              }
-           }
+      for (let i = 0; i < block.length; i++) {
+        const it = block[i];
+        if (i > 0) {
+          const prev = block[i - 1];
+          if (Math.abs(it.y - prev.y) > medH * 0.4) {
+            const match = paraText.match(/([a-zA-Z])[-\u2010-\u2015\u00AD]\s*$/);
+            if (match) {
+              paraText = paraText.replace(/[-\u2010-\u2015\u00AD]\s*$/, '');
+            } else {
+              paraText += ' ';
+            }
+          } else if (it.x - (prev.x + prev.w) > medH * 0.2) {
+            paraText += ' ';
+          }
         }
+        paraText += it.text;
       }
-      
-      const subParas = paraText.split('\n\n').filter(p => p.trim().length > 2);
-      for (const sp of subParas) {
-        const isHeading = block.fontH > medFontH * 1.3 || (sp.split(' ').length <= 15 && block.bold && !/[.!?]$/.test(sp));
-        finalParagraphs.push(isHeading ? '## ' + sp : sp);
+
+      paraText = paraText.replace(/\s+/g, ' ').trim();
+      if (paraText.length > 2) {
+        const avgFontH = block.reduce((sum, i) => sum + i.fontH, 0) / block.length;
+        const isBold = block.some(i => i.bold);
+        const isHeading = avgFontH > medH * 1.3 || (paraText.split(' ').length <= 15 && isBold && !/[.!?]$/.test(paraText));
+        finalParagraphs.push(isHeading ? '## ' + paraText : paraText);
       }
     }
 
     return finalParagraphs.join('\n\n');
-  }
-
-  // 10.2: CLOUD VISION ENGINE (Fallback for Garbled Text)
-  async function extractPageTextVision(page, pageNum) {
-    const baseVp = page.getViewport({ scale: 1 });
-    const safeScale = Math.min(1.5, 1600 / baseVp.width);
-    const viewport = page.getViewport({ scale: safeScale });
-    
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    canvas.width = viewport.width;
-    canvas.height = viewport.height;
-
-    ctx.fillStyle = '#f5f0e8';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    await page.render({ canvasContext: ctx, viewport: viewport }).promise;
-
-    const base64Image = canvas.toDataURL('image/jpeg', 0.8);
-    const prompt = "You are a high-precision OCR engine. Extract all the text from this newspaper page image exactly as written. Read the newspaper columns in the correct natural order (top-to-bottom, left-to-right). Fix any broken words or hyphens that span across lines. Return ONLY the raw extracted text separated by clean paragraph breaks. Do not include any formatting tags.";
-
-    const dummyStatus = document.createElement('span');
-    const res = await callGemini(prompt, dummyStatus, base64Image);
-    let text = await parseGeminiResponse(res);
-
-    return cleanAiResponse(text);
   }
 
   /* ═══════════════════════════════════════════════════════════════════
@@ -1587,7 +1497,6 @@
     const paragraphs = pageText.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
     const fullText   = paragraphs.join(' ');
 
-    // ── Title detection ──────────────────────────────────────────
     const detectedTitle = _detectTitle(paragraphs);
     const title = detectedTitle
       ? detectedTitle.substring(0, 90)
@@ -1597,22 +1506,20 @@
       ? fullText.replace(detectedTitle, '').trim()
       : fullText;
 
-    // ── TF-IDF-lite word frequency ────────────────────────────────
     const allWords  = _tokenWords(bodyText);
     const freq      = {};
     for (const w of allWords) freq[w] = (freq[w] || 0) + 1;
     const maxFreq   = Math.max(...Object.values(freq), 1);
     for (const w in freq) freq[w] /= maxFreq;
 
-    // ── Score sentences ───────────────────────────────────────────
     const sentences = _splitSentences(bodyText);
     const scored    = sentences.map((s, idx) => {
       const words   = _tokenWords(s);
       if (!words.length) return { s, score: 0 };
       const tfScore = words.reduce((sum, w) => sum + (freq[w] || 0), 0) / words.length;
 
-      const posBonus    = idx === 0 ? 0.25 : idx <= 2 ? 0.1 : 0;   // early sentences
-      const numBonus    = /\d/.test(s) ? 0.12 : 0;                   // contains numbers/stats
+      const posBonus    = idx === 0 ? 0.25 : idx <= 2 ? 0.1 : 0;
+      const numBonus    = /\d/.test(s) ? 0.12 : 0;
       const lenPenalty  = words.length < 6 || words.length > 45 ? -0.15 : 0;
       const keyBonus    = /key|important|significant|critical|major|result|conclude|show|find|reveal/i.test(s) ? 0.1 : 0;
 
@@ -1639,29 +1546,51 @@
     return { title, body };
   }
 
-  /* ═══════════════════════════════════════════════════════════════════
-     SECTION 10C — ROUTING & MASTER PROCESSING
-  ═══════════════════════════════════════════════════════════════════ */
-
-  async function routeDocumentProcessing(file, confirmedType) {
-    try {
-      await processPdf(file, confirmedType);
-    } catch (fatalErr) {
-      hideOverlay();
-      _resetUploadBtn();
-      DOM.output.innerHTML =
-        `<div class="system-msg">❌ Upload failed: ${escapeHtml(fatalErr.message || String(fatalErr))}</div>`;
-    }
+  function _makeViewOriginalBtn(pageNum) {
+    return `<button class="view-original-btn" onclick="openPdfPageView(${pageNum})">View original PDF page →</button>`;
   }
 
-  async function openPdfDocument(file) {
-    if (!window.pdfjsLib) throw new Error('PDF engine failed to load.');
-    if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
-      pdfjsLib.GlobalWorkerOptions.workerSrc =
-        '[https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js](https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js)';
+  function renderOneFeedItem(item, idx, fileName, isNew) {
+    const id       = `feed-item-${idx}`;
+    const existing = document.getElementById(id);
+    const pNum     = item.pageNum ?? (idx + 1);
+
+    let html;
+    if (item.error) {
+      html =
+        `<span class="headline">${escapeHtml(item.title || `Page ${pNum}`)}</span>` +
+        `<p class="error-msg">${escapeHtml(item.title || `Page ${pNum}`)} could not be converted due to a technical error. ` +
+        `If you want to view the original article, ` +
+        _makeViewOriginalBtn(pNum) + `</p>` +
+        `<div class="meta">Page ${pNum} · ${escapeHtml(fileName)}</div>`;
+    } else {
+      const engHtml = (item.summary_english && item.summary_english.trim().length > 0)
+        ? `<p class="description translation">English:<br>${escapeHtml(item.summary_english.substring(0, CONFIG.MAX_DESC_CHARS))}</p>`
+        : '';
+      const desc = item.description ? escapeHtml(item.description.substring(0, CONFIG.MAX_DESC_CHARS)) : '';
+      html =
+        `<span class="headline reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0">${escapeHtml(item.title)}</span>` +
+        (desc ? `<p class="description reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0" style="cursor:pointer;">${desc}</p>` : '') +
+        engHtml +
+        `<div class="meta" style="display:flex;justify-content:space-between;align-items:center;">` +
+          `<span>Page ${pNum} · ${escapeHtml(fileName)}</span>` +
+          _makeViewOriginalBtn(pNum) +
+        `</div>`;
     }
-    const arrayBuffer = await file.arrayBuffer();
-    return pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+
+    if (existing) {
+      existing.innerHTML = html;
+      existing.style.opacity = '1';
+    } else {
+      const div        = document.createElement('div');
+      div.className    = 'feed-item' + (item.error ? ' feed-item-error' : '');
+      div.id           = id;
+      div.style.animationDelay = `${Math.min(idx * 30, 300)}ms`;
+      if (isNew) div.style.opacity = '0';
+      div.innerHTML    = html;
+      DOM.output.appendChild(div);
+      if (isNew) requestAnimationFrame(() => { div.style.transition = 'opacity 0.4s'; div.style.opacity = '1'; });
+    }
   }
 
   function _resetUploadBtn() {
@@ -1721,27 +1650,7 @@
       }
 
       try {
-        const page = await pdfDoc.getPage(pageNum);
-        let extractionMethod = 'Local Engine';
-        
-        // 1. Try local, lightning-fast extraction
-        let pageText = await extractPageTextLocal(page);
-
-        // 2. Hybrid Handoff: Defect Sensor checks for scrambled columns
-        if (isTextGarbled(pageText)) {
-            extractionMethod = 'Cloud Vision OCR';
-            updateOverlay(`⚠️ Page ${pageNum} is visually complex. Routing to Gemini Vision OCR...`, pct, '');
-            try {
-                // If defects found, take a high-res snapshot and offload to Gemini
-                const visionText = await extractPageTextVision(page, pageNum);
-                if (visionText && visionText.length > 50) {
-                    pageText = visionText;
-                }
-            } catch (visionErr) {
-                console.warn(`Vision fallback failed for page ${pageNum}`, visionErr);
-                // Gracefully fallback to the best local attempt if network fails
-            }
-        }
+        const pageText = await extractPageText(pdfDoc, pageNum);
 
         if (!pageText || pageText.length < 30) {
           if (pageNum === 1) {
@@ -1760,8 +1669,7 @@
           description:       body.substring(0, CONFIG.MAX_DESC_CHARS),
           full_text:         pageText,
           full_text_english: '',
-          summary_english:   '',
-          extractionMethod:  extractionMethod
+          summary_english:   ''
         };
 
         feedItems.push(item);
@@ -1783,7 +1691,7 @@
           hideOverlay();
           DOM.overallSummaryBtn.style.display = 'inline-flex';
           if (totalPages === 1) {
-            _resetUploadBtn();
+            _resetUploadBtn(); // single-page PDF — done immediately
           } else {
             DOM.uploadPdfBtn.innerHTML = '<span class="upload-ring"></span>Processing…';
           }
