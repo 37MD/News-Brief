@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width">
-  <title>Pulse v7B — Visual OCR Intelligence</title>
+  <title>Pulse v8A — Lightning Vision OCR</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&family=Noto+Sans:wght@400;500&family=Noto+Sans+Devanagari:wght@400;500&display=swap" rel="stylesheet">
   <style>
     /* ═══ BASE ═══ */
@@ -342,7 +342,6 @@
     }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script>
     if (window.pdfjsLib) {
       pdfjsLib.GlobalWorkerOptions.workerSrc =
@@ -399,7 +398,7 @@
   </div>
 
   <div class="masthead">
-    <div class="masthead-title">Pulse<span style="font-size:10px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.6;">v7B</span></div>
+    <div class="masthead-title">Pulse<span style="font-size:10px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.6;">v8A</span></div>
     <div class="tagline">PDF Intelligence Terminal</div>
   </div>
   <div class="feed-status-bar"><span id="item-count"></span></div>
@@ -860,17 +859,27 @@
   window.openKeyManager    = openKeyManager;
 
   /* ═══════════════════════════════════════════════════════════════════
-     SECTION 5 — GEMINI API ENGINE
+     SECTION 5 — GEMINI MULTIMODAL API ENGINE (Vision OCR Upgrade)
   ═══════════════════════════════════════════════════════════════════ */
 
-  async function callGemini(promptText, statusEl) {
+  async function callGemini(promptText, statusEl, base64Image = null) {
     const k1 = _getRawKey(1);
     const k2 = _getRawKey(2);
     if (!k1 && !k2) throw new Error('No API key saved. Tap 🔑 to add one.');
 
+    // Construct the payload to support optional image data
+    const parts = [{ text: promptText }];
+    if (base64Image) {
+      const b64Data = base64Image.replace(/^data:image\/(png|jpeg);base64,/, "");
+      parts.push({
+        inlineData: { mimeType: "image/jpeg", data: b64Data }
+      });
+    }
+
     const payload = {
-      contents:         [{ role: 'user', parts: [{ text: promptText }] }],
-      generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
+      contents:         [{ role: 'user', parts: parts }],
+      // Increased maxOutputTokens to 8192 to accommodate full broadsheet OCR extraction
+      generationConfig: { temperature: 0.1, maxOutputTokens: 8192 }
     };
 
     const selectedModel = getGeminiModel();
@@ -1299,7 +1308,7 @@
   }
 
   /* ═══════════════════════════════════════════════════════════════════
-     SECTION 10 — VISUAL OCR PDF EXTRACTOR (TESSERACT.JS v5)
+     SECTION 10 — LIGHTNING OCR PDF EXTRACTOR (GEMINI VISION)
   ═══════════════════════════════════════════════════════════════════ */
 
   function detectDocumentType(file) {
@@ -1334,55 +1343,35 @@
   async function extractPageText(pdfDoc, pageNum) {
     const page = await pdfDoc.getPage(pageNum);
     
-    // 1. Cap Canvas Width to prevent Browser Out-Of-Memory Crashes
+    // Render to Canvas with 1.5 Scale (Optimal resolution for Gemini Vision OCR)
     const baseVp = page.getViewport({ scale: 1 });
-    const safeScale = Math.min(2.0, 1600 / baseVp.width);
+    const safeScale = Math.min(1.5, 1600 / baseVp.width);
     const viewport = page.getViewport({ scale: safeScale });
     
     const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d', { willReadFrequently: true });
+    const ctx = canvas.getContext('2d');
     canvas.width = viewport.width;
     canvas.height = viewport.height;
 
+    // Fill background color to ensure text contrast
+    ctx.fillStyle = '#f5f0e8';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
     await page.render({ canvasContext: ctx, viewport: viewport }).promise;
 
-    // Allow UI to breathe before locking main thread
-    await new Promise(r => setTimeout(r, 50));
+    updateOverlay(`⚡ Gemini Vision scanning Page ${pageNum}...`, 40, `Running Cloud OCR...`);
 
-    // 2. Initialize Tesseract Worker with safe logging
-    const worker = await Tesseract.createWorker("eng", 1, {
-      logger: m => {
-        if (m.status === 'recognizing text') {
-          const p = Math.round(m.progress * 100);
-          updateOverlay(`👁️ Visually scanning Page ${pageNum}...`, 10 + (p * 0.8), `Reading: ${p}%`);
-        } else {
-          // Provide live feedback during the ~25MB initial model download
-          let pStr = (m.progress && m.progress > 0 && m.progress < 1) ? ` (${Math.round(m.progress * 100)}%)` : '';
-          updateOverlay(`⚙️ Setup OCR...`, null, `${m.status}${pStr}`);
-        }
-      }
-    });
+    // Convert Canvas to a lightweight JPEG to send to the API
+    const base64Image = canvas.toDataURL('image/jpeg', 0.8);
 
-    try {
-      // 3. Failsafe: Wrap OCR in a strict 2-minute timeout so app never freezes
-      const ocrPromise = worker.recognize(canvas);
-      const timeoutPromise = new Promise((_, rej) => setTimeout(() => rej(new Error("OCR engine timed out.")), 120000));
-      
-      const result = await Promise.race([ocrPromise, timeoutPromise]);
-      await worker.terminate();
+    const prompt = "You are a high-precision OCR engine. Extract all the text from this newspaper page image exactly as written. Read the newspaper columns in the correct natural order (top-to-bottom, left-to-right). Fix any broken words or hyphens that span across lines. Do not hallucinate or summarize. Return ONLY the raw extracted text separated by clean paragraph breaks. Do not include any introductory or concluding conversational text or markdown formatting tags.";
 
-      let text = result.data.text;
+    // Send directly to the existing Gemini Multimodal call
+    const dummyStatus = document.createElement('span');
+    const res = await callGemini(prompt, dummyStatus, base64Image);
+    let text = await parseGeminiResponse(res);
 
-      // 4. Clean up OCR layout artifacts
-      text = text.replace(/([a-zA-Z])-\n([a-zA-Z])/g, '$1$2'); // fix hyphens
-      text = text.replace(/(?<!\n)\n(?!\n)/g, ' ');           // fix hard returns
-      text = text.replace(/\n{3,}/g, '\n\n');                 // normalize spacing
-      return text.trim();
-
-    } catch (e) {
-      await worker.terminate();
-      throw e;
-    }
+    return cleanAiResponse(text);
   }
 
   /* ═══════════════════════════════════════════════════════════════════
