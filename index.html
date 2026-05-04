@@ -124,24 +124,27 @@
     .view-original-btn:hover { color: #000000; }
 
     /* ═══ READER PANEL ═══ */
-    #reader-backdrop, #summary-backdrop {
+    #summary-backdrop {
       display: none; position: fixed; inset: 0;
       background: rgba(26,26,24,0.45); z-index: 998; backdrop-filter: blur(2px);
     }
-    #reader-backdrop.open, #summary-backdrop.open { display: block; }
+    #summary-backdrop.open { display: block; }
+    #reader-backdrop { display: none; }
 
     #reader-panel {
-      position: fixed; top: 0; right: 0; bottom: 0; width: 100%; max-width: 780px;
-      background: var(--paper); z-index: 999; display: flex; flex-direction: column;
-      transform: translateX(100%); transition: transform 0.35s cubic-bezier(.4,0,.2,1);
-      box-shadow: -4px 0 40px rgba(0,0,0,0.18);
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      width: 100%; height: 100%;
+      background: var(--paper); z-index: 999;
+      display: flex; flex-direction: column;
+      opacity: 0; pointer-events: none;
+      transition: opacity 0.2s ease;
     }
-    #reader-panel.open { transform: translateX(0); }
+    #reader-panel.open { opacity: 1; pointer-events: all; }
 
     #reader-progress { position: absolute; top: 0; left: 0; height: 3px; width: 0%; background: var(--ink); transition: width 0.2s; z-index: 5; }
 
     .reader-topbar { display: flex; align-items: center; gap: 10px; padding: 10px 15px; border-bottom: 1px solid var(--rule); background: #e4eaf2; flex-shrink: 0; position: relative; z-index: 20; }
-    .reader-back-btn { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; text-transform: uppercase; background: transparent; border: 1px solid var(--ink); padding: 4px 10px; border-radius: 4px; cursor: pointer; white-space: nowrap; transition: background 0.2s; }
+    .reader-back-btn { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; text-transform: uppercase; background: transparent; border: 1px solid var(--ink); padding: 5px 14px; border-radius: 4px; cursor: pointer; white-space: nowrap; transition: background 0.2s; letter-spacing: 0.04em; }
     .reader-back-btn:hover { background: #d0d7e0; }
     .reader-source-url { font-family: 'IBM Plex Mono', monospace; font-size: 10px; flex: 1; }
     .reader-font-ctrl { display: flex; gap: 4px; }
@@ -150,7 +153,8 @@
     .reader-open-btn { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700; text-transform: uppercase; background: #e4eaf2; border: 1px solid var(--ink); padding: 4px 8px; border-radius: 4px; cursor: pointer; white-space: nowrap; }
     .reader-open-btn:hover { background: #d0d7e0; }
 
-    .reader-scroll { overflow-y: auto; flex: 1; padding: 20px 25px 40px; position: relative; z-index: 10; }
+    .reader-scroll { overflow-y: auto; flex: 1; padding: 28px 20px 60px; position: relative; z-index: 10; }
+    .reader-scroll-inner { max-width: 720px; margin: 0 auto; }
     .reader-article-title { font-family: 'Playfair Display', serif; font-size: clamp(20px,3vw,28px); font-weight: 700; line-height: 1.2; margin-bottom: 10px; text-align: center; }
     .reader-article-meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--rule); }
     .reader-body { font-size: var(--reader-font-sz); line-height: 1.7; padding-bottom: 20px; color: #000000; font-weight: 400; }
@@ -431,10 +435,12 @@
     </div>
 
     <div class="reader-scroll" id="reader-scroll">
-      <div id="reader-content"></div>
+      <div class="reader-scroll-inner">
+        <div id="reader-content"></div>
+      </div>
     </div>
 
-    <!-- ═══ AI CHAT PANEL (inside reader) ═══ -->
+    <!-- ═══ AI CHAT PANEL ═══ -->
     <div id="ai-panel">
       <div class="ai-header">
         <span>✨ Gemini Assistant</span>
@@ -582,12 +588,13 @@
 
   function _idbOpen() {
     return new Promise((resolve, reject) => {
-      const req = indexedDB.open(PULSE_DB, PULSE_DB_VER);
+      const req = indexedDB.open(PULSE_DB, 1);
       req.onupgradeneeded = e => {
         const db = e.target.result;
-        if (!db.objectStoreNames.contains(STORE_KEYS))     db.createObjectStore(STORE_KEYS);
-        if (!db.objectStoreNames.contains(STORE_SESSIONS)) db.createObjectStore(STORE_SESSIONS);
+        try { if (!db.objectStoreNames.contains(STORE_KEYS))     db.createObjectStore(STORE_KEYS); } catch(_) {}
+        try { if (!db.objectStoreNames.contains(STORE_SESSIONS)) db.createObjectStore(STORE_SESSIONS); } catch(_) {}
       };
+      req.onblocked = () => req.result && req.result.close();
       req.onsuccess = e => resolve(e.target.result);
       req.onerror   = () => reject(req.error);
     });
@@ -596,11 +603,11 @@
   async function _idbSet(key, value) {
     try {
       const db = await _idbOpen();
-      await new Promise((resolve, reject) => {
+      await new Promise((res, rej) => {
         const tx = db.transaction(STORE_KEYS, 'readwrite');
         tx.objectStore(STORE_KEYS).put(value, key);
-        tx.oncomplete = resolve;
-        tx.onerror    = () => reject(tx.error);
+        tx.oncomplete = res;
+        tx.onerror    = () => rej(tx.error);
       });
       db.close();
     } catch (_) {}
@@ -609,10 +616,11 @@
   async function _idbGet(key) {
     try {
       const db = await _idbOpen();
-      const result = await new Promise((resolve, reject) => {
-        const req = db.transaction(STORE_KEYS, 'readonly').objectStore(STORE_KEYS).get(key);
-        req.onsuccess = () => resolve(req.result ?? null);
-        req.onerror   = () => reject(req.error);
+      const result = await new Promise((res, rej) => {
+        const tx  = db.transaction(STORE_KEYS, 'readonly');
+        const req = tx.objectStore(STORE_KEYS).get(key);
+        req.onsuccess = () => res(req.result ?? null);
+        req.onerror   = () => rej(req.error);
       });
       db.close();
       return result;
@@ -626,10 +634,12 @@
       { ls: 'pulse_gemini_model', idb: 'model' }
     ];
     for (const { ls, idb } of slots) {
-      const existing = (localStorage.getItem(ls) || '').trim();
-      if (!existing) {
-        const val = await _idbGet(idb);
-        if (val && val.trim()) localStorage.setItem(ls, val.trim());
+      const lsVal  = (localStorage.getItem(ls) || '').trim();
+      const idbVal = (await _idbGet(idb) || '').trim();
+      if (!lsVal && idbVal) {
+        localStorage.setItem(ls, idbVal);
+      } else if (lsVal && lsVal !== idbVal) {
+        await _idbSet(idb, lsVal);
       }
     }
   }
@@ -697,17 +707,18 @@
     try {
       const payload = { fileName, feedItems, summaries, titles, savedAt: Date.now() };
       const db = await _idbOpen();
-      await new Promise((resolve, reject) => {
+      await new Promise((res, rej) => {
         const tx = db.transaction(STORE_SESSIONS, 'readwrite');
         tx.objectStore(STORE_SESSIONS).put(payload, STORAGE_KEY);
-        tx.oncomplete = resolve;
-        tx.onerror    = () => reject(tx.error);
+        tx.oncomplete = res;
+        tx.onerror    = () => rej(tx.error);
       });
       db.close();
     } catch (_) {
       try {
         const slim = feedItems.map(({ full_text, full_text_english, ...rest }) => rest);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ fileName, feedItems: slim, summaries, titles, savedAt: Date.now() }));
+        localStorage.setItem(STORAGE_KEY,
+          JSON.stringify({ fileName, feedItems: slim, summaries, titles, savedAt: Date.now() }));
       } catch (_2) {}
     }
   }
@@ -715,19 +726,18 @@
   async function _loadSessionFromStorage() {
     try {
       const db = await _idbOpen();
-      const result = await new Promise((resolve, reject) => {
-        const req = db.transaction(STORE_SESSIONS, 'readonly')
-                      .objectStore(STORE_SESSIONS).get(STORAGE_KEY);
-        req.onsuccess = () => resolve(req.result ?? null);
-        req.onerror   = () => reject(req.error);
+      const result = await new Promise((res, rej) => {
+        const tx  = db.transaction(STORE_SESSIONS, 'readonly');
+        const req = tx.objectStore(STORE_SESSIONS).get(STORAGE_KEY);
+        req.onsuccess = () => res(req.result ?? null);
+        req.onerror   = () => rej(req.error);
       });
       db.close();
       if (result) return result;
     } catch (_) {}
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      if (!raw) return null;
-      return JSON.parse(raw);
+      return raw ? JSON.parse(raw) : null;
     } catch (_) { return null; }
   }
 
@@ -749,6 +759,8 @@
   function clearGeminiKeys() {
     localStorage.removeItem('pulse_gemini_key1');
     localStorage.removeItem('pulse_gemini_key2');
+    _idbSet('k1', '');
+    _idbSet('k2', '');
     _activeKeySlot = 1;
     _refreshKmButtonStates();
     _updateKmStatus();
@@ -1195,12 +1207,11 @@
   };
 
   /* ═══════════════════════════════════════════════════════════════════
-     SECTION 8 — READER PANEL (slide-in; Escape/back still active)
+     SECTION 8 — READER PANEL (full-page overlay; Escape/back to close)
   ═══════════════════════════════════════════════════════════════════ */
 
   function openReader(url) {
     DOM.readerPanel.classList.add('open');
-    DOM.readerBackdrop.classList.add('open');
     document.body.style.overflow = 'hidden';
     DOM.aiToggle.style.display   = 'none';
     closeAiPanel();
@@ -1249,7 +1260,6 @@
 
   function closeReader() {
     DOM.readerPanel.classList.remove('open');
-    DOM.readerBackdrop.classList.remove('open');
     document.body.style.overflow = '';
     closeAiPanel();
     DOM.aiToggle.style.display = 'none';
@@ -1791,9 +1801,9 @@
   ═══════════════════════════════════════════════════════════════════ */
 
   window.addEventListener('load', async () => {
+  try {
 
-    // ── Restore keys from IndexedDB if localStorage was cleared ──
-    await _restoreKeysFromIDB();
+    try { await _restoreKeysFromIDB(); } catch (_) {}
 
     // ── Key Manager wiring ────────────────────────────────────────
     DOM.keyMgrBtn.addEventListener('click', (e) => {
@@ -1939,6 +1949,9 @@
     if (saved) {
       _restoreSession(saved);
     }
+  } catch (fatalErr) {
+    document.body.innerHTML += `<div style="position:fixed;top:0;left:0;right:0;padding:10px;background:#c8102e;color:#fff;font-family:monospace;font-size:12px;z-index:9999;">Startup error: ${fatalErr.message}</div>`;
+  }
   });
 
   </script>
