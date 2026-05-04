@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width">
-  <title>Pulse v6G — PDF Intelligence</title>
+  <title>Pulse v9 — Pure Local Intelligence</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&family=Noto+Sans:wght@400;500&family=Noto+Sans+Devanagari:wght@400;500&display=swap" rel="stylesheet">
   <style>
     /* ═══ BASE ═══ */
@@ -398,8 +398,8 @@
   </div>
 
   <div class="masthead">
-    <div class="masthead-title">Pulse<span style="font-size:10px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.6;">v6G</span></div>
-    <div class="tagline">PDF Intelligence Terminal</div>
+    <div class="masthead-title">Pulse<span style="font-size:10px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.6;">v9</span></div>
+    <div class="tagline">Pure Local Intelligence</div>
   </div>
   <div class="feed-status-bar"><span id="item-count"></span></div>
 
@@ -664,14 +664,14 @@
   function showOverlay(title, step, pct, note) {
     DOM.procTitle.textContent = title || 'Processing';
     DOM.procStep.textContent  = step  || '';
-    DOM.procBar.style.width   = (pct || 0) + '%';
+    DOM.procBar.style.width   = (pct !== null ? pct : 0) + '%';
     DOM.procNote.textContent  = note || '';
     DOM.procOverlay.classList.add('active');
   }
   function updateOverlay(step, pct, note) {
-    if (step !== undefined) DOM.procStep.textContent = step;
-    if (pct  !== undefined) DOM.procBar.style.width  = pct + '%';
-    if (note !== undefined) DOM.procNote.textContent = note;
+    if (step !== undefined && step !== null) DOM.procStep.textContent = step;
+    if (pct  !== undefined && pct !== null)  DOM.procBar.style.width  = pct + '%';
+    if (note !== undefined && note !== null) DOM.procNote.textContent = note;
   }
   function hideOverlay() {
     DOM.procOverlay.classList.remove('active');
@@ -859,7 +859,7 @@
   window.openKeyManager    = openKeyManager;
 
   /* ═══════════════════════════════════════════════════════════════════
-     SECTION 5 — GEMINI API ENGINE
+     SECTION 5 — GEMINI API ENGINE (Text Only)
   ═══════════════════════════════════════════════════════════════════ */
 
   async function callGemini(promptText, statusEl) {
@@ -1298,7 +1298,7 @@
   }
 
   /* ═══════════════════════════════════════════════════════════════════
-     SECTION 10 — BANDED BLOCK-CLUSTERING PDF EXTRACTOR (NEWSPAPER SAFE)
+     SECTION 10 — PURE LOCAL RECURSIVE XY-CUT PDF EXTRACTOR (V6H Base)
   ═══════════════════════════════════════════════════════════════════ */
 
   function detectDocumentType(file) {
@@ -1354,138 +1354,83 @@
     if (!items.length) return '';
 
     const fontHeights = items.map(i => i.fontH).sort((a, b) => a - b);
-    const medFontH = Math.max(fontHeights[Math.floor(fontHeights.length / 2)] || 10, 5);
+    const medH = Math.max(fontHeights[Math.floor(fontHeights.length / 2)] || 10, 5);
 
-    // 1. Group into physical horizontal lines
-    items.sort((a, b) => a.y - b.y);
-    const lines = [];
-    let currentLine = [];
-
-    for (const it of items) {
-      if (!currentLine.length) {
-        currentLine.push(it);
-      } else {
-        const lineY = currentLine.reduce((sum, i) => sum + i.y, 0) / currentLine.length;
-        if (Math.abs(it.y - lineY) < medFontH * 0.4) {
-          currentLine.push(it);
-        } else {
-          lines.push(currentLine);
-          currentLine = [it];
-        }
-      }
-    }
-    if (currentLine.length) lines.push(currentLine);
-
-    // 2. Split lines into continuous segments (breaking at gutters)
-    const segments = [];
-    for (const line of lines) {
-      line.sort((a, b) => a.x - b.x);
-      let currentSeg = null;
-
-      for (const it of line) {
-        if (!currentSeg) {
-          currentSeg = { text: it.text, x: it.x, y: it.y, w: it.w, h: it.h, fontH: it.fontH, bold: it.bold };
-          segments.push(currentSeg);
-        } else {
-          const gap = it.x - (currentSeg.x + currentSeg.w);
-          if (gap > medFontH * 2.0) {
-            currentSeg = { text: it.text, x: it.x, y: it.y, w: it.w, h: it.h, fontH: it.fontH, bold: it.bold };
-            segments.push(currentSeg);
-          } else {
-            currentSeg.w = (it.x + it.w) - currentSeg.x;
-            currentSeg.h = Math.max(currentSeg.h, it.h);
-            if (gap > medFontH * 0.2) currentSeg.text += ' ';
-            currentSeg.text += it.text;
-            currentSeg.bold = currentSeg.bold || it.bold;
-          }
-        }
-      }
-    }
-
-    // 3. Group segments into blocks
-    segments.sort((a, b) => a.y - b.y);
-    let blocks = [];
-    for (const seg of segments) {
-      let placed = false;
-      for (const block of blocks) {
-        const vGap = seg.y - block.bottomY;
-        if (vGap > -medFontH && vGap < medFontH * 4) {
-          const segCenter = seg.x + seg.w / 2;
-          const blkCenter = block.x + block.w / 2;
-          if (Math.abs(segCenter - blkCenter) < medFontH * 3 || 
-              (seg.x >= block.x - medFontH && seg.x + seg.w <= block.x + block.w + medFontH)) {
-            block.segments.push(seg);
-            block.bottomY = Math.max(block.bottomY, seg.y + seg.h);
-            block.x = Math.min(block.x, seg.x);
-            block.w = Math.max(block.x + block.w, seg.x + seg.w) - block.x;
-            placed = true;
-            break;
-          }
-        }
-      }
-      if (!placed) {
-        blocks.push({
-          segments: [seg],
-          topY: seg.y, bottomY: seg.y + seg.h,
-          x: seg.x, w: seg.w,
-          fontH: seg.fontH, bold: seg.bold
-        });
-      }
-    }
-
-    // 4. Banded Row Sort (Top-Down, Left-Right)
-    const sortedBlocks = [];
-    let remaining = [...blocks];
-    
-    while (remaining.length > 0) {
-      remaining.sort((a, b) => a.topY - b.topY);
-      const topBlock = remaining[0];
+    // Recursive XY-Cut Engine
+    function getBlocks(nodes) {
+      if (nodes.length === 0) return [];
       
-      const row = remaining.filter(b => {
-        const overlapY = Math.max(0, Math.min(topBlock.bottomY, b.bottomY) - Math.max(topBlock.topY, b.topY));
-        const minH = Math.min(topBlock.bottomY - topBlock.topY, b.bottomY - b.topY) || 1;
-        return overlapY > medFontH || overlapY > minH * 0.25;
-      });
+      // 1. Horizontal Cut (Y-axis)
+      nodes.sort((a, b) => a.y - b.y);
+      let cutYIndex = -1;
+      let maxYSoFar = nodes[0].y + nodes[0].h;
       
-      row.sort((a, b) => a.x - b.x);
-      sortedBlocks.push(...row);
-      remaining = remaining.filter(b => !row.includes(b));
+      for (let i = 1; i < nodes.length; i++) {
+        if (nodes[i].y > maxYSoFar + medH * 0.8) {
+          cutYIndex = i;
+          break;
+        }
+        maxYSoFar = Math.max(maxYSoFar, nodes[i].y + nodes[i].h);
+      }
+      
+      if (cutYIndex !== -1) {
+        return [...getBlocks(nodes.slice(0, cutYIndex)), ...getBlocks(nodes.slice(cutYIndex))];
+      }
+      
+      // 2. Vertical Cut (X-axis)
+      nodes.sort((a, b) => a.x - b.x);
+      let cutXIndex = -1;
+      let maxXSoFar = nodes[0].x + nodes[0].w;
+      
+      for (let i = 1; i < nodes.length; i++) {
+        if (nodes[i].x > maxXSoFar + medH * 1.8) { 
+          cutXIndex = i;
+          break;
+        }
+        maxXSoFar = Math.max(maxXSoFar, nodes[i].x + nodes[i].w);
+      }
+      
+      if (cutXIndex !== -1) {
+        return [...getBlocks(nodes.slice(0, cutXIndex)), ...getBlocks(nodes.slice(cutXIndex))];
+      }
+      
+      return [nodes];
     }
-    blocks = sortedBlocks;
 
-    // 5. Build final text and resolve hyphens
+    const blocks = getBlocks(items);
     const finalParagraphs = [];
+
     for (const block of blocks) {
+      block.sort((a, b) => {
+        if (Math.abs(a.y - b.y) > medH * 0.4) return a.y - b.y;
+        return a.x - b.x;
+      });
+
       let paraText = '';
-      block.segments.sort((a, b) => a.y - b.y);
-      
-      for (let i = 0; i < block.segments.length; i++) {
-        const seg = block.segments[i];
-        const segText = seg.text.trim();
-        
-        if (i === 0) {
-           paraText += segText;
-        } else {
-           const prevSeg = block.segments[i - 1];
-           const vGap = seg.y - prevSeg.y;
-           
-           if (vGap > medFontH * 1.6) {
-              paraText += '\n\n' + segText;
-           } else {
-              const match = paraText.match(/([a-zA-Z])[-\u2010-\u2015\u00AD]\s*$/);
-              if (match) {
-                 paraText = paraText.replace(/[-\u2010-\u2015\u00AD]\s*$/, '') + segText;
-              } else {
-                 paraText += ' ' + segText;
-              }
-           }
+      for (let i = 0; i < block.length; i++) {
+        const it = block[i];
+        if (i > 0) {
+          const prev = block[i - 1];
+          if (Math.abs(it.y - prev.y) > medH * 0.4) {
+            const match = paraText.match(/([a-zA-Z])[-\u2010-\u2015\u00AD]\s*$/);
+            if (match) {
+              paraText = paraText.replace(/[-\u2010-\u2015\u00AD]\s*$/, '');
+            } else {
+              paraText += ' ';
+            }
+          } else if (it.x - (prev.x + prev.w) > medH * 0.2) {
+            paraText += ' ';
+          }
         }
+        paraText += it.text;
       }
-      
-      const subParas = paraText.split('\n\n').filter(p => p.trim().length > 2);
-      for (const sp of subParas) {
-        const isHeading = block.fontH > medFontH * 1.3 || (sp.split(' ').length <= 15 && block.bold && !/[.!?]$/.test(sp));
-        finalParagraphs.push(isHeading ? '## ' + sp : sp);
+
+      paraText = paraText.replace(/\s+/g, ' ').trim();
+      if (paraText.length > 2) {
+        const avgFontH = block.reduce((sum, i) => sum + i.fontH, 0) / block.length;
+        const isBold = block.some(i => i.bold);
+        const isHeading = avgFontH > medH * 1.3 || (paraText.split(' ').length <= 15 && isBold && !/[.!?]$/.test(paraText));
+        finalParagraphs.push(isHeading ? '## ' + paraText : paraText);
       }
     }
 
@@ -1552,7 +1497,6 @@
     const paragraphs = pageText.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
     const fullText   = paragraphs.join(' ');
 
-    // ── Title detection ──────────────────────────────────────────
     const detectedTitle = _detectTitle(paragraphs);
     const title = detectedTitle
       ? detectedTitle.substring(0, 90)
@@ -1562,22 +1506,20 @@
       ? fullText.replace(detectedTitle, '').trim()
       : fullText;
 
-    // ── TF-IDF-lite word frequency ────────────────────────────────
     const allWords  = _tokenWords(bodyText);
     const freq      = {};
     for (const w of allWords) freq[w] = (freq[w] || 0) + 1;
     const maxFreq   = Math.max(...Object.values(freq), 1);
     for (const w in freq) freq[w] /= maxFreq;
 
-    // ── Score sentences ───────────────────────────────────────────
     const sentences = _splitSentences(bodyText);
     const scored    = sentences.map((s, idx) => {
       const words   = _tokenWords(s);
       if (!words.length) return { s, score: 0 };
       const tfScore = words.reduce((sum, w) => sum + (freq[w] || 0), 0) / words.length;
 
-      const posBonus    = idx === 0 ? 0.25 : idx <= 2 ? 0.1 : 0;   // early sentences
-      const numBonus    = /\d/.test(s) ? 0.12 : 0;                   // contains numbers/stats
+      const posBonus    = idx === 0 ? 0.25 : idx <= 2 ? 0.1 : 0;
+      const numBonus    = /\d/.test(s) ? 0.12 : 0;
       const lenPenalty  = words.length < 6 || words.length > 45 ? -0.15 : 0;
       const keyBonus    = /key|important|significant|critical|major|result|conclude|show|find|reveal/i.test(s) ? 0.1 : 0;
 
@@ -1616,8 +1558,8 @@
     let html;
     if (item.error) {
       html =
-        `<span class="headline">${escapeHtml(item.title)}</span>` +
-        `<p class="error-msg">${escapeHtml(item.title)} could not be converted due to a technical error. ` +
+        `<span class="headline">${escapeHtml(item.title || `Page ${pNum}`)}</span>` +
+        `<p class="error-msg">${escapeHtml(item.title || `Page ${pNum}`)} could not be converted due to a technical error. ` +
         `If you want to view the original article, ` +
         _makeViewOriginalBtn(pNum) + `</p>` +
         `<div class="meta">Page ${pNum} · ${escapeHtml(fileName)}</div>`;
@@ -1714,8 +1656,7 @@
           if (pageNum === 1) {
             hideOverlay();
             DOM.output.innerHTML =
-              '<div class="system-msg">⚠️ Page 1 appears to be blank or image-only (no extractable text). ' +
-              'Try a text-based PDF or a different file.</div>';
+              '<div class="system-msg">⚠️ Page 1 appears to be blank or image-only. Try a different file.</div>';
             _resetUploadBtn();
           }
           continue;
@@ -1759,34 +1700,11 @@
         }
 
         DOM.itemCount.textContent = `${feedItems.length} of ${totalPages} pages processed`;
-
-        // ── Incremental save after every page ──────────────────────
         void _saveSessionToStorage(file.name, feedItems, summaries, titles);
 
       } catch (err) {
-        let retryResult = null;
-        try {
-          const retryPageText = await extractPageText(pdfDoc, pageNum);
-          if (retryPageText && retryPageText.length >= 30) {
-            retryResult = summarisePageLocal(retryPageText, pageNum, docType);
-          }
-        } catch (retryErr) {
-        }
-
         const idx = feedItems.length;
-        let item;
-        if (retryResult) {
-          item = {
-            title:             retryResult.title,
-            description:       retryResult.body.substring(0, CONFIG.MAX_DESC_CHARS),
-            full_text:         '',
-            full_text_english: '',
-            summary_english:   ''
-          };
-          titles.push(retryResult.title);
-          summaries.push(retryResult.body);
-        } else {
-          item = {
+        const item = {
             title:             `Page ${pageNum}`,
             description:       '',
             full_text:         '',
@@ -1794,10 +1712,9 @@
             summary_english:   '',
             error:             true,
             pageNum
-          };
-          titles.push(`Page ${pageNum}`);
-          summaries.push('');
-        }
+        };
+        titles.push(`Page ${pageNum}`);
+        summaries.push('');
         feedItems.push(item);
         feedCache['uploaded-pdf'] = { items: feedItems };
         renderOneFeedItem(item, idx, file.name, true);
@@ -1830,7 +1747,6 @@
 
   window.addEventListener('load', async () => {
   try {
-
     try {
       await Promise.race([
         _restoreKeysFromIDB(),
