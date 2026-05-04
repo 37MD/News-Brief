@@ -1918,4 +1918,42 @@
       }
     });
 
-    DOM.
+    DOM.fontUp.addEventListener('click', () => {
+      readerFontSize = Math.min(CONFIG.READER_FONT_MAX, readerFontSize + 1);
+      document.documentElement.style.setProperty('--reader-font-sz', `${readerFontSize}px`);
+    });
+    DOM.fontDown.addEventListener('click', () => {
+      readerFontSize = Math.max(CONFIG.READER_FONT_MIN, readerFontSize - 1);
+      document.documentElement.style.setProperty('--reader-font-sz', `${readerFontSize}px`);
+    });
+
+    DOM.readerScroll.addEventListener('scroll', () => {
+      const { scrollTop, scrollHeight, clientHeight } = DOM.readerScroll;
+      const denom = scrollHeight - clientHeight;
+      setReaderProgress(denom > 0 ? (scrollTop / denom) * 100 : 0);
+    });
+
+    // ── AI chat panel ─────────────────────────────────────────────
+    DOM.aiToggle.addEventListener('click', toggleAiPanel);
+    DOM.aiCloseBtn.addEventListener('click', closeAiPanel);
+    DOM.aiSubmit.addEventListener('click', () => submitAiPrompt(DOM.aiInput.value));
+    DOM.aiInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitAiPrompt(DOM.aiInput.value); });
+    DOM.aiPromptBtns.forEach(btn => btn.addEventListener('click', () => submitAiPrompt(btn.textContent)));
+
+    // ── Initial badge render ──────────────────────────────────────
+    _refreshKmButtonStates();
+    _updateKeyStatusBadge();
+
+    // ── Restore last session if available ─────────────────────────
+    const saved = await _loadSessionFromStorage();
+    if (saved) {
+      _restoreSession(saved);
+    }
+  } catch (fatalErr) {
+    document.body.innerHTML += `<div style="position:fixed;top:0;left:0;right:0;padding:10px;background:#c8102e;color:#000000;font-family:monospace;font-size:12px;z-index:9999;">Startup error: ${fatalErr.message}</div>`;
+  }
+  });
+
+  </script>
+</body>
+</html>
