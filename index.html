@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width">
-  <title>Pulse v5A — PDF Intelligence</title>
+  <title>Pulse v5B — PDF Intelligence</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
     /* ═══ BASE ═══ */
@@ -20,13 +20,13 @@
 
     /* ═══ CONTROLS BAR ═══ */
     .controls-bar {
-      position: relative; padding: 8px 20px 0;
+      position: relative; padding: 5px 20px 0;
       display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;
       border-bottom: 1px solid var(--rule); background: #e4eaf2;
     }
     .controls-row1 {
       width: 100%; display: flex; justify-content: center; align-items: center;
-      gap: 8px; flex-wrap: wrap; padding-bottom: 8px;
+      gap: 8px; flex-wrap: wrap; padding-bottom: 5px;
     }
     /* Row 2 — hidden by default, shown only when key manager is open */
     .controls-row2 {
@@ -88,30 +88,30 @@
     .km-close:hover { background: #e0e6ef; }
 
     /* ═══ MASTHEAD ═══ */
-    .masthead { border-bottom: 2px solid var(--ink); padding: 15px 20px; text-align: center; background: var(--paper); }
-    .masthead-title { font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 700; line-height: 1.1; }
-    .tagline { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; margin-top: 4px; }
+    .masthead { border-bottom: 2px solid var(--ink); padding: 7px 20px 6px; text-align: center; background: var(--paper); }
+    .masthead-title { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700; line-height: 1.1; }
+    .tagline { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; margin-top: 2px; }
 
     /* ═══ KEY STATUS BADGE (under masthead) ═══ */
     #key-status-badge {
       font-family: 'IBM Plex Mono', monospace; font-size: 9px; text-align: center;
-      padding: 4px 0 2px; letter-spacing: 0.05em;
+      padding: 2px 0 1px; letter-spacing: 0.05em;
     }
 
     .feed-status-bar {
-      max-width: 800px; margin: 8px auto 0; padding: 0 15px;
+      max-width: 800px; margin: 4px auto 0; padding: 0 15px;
       font-family: 'IBM Plex Mono', monospace; font-size: 10px;
       text-transform: uppercase; letter-spacing: 0.05em; text-align: center;
     }
 
-    .container { max-width: 800px; margin: 0 auto; padding: 15px 15px 40px; }
+    .container { max-width: 800px; margin: 0 auto; padding: 8px 15px 40px; }
 
     /* ═══ FEED ITEMS ═══ */
-    .feed-item { margin-bottom: 20px; border-bottom: 1px solid var(--rule); padding-bottom: 15px; animation: fadeIn 0.3s ease forwards; }
+    .feed-item { margin-bottom: 14px; border-bottom: 1px solid var(--rule); padding-bottom: 12px; animation: fadeIn 0.3s ease forwards; }
     .feed-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
-    .headline { font-family: 'Playfair Display', serif; font-size: 20px; text-decoration: none; font-weight: 700; display: block; line-height: 1.2; margin-bottom: 8px; word-break: break-word; cursor: pointer; text-align: center; }
+    .headline { font-family: 'Playfair Display', serif; font-size: 19px; text-decoration: none; font-weight: 700; display: block; line-height: 1.2; margin-bottom: 5px; word-break: break-word; cursor: pointer; text-align: center; }
     .headline:hover { text-decoration: underline; }
     .description { font-size: 14px; margin-bottom: 6px; line-height: 1.7; color: #000000; font-weight: 400; text-align: justify; hyphens: auto; -webkit-hyphens: auto; max-width: 65ch; }
     .description.reader-trigger:hover { text-decoration: underline; }
@@ -210,7 +210,7 @@
     /* ═══ MOBILE ═══ */
     @media (max-width: 520px) {
       .controls-bar { padding: 12px 16px; justify-content: flex-end; flex-wrap: wrap; }
-      .masthead { padding: 20px 16px; }
+      .masthead { padding: 7px 16px 6px; }
       .reader-scroll { padding: 20px 18px 0px; }
       .reader-source-url { display: none; }
       #ai-panel { top: 65px; right: 10px; max-width: calc(100vw - 20px); max-height: 70vh; }
@@ -289,7 +289,7 @@
       border-radius: 6px; padding: 8px 12px;
       display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
       font-size: 12px; color: #b0c8d8;
-      margin: 6px 12px 0;
+      margin: 3px 12px 0;
     }
     #doctype-confirm-msg { flex: 1; min-width: 160px; }
 
@@ -396,7 +396,7 @@
 
   <!-- ═══ MASTHEAD ═══ -->
   <div class="masthead">
-    <div class="masthead-title">Pulse<span style="font-size:10px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.6;">v5A</span></div>
+    <div class="masthead-title">Pulse<span style="font-size:10px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.6;">v5B</span></div>
     <div class="tagline">PDF Intelligence Terminal</div>
   </div>
   <div class="feed-status-bar"><span id="item-count"></span></div>
