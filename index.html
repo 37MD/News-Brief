@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width">
-  <title>Pulse v6A — PDF Intelligence</title>
+  <title>Pulse v6B — PDF Intelligence</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&family=Noto+Sans:wght@400;500&family=Noto+Sans+Devanagari:wght@400;500&display=swap" rel="stylesheet">
   <style>
     /* ═══ BASE ═══ */
@@ -42,6 +42,7 @@
       background: transparent; border: 1px solid var(--accent);
       padding: 6px 12px; border-radius: 4px; cursor: pointer;
       text-transform: uppercase; font-weight: 700; transition: background 0.2s; white-space: nowrap;
+      color: #000000;
     }
     .btn-outline:hover    { background: #d0d7e0; }
     .btn-outline:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -52,42 +53,43 @@
     #key-manager-box {
       display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
       width: 340px; max-width: calc(100vw - 20px);
-      background: #fff; border: 2px solid #009e70; border-radius: 8px;
+      background: #f5f0e8; border: 2px solid #009e70; border-radius: 8px;
       box-shadow: 0 8px 30px rgba(0,0,0,0.18); z-index: 2000;
       padding: 14px 16px 12px; font-family: 'IBM Plex Mono', monospace;
+      color: #000000;
     }
     #key-manager-box.open { display: block; }
     .km-title  { font-size: 10px; font-weight: 700; color: #009e70; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px; }
-    .km-label  { font-size: 9px; font-weight: 600; color: #404060; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }
+    .km-label  { font-size: 9px; font-weight: 600; color: #000000; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }
     .km-row    { display: flex; gap: 6px; align-items: center; margin-bottom: 9px; }
     .km-input  {
       flex: 1; font-size: 11px; padding: 6px 9px; border-radius: 5px;
-      border: 1.5px solid #b0bece; background: #f2f5f9;
-      outline: none; font-family: monospace; min-width: 0;
+      border: 1.5px solid #000000; background: #e4eaf2;
+      outline: none; font-family: monospace; min-width: 0; color: #000000;
     }
     .km-input:focus { border-color: #009e70; }
     .km-save {
-      background: #fff; border: 1.5px solid #b0bece; border-radius: 5px;
+      background: #e4eaf2; border: 1.5px solid #000000; border-radius: 5px;
       padding: 6px 10px; font-size: 9px; cursor: pointer; white-space: nowrap;
-      font-family: 'IBM Plex Mono', monospace; font-weight: 600; min-width: 72px; transition: all 0.2s;
+      font-family: 'IBM Plex Mono', monospace; font-weight: 600; min-width: 72px; transition: all 0.2s; color: #000000;
     }
     .km-save.active { background: #009e70 !important; color: #000000 !important; border-color: #009e70 !important; }
-    .km-status { font-size: 8.5px; color: #404060; line-height: 1.6; margin-bottom: 6px; }
-    .km-footer { font-size: 7.5px; color: #7090b0; margin-top: 4px; }
+    .km-status { font-size: 8.5px; color: #000000; line-height: 1.6; margin-bottom: 6px; }
+    .km-footer { font-size: 7.5px; color: #000000; margin-top: 4px; }
     .km-footer span { color: #009e70; font-weight: 600; }
     .km-bottom { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; }
     .km-bottom > div { flex: 1; min-width: 0; }
     .km-model-select {
       font-family: 'IBM Plex Mono', monospace; font-size: 10px;
-      border: 1px solid #b0bece; border-radius: 4px; padding: 4px 6px;
-      background: #f2f5f9; cursor: pointer; outline: none;
+      border: 1px solid #000000; border-radius: 4px; padding: 4px 6px;
+      background: #e4eaf2; cursor: pointer; outline: none; color: #000000;
       width: 100%; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;
     }
     .km-close {
-      background: #f2f5f9; border: 1.5px solid #b0bece; border-radius: 5px;
-      padding: 4px 12px; font-size: 9px; cursor: pointer; font-family: 'IBM Plex Mono', monospace;
+      background: #e4eaf2; border: 1.5px solid #000000; border-radius: 5px;
+      padding: 4px 12px; font-size: 9px; cursor: pointer; font-family: 'IBM Plex Mono', monospace; color: #000000;
     }
-    .km-close:hover { background: #e0e6ef; }
+    .km-close:hover { background: #c8c0b0; }
 
     /* ═══ MASTHEAD ═══ */
     .masthead { border-bottom: 2px solid var(--ink); padding: 7px 20px 6px; text-align: center; background: var(--paper); }
@@ -97,7 +99,7 @@
     /* ═══ KEY STATUS BADGE (under masthead) ═══ */
     #key-status-badge {
       font-family: 'IBM Plex Mono', monospace; font-size: 9px; text-align: center;
-      padding: 2px 0 1px; letter-spacing: 0.05em;
+      padding: 2px 0 1px; letter-spacing: 0.05em; color: #000000;
     }
 
     .feed-status-bar {
@@ -113,22 +115,22 @@
     .feed-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
-    .headline { font-family: 'Playfair Display', serif; font-size: 19px; text-decoration: none; font-weight: 700; display: block; line-height: 1.2; margin-bottom: 5px; word-break: break-word; overflow-wrap: anywhere; cursor: pointer; text-align: center; }
+    .headline { font-family: 'Playfair Display', serif; font-size: 19px; text-decoration: none; font-weight: 700; display: block; line-height: 1.2; margin-bottom: 5px; word-break: break-word; overflow-wrap: anywhere; cursor: pointer; text-align: center; color: #000000; }
     .headline:hover { text-decoration: underline; }
     .description { font-size: 14px; margin-bottom: 6px; line-height: 1.7; color: #000000; font-weight: 400; text-align: left; hyphens: auto; -webkit-hyphens: auto; max-width: 65ch; word-break: break-word; overflow-wrap: anywhere; }
     .description.reader-trigger:hover { text-decoration: underline; }
     .description.translation { border-left: 3px solid var(--accent); background: rgba(26,92,58,0.05); padding: 6px 10px; border-radius: 0 4px 4px 0; font-weight: 400; }
-    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 8px; }
-    .system-msg { font-family: 'IBM Plex Mono', monospace; font-size: 12px; text-align: center; margin-top: 30px; line-height: 1.5; }
-    .feed-item-error .headline { color: #7090b0; font-style: italic; font-size: 16px; }
-    .feed-item-error .error-msg { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #7090b0; margin: 4px 0 8px; word-break: break-word; overflow-wrap: anywhere; }
-    .view-original-btn { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #1a5c3a; text-decoration: underline; cursor: pointer; background: none; border: none; padding: 0; letter-spacing: 0.03em; }
-    .view-original-btn:hover { color: #000000; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 8px; color: #000000; }
+    .system-msg { font-family: 'IBM Plex Mono', monospace; font-size: 12px; text-align: center; margin-top: 30px; line-height: 1.5; color: #000000; }
+    .feed-item-error .headline { color: #000000; font-style: italic; font-size: 16px; }
+    .feed-item-error .error-msg { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #000000; margin: 4px 0 8px; word-break: break-word; overflow-wrap: anywhere; }
+    .view-original-btn { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #000000; text-decoration: underline; cursor: pointer; background: none; border: none; padding: 0; letter-spacing: 0.03em; font-weight: 700; }
+    .view-original-btn:hover { color: #1a5c3a; }
 
     /* ═══ READER PANEL ═══ */
     #summary-backdrop {
       display: none; position: fixed; inset: 0;
-      background: rgba(26,26,24,0.45); z-index: 998; backdrop-filter: blur(2px);
+      background: rgba(245,240,232,0.85); z-index: 998; backdrop-filter: blur(2px);
     }
     #summary-backdrop.open { display: block; }
     #reader-backdrop { display: none; }
@@ -145,26 +147,26 @@
 
     #reader-progress { position: absolute; top: 0; left: 0; height: 3px; width: 0%; background: var(--ink); transition: width 0.2s; z-index: 5; }
 
-    .reader-topbar { display: flex; align-items: center; gap: 10px; padding: 10px 15px; border-bottom: 1px solid var(--rule); background: #e4eaf2; flex-shrink: 0; position: relative; z-index: 20; }
-    .reader-back-btn { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; text-transform: uppercase; background: transparent; border: 1px solid var(--ink); padding: 5px 14px; border-radius: 4px; cursor: pointer; white-space: nowrap; transition: background 0.2s; letter-spacing: 0.04em; }
-    .reader-back-btn:hover { background: #d0d7e0; }
-    .reader-source-url { font-family: 'IBM Plex Mono', monospace; font-size: 10px; flex: 1; }
+    .reader-topbar { display: flex; align-items: center; gap: 10px; padding: 10px 15px; border-bottom: 1px solid var(--rule); background: #e4eaf2; flex-shrink: 0; position: relative; z-index: 20; color: #000000; }
+    .reader-back-btn { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; text-transform: uppercase; background: transparent; border: 1px solid var(--ink); padding: 5px 14px; border-radius: 4px; cursor: pointer; white-space: nowrap; transition: background 0.2s; letter-spacing: 0.04em; color: #000000; }
+    .reader-back-btn:hover { background: #c8c0b0; }
+    .reader-source-url { font-family: 'IBM Plex Mono', monospace; font-size: 10px; flex: 1; color: #000000; }
     .reader-font-ctrl { display: flex; gap: 4px; }
-    .reader-font-ctrl button { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 700; background: transparent; border: 1px solid var(--rule); width: 26px; height: 26px; border-radius: 4px; cursor: pointer; transition: border-color 0.2s; }
-    .reader-font-ctrl button:hover { border-color: var(--ink); background: #d0d7e0; }
-    .reader-open-btn { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700; text-transform: uppercase; background: #e4eaf2; border: 1px solid var(--ink); padding: 4px 8px; border-radius: 4px; cursor: pointer; white-space: nowrap; }
-    .reader-open-btn:hover { background: #d0d7e0; }
+    .reader-font-ctrl button { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 700; background: transparent; border: 1px solid var(--ink); width: 26px; height: 26px; border-radius: 4px; cursor: pointer; transition: background 0.2s; color: #000000; }
+    .reader-font-ctrl button:hover { background: #c8c0b0; }
+    .reader-open-btn { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700; text-transform: uppercase; background: #e4eaf2; border: 1px solid var(--ink); padding: 4px 8px; border-radius: 4px; cursor: pointer; white-space: nowrap; color: #000000; }
+    .reader-open-btn:hover { background: #c8c0b0; }
 
     .reader-scroll { overflow-y: auto; flex: 1; padding: 28px 20px 60px; position: relative; z-index: 10; }
     .reader-scroll-inner { max-width: 720px; margin: 0 auto; }
-    .reader-article-title { font-family: 'Playfair Display', serif; font-size: clamp(20px,3vw,28px); font-weight: 700; line-height: 1.2; margin-bottom: 10px; text-align: center; }
-    .reader-article-meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--rule); }
+    .reader-article-title { font-family: 'Playfair Display', serif; font-size: clamp(20px,3vw,28px); font-weight: 700; line-height: 1.2; margin-bottom: 10px; text-align: center; color: #000000; }
+    .reader-article-meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--rule); color: #000000; }
     .reader-body { font-size: var(--reader-font-sz); line-height: 1.7; padding-bottom: 20px; color: #000000; font-weight: 400; }
     .reader-body h1,.reader-body h2,.reader-body h3,.reader-body h4 { font-family: 'Playfair Display', serif; margin: 1.2em 0 0.5em; line-height: 1.2; color: #000000; font-weight: 700; text-align: center; }
     .reader-body p { margin-bottom: 1em; font-weight: 400; color: #000000; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
     .reader-body strong, .reader-body b { font-weight: 400; }
     .reader-body em, .reader-body i { font-style: normal; }
-    .translation-header { font-family: 'Playfair Display', serif; font-size: 1.2em; font-weight: 700; margin: 30px 0 15px; padding-top: 20px; border-top: 2px dashed var(--rule); text-align: center; }
+    .translation-header { font-family: 'Playfair Display', serif; font-size: 1.2em; font-weight: 700; margin: 30px 0 15px; padding-top: 20px; border-top: 2px dashed var(--rule); text-align: center; color: #000000; }
 
     /* ═══ SUMMARY MODAL ═══ */
     #summary-modal {
@@ -172,45 +174,45 @@
       position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
       width: 90%; max-width: 800px; max-height: 85vh;
       background: var(--paper); z-index: 1000; border-radius: 8px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.3); flex-direction: column; border: 1px solid var(--rule);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3); flex-direction: column; border: 2px solid var(--ink);
     }
     #summary-modal.open { visibility: visible; }
-    .summary-header { display: flex; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--rule); align-items: center; background: #e4eaf2; border-radius: 8px 8px 0 0; }
+    .summary-header { display: flex; justify-content: space-between; padding: 12px 16px; border-bottom: 2px solid var(--ink); align-items: center; background: #e4eaf2; border-radius: 6px 6px 0 0; color: #000000; }
     .summary-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; text-align: center; }
-    .summary-content-area { padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
-    .summary-box { border: 1px solid var(--rule); border-radius: 6px; background: #fff; overflow: hidden; }
-    .summary-box-title { background: #e4eaf2; padding: 8px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; text-transform: uppercase; border-bottom: 1px solid var(--rule); text-align: center; }
-    .summary-box-content { padding: 12px; font-size: 13px; line-height: 1.7; white-space: pre-line; background: #fff; color: #000000; font-weight: 400; text-align: justify; hyphens: auto; -webkit-hyphens: auto; max-width: 65ch; margin: 0 auto; }
+    .summary-content-area { padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; background: #f5f0e8; }
+    .summary-box { border: 1px solid var(--ink); border-radius: 6px; background: #f5f0e8; overflow: hidden; }
+    .summary-box-title { background: #e4eaf2; padding: 8px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; text-transform: uppercase; border-bottom: 1px solid var(--ink); text-align: center; color: #000000; }
+    .summary-box-content { padding: 12px; font-size: 13px; line-height: 1.7; white-space: pre-line; background: #f5f0e8; color: #000000; font-weight: 400; text-align: justify; hyphens: auto; -webkit-hyphens: auto; max-width: 65ch; margin: 0 auto; }
     .summary-box-content strong, .summary-box-content b { font-weight: 400; }
 
     /* ═══ AI CHAT PANEL ═══ */
     #ai-panel {
       position: absolute; top: 50px; right: 15px; width: 340px; max-width: calc(100vw - 30px);
-      background: #fff; border: 1px solid var(--rule); border-radius: 8px;
+      background: #f5f0e8; border: 2px solid var(--ink); border-radius: 8px;
       box-shadow: 0 8px 30px rgba(0,0,0,0.15); display: flex; flex-direction: column;
       opacity: 0; pointer-events: none; transform: translateY(-10px);
       transition: all 0.2s ease; max-height: 65vh; z-index: 1005;
     }
     #ai-panel.open { opacity: 1; pointer-events: auto; transform: translateY(0); }
-    .ai-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #e4eaf2; border-bottom: 1px solid var(--rule); border-radius: 8px 8px 0 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; text-transform: uppercase; }
+    .ai-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #e4eaf2; border-bottom: 1px solid var(--ink); border-radius: 6px 6px 0 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #000000; }
 
     /* ═══ AI QUOTA STATUS BAR (inside AI panel header) ═══ */
-    #ai-quota-status { font-size: 8px; font-family: 'IBM Plex Mono', monospace; font-weight: 400; text-transform: none; letter-spacing: 0; color: #404060; flex: 1; text-align: right; padding-right: 6px; }
+    #ai-quota-status { font-size: 8px; font-family: 'IBM Plex Mono', monospace; font-weight: 400; text-transform: none; letter-spacing: 0; color: #000000; flex: 1; text-align: right; padding-right: 6px; }
 
     .ai-close-btn { background: transparent; border: none; font-size: 18px; cursor: pointer; font-weight: 700; color: #000000; }
-    .ai-chat-area { padding: 12px; overflow-y: auto; flex: 1; font-size: 13px; line-height: 1.5; background: #fff; }
-    .ai-message { margin-bottom: 12px; padding: 10px 12px; border-radius: 6px; background: #f0f0f0; font-weight: 400; text-align: justify; hyphens: auto; -webkit-hyphens: auto; line-height: 1.7; color: #000000; }
-    .ai-message.user   { background: #e4eaf2; border-left: 3px solid var(--ink); }
-    .ai-message.system { font-style: italic; background: transparent; padding: 0; }
-    .ai-message.status { font-size: 11px; color: #f59e0b; background: #fffbeb; border-left: 3px solid #f59e0b; padding: 6px 10px; font-style: italic; text-align: left; }
+    .ai-chat-area { padding: 12px; overflow-y: auto; flex: 1; font-size: 13px; line-height: 1.5; background: #f5f0e8; }
+    .ai-message { margin-bottom: 12px; padding: 10px 12px; border-radius: 6px; background: #e4eaf2; border: 1px solid #c8c0b0; font-weight: 400; text-align: justify; hyphens: auto; -webkit-hyphens: auto; line-height: 1.7; color: #000000; }
+    .ai-message.user   { background: #d0d7e0; border-left: 3px solid var(--ink); }
+    .ai-message.system { font-style: italic; background: transparent; padding: 0; border: none; }
+    .ai-message.status { font-size: 11px; color: #000000; background: #d0d7e0; border-left: 3px solid #000000; padding: 6px 10px; font-style: italic; text-align: left; }
     .ai-message strong, .ai-message b { font-weight: 400; }
     .ai-message p { margin-bottom: 0.8em; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
-    .ai-quick-prompts { display: flex; gap: 6px; padding: 0 12px 10px; overflow-x: auto; background: #fff; }
-    .ai-quick-prompts button { background: #f0f0f0; border: 1px solid var(--rule); padding: 4px 10px; border-radius: 15px; font-size: 11px; font-weight: 700; cursor: pointer; color: #000000; }
-    .ai-quick-prompts button:hover { background: #d0d7e0; border-color: var(--ink); }
-    .ai-input-area { display: flex; padding: 10px 12px; border-top: 1px solid var(--rule); background: #e4eaf2; border-radius: 0 0 8px 8px; }
-    .ai-input-area input { flex: 1; border: 1px solid var(--rule); border-radius: 4px; padding: 8px 10px; font-size: 13px; outline: none; color: #000000; }
-    .ai-input-area input:focus { border-color: var(--ink); }
+    .ai-quick-prompts { display: flex; gap: 6px; padding: 0 12px 10px; overflow-x: auto; background: #f5f0e8; }
+    .ai-quick-prompts button { background: #e4eaf2; border: 1px solid var(--ink); padding: 4px 10px; border-radius: 15px; font-size: 11px; font-weight: 700; cursor: pointer; color: #000000; }
+    .ai-quick-prompts button:hover { background: #d0d7e0; }
+    .ai-input-area { display: flex; padding: 10px 12px; border-top: 1px solid var(--ink); background: #e4eaf2; border-radius: 0 0 6px 6px; }
+    .ai-input-area input { flex: 1; border: 1px solid var(--ink); border-radius: 4px; padding: 8px 10px; font-size: 13px; outline: none; color: #000000; background: #f5f0e8; }
+    .ai-input-area input:focus { border-color: #1a5c3a; }
     .ai-input-area button { background: #d0d7e0; border: 1px solid var(--ink); border-radius: 4px; padding: 0 12px; margin-left: 6px; cursor: pointer; font-weight: 700; color: #000000; }
 
     /* ═══ MOBILE ═══ */
@@ -244,9 +246,9 @@
     }
     #upload-pdf-btn.uploading {
       padding-left: 34px;
-      color: #1a5c3a;
+      color: #000000;
       border-color: #1a5c3a;
-      background: #e6f4ec;
+      background: #c8c0b0;
       cursor: wait;
     }
     #upload-pdf-btn .upload-ring {
@@ -258,7 +260,7 @@
       width: 14px;
       height: 14px;
       border: 2px solid #b0d8be;
-      border-top-color: #1a5c3a;
+      border-top-color: #000000;
       border-radius: 50%;
       animation: uploadSpin 0.75s linear infinite;
     }
@@ -278,7 +280,7 @@
     .proc-spinner {
       width: 44px; height: 44px;
       border: 3px solid #c8c0b0;
-      border-top-color: #1a5c3a;
+      border-top-color: #000000;
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
@@ -286,24 +288,22 @@
 
     .proc-title {
       font-size: 13px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.12em; color: #1a5c3a;
+      letter-spacing: 0.12em; color: #000000;
     }
     .proc-step {
-      font-size: 11px; color: #404060; text-align: center;
+      font-size: 11px; color: #000000; text-align: center;
       max-width: 280px; line-height: 1.6;
     }
     .proc-bar-wrap {
       width: 240px; height: 4px; background: #c8c0b0; border-radius: 2px; overflow: hidden;
     }
     .proc-bar {
-      height: 100%; width: 0%; background: #1a5c3a;
+      height: 100%; width: 0%; background: #000000;
       border-radius: 2px; transition: width 0.4s ease;
     }
     .proc-note {
-      font-size: 9px; color: #7090b0; text-align: center; max-width: 260px; line-height: 1.5;
+      font-size: 9px; color: #000000; text-align: center; max-width: 260px; line-height: 1.5;
     }
-
-    /* ── Doc Type Confirm Bar ── */
 
     /* ── Reader paragraph text (PDF extract) ── */
     .reader-extract {
@@ -398,7 +398,7 @@
   </div>
 
   <div class="masthead">
-    <div class="masthead-title">Pulse<span style="font-size:10px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.6;">v6A</span></div>
+    <div class="masthead-title">Pulse<span style="font-size:10px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.6;">v6B</span></div>
     <div class="tagline">PDF Intelligence Terminal</div>
   </div>
   <div class="feed-status-bar"><span id="item-count"></span></div>
@@ -572,13 +572,14 @@
 
   function _idbOpen() {
     return new Promise((resolve, reject) => {
+      if (!window.indexedDB) return reject(new Error('IDB not supported'));
       const req = indexedDB.open(PULSE_DB, 1);
       req.onupgradeneeded = e => {
         const db = e.target.result;
         try { if (!db.objectStoreNames.contains(STORE_KEYS))     db.createObjectStore(STORE_KEYS); } catch(_) {}
         try { if (!db.objectStoreNames.contains(STORE_SESSIONS)) db.createObjectStore(STORE_SESSIONS); } catch(_) {}
       };
-      req.onblocked = () => req.result && req.result.close();
+      req.onblocked = () => { if (req.result) req.result.close(); reject(new Error('IDB blocked')); };
       req.onsuccess = e => resolve(e.target.result);
       req.onerror   = () => reject(req.error);
     });
@@ -770,10 +771,10 @@
   function _updateKmStatus() {
     if (!DOM.kmStatus) return;
     const k1 = _getRawKey(1), k2 = _getRawKey(2);
-    const slot = _activeKeySlot === 2 ? '  <strong style="color:#f59e0b">⚡ K2 active (K1 quota hit)</strong>' : '';
+    const slot = _activeKeySlot === 2 ? '  <strong style="color:#000000">⚡ K2 active (K1 quota hit)</strong>' : '';
     DOM.kmStatus.innerHTML =
-      `<span style="color:${k1?'#009e70':'#c8102e'};font-weight:700">K1: ${_maskKey(k1)}</span>` +
-      `  <span style="color:${k2?'#009e70':'#7090b0'};font-weight:700">K2: ${_maskKey(k2)}</span>` +
+      `<span style="color:${k1?'#009e70':'#000000'};font-weight:700">K1: ${_maskKey(k1)}</span>` +
+      `  <span style="color:${k2?'#009e70':'#000000'};font-weight:700">K2: ${_maskKey(k2)}</span>` +
       (k2 ? ` <span style="color:#009e70"> ✓ fallback ready</span>` : '') +
       slot;
   }
@@ -790,22 +791,22 @@
       } else {
         DOM.welcomeMsg.innerHTML =
           'API key active — tap <strong>📄 Upload PDF</strong> to begin.<br>' +
-          '<span style="font-size:9px;color:#7090b0;letter-spacing:0.03em;">Key is stored permanently and will be available next session.</span>';
+          '<span style="font-size:9px;color:#000000;letter-spacing:0.03em;">Key is stored permanently and will be available next session.</span>';
       }
     }
 
     if (!k1 && !k2) {
-      DOM.keyStatusBadge.innerHTML = '<span style="color:#c8102e">⚠ No keys saved</span>';
+      DOM.keyStatusBadge.innerHTML = '<span style="color:#000000; font-weight:700;">⚠ No keys saved</span>';
       return;
     }
     const slotLabel = _activeKeySlot === 2
-      ? '<span style="color:#f59e0b">⚡ Using K2 (K1 quota hit)</span>'
+      ? '<span style="color:#000000; font-weight:700;">⚡ Using K2 (K1 quota hit)</span>'
       : '<span style="color:#009e70">✓ K1 Active</span>';
     const k2label = k2
       ? '<span style="color:#009e70"> · K2 Backup Ready</span>'
-      : '<span style="color:#7090b0"> · K2 not set</span>';
+      : '<span style="color:#000000"> · K2 not set</span>';
     DOM.keyStatusBadge.innerHTML =
-      `Gemini: ${slotLabel}${k2label}  ·  Model: <strong>${getGeminiModel()}</strong>  ·  <span style="color:#7090b0;font-size:8px;">Stored permanently</span>`;
+      `Gemini: ${slotLabel}${k2label}  ·  Model: <strong>${getGeminiModel()}</strong>  ·  <span style="color:#000000;font-size:8px;">Stored permanently</span>`;
   }
 
   function openKeyManager() {
@@ -832,11 +833,11 @@
 
   function _saveKey(slot, val) {
     if (!val) {
-      DOM.kmStatus.innerHTML = '<span style="color:#c8102e;font-weight:700">⚠ Nothing to save — paste your AIza… key first.</span>';
+      DOM.kmStatus.innerHTML = '<span style="color:#000000;font-weight:700">⚠ Nothing to save — paste your AIza… key first.</span>';
       return;
     }
     if (!val.startsWith('AIza')) {
-      DOM.kmStatus.innerHTML = '<span style="color:#c8102e;font-weight:700">⚠ Key should start with "AIza…" — check and paste again.</span>';
+      DOM.kmStatus.innerHTML = '<span style="color:#000000;font-weight:700">⚠ Key should start with "AIza…" — check and paste again.</span>';
       return;
     }
     const lsKey = slot === 2 ? 'pulse_gemini_key2' : 'pulse_gemini_key1';
@@ -854,8 +855,8 @@
 
     DOM.kmStatus.innerHTML =
       `<span style="color:#009e70;font-weight:700">✅ K${slot} saved permanently.</span>` +
-      `<br><span style="color:#404060;font-size:8px;">Stored in IndexedDB — survives browser restarts and cache clears.</span>` +
-      (slot === 1 && !_getRawKey(2) ? '<br><span style="color:#7090b0;">Optionally add K2 as a backup key.</span>' : '');
+      `<br><span style="color:#000000;font-size:8px;">Stored in IndexedDB — survives browser restarts and cache clears.</span>` +
+      (slot === 1 && !_getRawKey(2) ? '<br><span style="color:#000000;">Optionally add K2 as a backup key.</span>' : '');
   }
 
   window.getGeminiKey      = getGeminiKey;
@@ -866,11 +867,6 @@
 
   /* ═══════════════════════════════════════════════════════════════════
      SECTION 5 — GEMINI API ENGINE
-     Full cascade on 429 quota:
-       Flash-Lite/K1 → Flash-Lite/K2 → Flash/K1 → Flash/K2 → Pro/K1 → Pro/K2
-     Starting model = user selection (default: Flash-Lite).
-     On each 429, tries the same model with the other key first,
-     then escalates to the next model tier.
   ═══════════════════════════════════════════════════════════════════ */
 
   async function callGemini(promptText, statusEl) {
@@ -1048,8 +1044,8 @@
       .join('');
 
     const translationHtml = (item.full_text_english && item.full_text_english.trim().length > 0)
-      ? `<hr style="border:none;border-top:2px dashed #c8c0b0;margin:32px 0;">
-         <h2 style="font-family:'Georgia',serif;font-size:1.3em;margin-bottom:18px;">English Translation</h2>
+      ? `<hr style="border:none;border-top:2px dashed #000000;margin:32px 0;">
+         <h2 style="font-family:'Georgia',serif;font-size:1.3em;margin-bottom:18px;color:#000000;">English Translation</h2>
          <div style="font-size:17px;line-height:1.75;color:#000000;">${parseMarkdown(item.full_text_english)}</div>`
       : '';
 
@@ -1062,14 +1058,14 @@
   <link href="[https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap](https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap)" rel="stylesheet">
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-    body{background:#f5f0e8;font-family:'IBM Plex Sans',sans-serif;padding:0 0 60px;}
-    .topbar{background:#e4eaf2;border-bottom:1px solid #c8c0b0;padding:10px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10;}
-    .close-btn{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;text-transform:uppercase;background:transparent;border:1px solid #000;padding:5px 12px;border-radius:4px;cursor:pointer;}
+    body{background:#f5f0e8;font-family:'IBM Plex Sans',sans-serif;padding:0 0 60px;color:#000000;}
+    .topbar{background:#e4eaf2;border-bottom:1px solid #000000;padding:10px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10;color:#000000;}
+    .close-btn{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;text-transform:uppercase;background:transparent;border:1px solid #000;padding:5px 12px;border-radius:4px;cursor:pointer;color:#000000;}
     .close-btn:hover{background:#d0d7e0;}
-    .source-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#404060;letter-spacing:0.05em;text-transform:uppercase;}
+    .source-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#000000;letter-spacing:0.05em;text-transform:uppercase;}
     .article{max-width:720px;margin:0 auto;padding:32px 24px 0;}
     h1{font-family:'Playfair Display',serif;font-size:clamp(22px,4vw,32px);font-weight:700;line-height:1.2;margin-bottom:12px;color:#000000;text-align:center;}
-    .meta{font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#404060;margin-bottom:24px;padding-bottom:14px;border-bottom:1px solid #c8c0b0;}
+    .meta{font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#000000;margin-bottom:24px;padding-bottom:14px;border-bottom:1px solid #000000;}
     strong,b{font-weight:400;color:#000000;}em,i{font-style:normal;color:#000000;}
     ul{padding-left:1.4em;margin-bottom:1em;}li{margin-bottom:0.4em;line-height:1.7;font-size:17px;}
     p{hyphens:auto;-webkit-hyphens:auto;}
@@ -1103,8 +1099,6 @@
 
   /* ═══════════════════════════════════════════════════════════════════
      SECTION 8B — ORIGINAL PDF PAGE VIEWER
-     Renders the raw PDF page as a high-res canvas in a popup window.
-     Uses the in-memory pdfDoc kept from the last upload.
   ═══════════════════════════════════════════════════════════════════ */
 
   window.openPdfPageView = async function(pageNum) {
@@ -1127,16 +1121,16 @@
   <title>Page ${pageNum} — ${escapeHtml(fileName)}</title>
   <style>
     *{box-sizing:border-box;margin:0;padding:0;}
-    body{background:#333;display:flex;flex-direction:column;min-height:100vh;font-family:'IBM Plex Mono',monospace;}
-    .topbar{background:#1a2636;color:#b0c8d8;padding:10px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10;font-size:11px;}
-    .close-btn{background:transparent;border:1px solid #b0c8d8;color:#b0c8d8;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:10px;font-family:inherit;text-transform:uppercase;}
-    .close-btn:hover{background:#b0c8d8;color:#1a2636;}
-    .nav-btn{background:transparent;border:1px solid #b0c8d8;color:#b0c8d8;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:10px;font-family:inherit;}
-    .nav-btn:hover{background:#b0c8d8;color:#1a2636;}
-    .page-label{flex:1;text-align:center;}
+    body{background:#f5f0e8;display:flex;flex-direction:column;min-height:100vh;font-family:'IBM Plex Mono',monospace;color:#000000;}
+    .topbar{background:#e4eaf2;color:#000000;padding:10px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10;font-size:11px;border-bottom:2px solid #000000;}
+    .close-btn{background:#f5f0e8;border:1px solid #000000;color:#000000;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:10px;font-family:inherit;text-transform:uppercase;font-weight:700;}
+    .close-btn:hover{background:#d0d7e0;}
+    .nav-btn{background:#f5f0e8;border:1px solid #000000;color:#000000;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700;}
+    .nav-btn:hover{background:#d0d7e0;}
+    .page-label{flex:1;text-align:center;font-weight:700;}
     .canvas-wrap{display:flex;justify-content:center;align-items:flex-start;padding:20px;flex:1;}
-    canvas{background:#fff;box-shadow:0 4px 24px rgba(0,0,0,0.5);max-width:100%;}
-    .loading{color:#b0c8d8;text-align:center;padding:60px 20px;font-size:13px;}
+    canvas{background:#fff;box-shadow:0 4px 24px rgba(0,0,0,0.5);max-width:100%;border:1px solid #000000;}
+    .loading{color:#000000;text-align:center;padding:60px 20px;font-size:13px;font-weight:700;}
   </style>
 </head>
 <body>
@@ -1202,7 +1196,7 @@
     DOM.aiChatArea.innerHTML = `<div class="ai-message system">Ask me anything about this section.</div>`;
     currentArticleText = '';
 
-    if (url.startsWith('pdf-local-file')) {
+    if (url && url.startsWith('pdf-local-file')) {
       const index = parseInt(url.split('-').pop(), 10);
       const item  = feedCache['uploaded-pdf']?.items[index];
       DOM.readerUrlLabel.textContent = 'Local PDF Extraction';
@@ -1312,12 +1306,6 @@
 
   /* ═══════════════════════════════════════════════════════════════════
      SECTION 10 — PDF PROCESSING ENGINE
-     Architecture: page-by-page streaming
-     - Open PDF, get page count
-     - Process page 1 → render immediately → user can browse
-     - Process pages 2,3,4… in background one at a time
-     - Each page = one Gemini call (small, never hits token limit)
-     - No chunking, no batching
   ═══════════════════════════════════════════════════════════════════ */
 
   function detectDocumentType(file) {
@@ -1456,9 +1444,6 @@
 
   /* ═══════════════════════════════════════════════════════════════════
      SECTION 10B — LOCAL EXTRACTIVE SUMMARISER
-     No AI, no network. TF-IDF sentence scoring:
-     Title from first heading-like line; top 4 sentences → bullets;
-     highest-scoring sentence → Key Insight.
   ═══════════════════════════════════════════════════════════════════ */
 
   const STOP_WORDS = new Set([
@@ -1651,6 +1636,13 @@
     DOM.itemCount.textContent = `0 / ${totalPages} pages processing…`;
     DOM.overallSummaryBtn.style.display = 'none';
 
+    if (totalPages === 0) {
+      hideOverlay();
+      DOM.output.innerHTML = `<div class="system-msg">PDF contains no readable pages.</div>`;
+      _resetUploadBtn();
+      return;
+    }
+
     const feedItems = [];
     const summaries = [];
     const titles    = [];
@@ -1789,7 +1781,12 @@
   window.addEventListener('load', async () => {
   try {
 
-    try { await _restoreKeysFromIDB(); } catch (_) {}
+    try {
+      await Promise.race([
+        _restoreKeysFromIDB(),
+        new Promise((_, r) => setTimeout(() => r(new Error('IDB Timeout')), 1000))
+      ]);
+    } catch (_) {}
 
     // ── Key Manager wiring ────────────────────────────────────────
     DOM.keyMgrBtn.addEventListener('click', (e) => {
@@ -1829,11 +1826,11 @@
 
     // ── PDF Upload ────────────────────────────────────────────────
     DOM.uploadPdfBtn.addEventListener('click', () => DOM.pdfFileInput.click());
-    DOM.pdfFileInput.addEventListener('change', (e) => {
+    DOM.pdfFileInput.addEventListener('change', async (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      setTimeout(() => { e.target.value = ''; }, 100);
-      routeDocumentProcessing(file, null);
+      await routeDocumentProcessing(file, null);
+      e.target.value = '';
     });
 
     // ── Summary modal ─────────────────────────────────────────────
@@ -1850,15 +1847,15 @@
       })
     );
 
-    // ── Feed → open article in new window ────────────────────────
+    // ── Feed → open article inline ────────────────────────
     DOM.output.addEventListener('click', (e) => {
       const t = e.target.closest('.reader-trigger');
-      if (t) openArticleWindow(t.getAttribute('data-url'));
+      if (t) openReader(t.getAttribute('data-url'));
     });
     DOM.output.addEventListener('keydown', (e) => {
       if (e.key !== 'Enter' && e.key !== ' ') return;
       const t = e.target.closest('.reader-trigger');
-      if (t) { e.preventDefault(); openArticleWindow(t.getAttribute('data-url')); }
+      if (t) { e.preventDefault(); openReader(t.getAttribute('data-url')); }
     });
 
     // ── Reader panel ──────────────────────────────────────────────
@@ -1872,3 +1869,44 @@
         DOM.summaryModal.classList.remove('open');
         document.body.style.overflow = '';
       }
+    });
+
+    DOM.fontUp.addEventListener('click', () => {
+      readerFontSize = Math.min(CONFIG.READER_FONT_MAX, readerFontSize + 1);
+      document.documentElement.style.setProperty('--reader-font-sz', `${readerFontSize}px`);
+    });
+    DOM.fontDown.addEventListener('click', () => {
+      readerFontSize = Math.max(CONFIG.READER_FONT_MIN, readerFontSize - 1);
+      document.documentElement.style.setProperty('--reader-font-sz', `${readerFontSize}px`);
+    });
+
+    DOM.readerScroll.addEventListener('scroll', () => {
+      const { scrollTop, scrollHeight, clientHeight } = DOM.readerScroll;
+      const denom = scrollHeight - clientHeight;
+      setReaderProgress(denom > 0 ? (scrollTop / denom) * 100 : 0);
+    });
+
+    // ── AI chat panel ─────────────────────────────────────────────
+    DOM.aiToggle.addEventListener('click', toggleAiPanel);
+    DOM.aiCloseBtn.addEventListener('click', closeAiPanel);
+    DOM.aiSubmit.addEventListener('click', () => submitAiPrompt(DOM.aiInput.value));
+    DOM.aiInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitAiPrompt(DOM.aiInput.value); });
+    DOM.aiPromptBtns.forEach(btn => btn.addEventListener('click', () => submitAiPrompt(btn.textContent)));
+
+    // ── Initial badge render ──────────────────────────────────────
+    _refreshKmButtonStates();
+    _updateKeyStatusBadge();
+
+    // ── Restore last session if available ─────────────────────────
+    const saved = await _loadSessionFromStorage();
+    if (saved) {
+      _restoreSession(saved);
+    }
+  } catch (fatalErr) {
+    document.body.innerHTML += `<div style="position:fixed;top:0;left:0;right:0;padding:10px;background:#c8102e;color:#000000;font-family:monospace;font-size:12px;z-index:9999;">Startup error: ${fatalErr.message}</div>`;
+  }
+  });
+
+  </script>
+</body>
+</html>
