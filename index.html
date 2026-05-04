@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width">
-  <title>Pulse v7A — Visual OCR Intelligence</title>
+  <title>Pulse v7B — Visual OCR Intelligence</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&family=Noto+Sans:wght@400;500&family=Noto+Sans+Devanagari:wght@400;500&display=swap" rel="stylesheet">
   <style>
     /* ═══ BASE ═══ */
@@ -399,7 +399,7 @@
   </div>
 
   <div class="masthead">
-    <div class="masthead-title">Pulse<span style="font-size:10px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.6;">v7A</span></div>
+    <div class="masthead-title">Pulse<span style="font-size:10px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.6;">v7B</span></div>
     <div class="tagline">PDF Intelligence Terminal</div>
   </div>
   <div class="feed-status-bar"><span id="item-count"></span></div>
@@ -1299,7 +1299,7 @@
   }
 
   /* ═══════════════════════════════════════════════════════════════════
-     SECTION 10 — VISUAL OCR PDF EXTRACTOR (TESSERACT.JS)
+     SECTION 10 — VISUAL OCR PDF EXTRACTOR (TESSERACT.JS v5)
   ═══════════════════════════════════════════════════════════════════ */
 
   function detectDocumentType(file) {
@@ -1334,38 +1334,55 @@
   async function extractPageText(pdfDoc, pageNum) {
     const page = await pdfDoc.getPage(pageNum);
     
-    // Render to Canvas with 2.0 Scale for High-Quality OCR
-    const viewport = page.getViewport({ scale: 2.0 });
+    // 1. Cap Canvas Width to prevent Browser Out-Of-Memory Crashes
+    const baseVp = page.getViewport({ scale: 1 });
+    const safeScale = Math.min(2.0, 1600 / baseVp.width);
+    const viewport = page.getViewport({ scale: safeScale });
+    
     const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext('2d', { willReadFrequently: true });
     canvas.width = viewport.width;
     canvas.height = viewport.height;
 
     await page.render({ canvasContext: ctx, viewport: viewport }).promise;
 
-    // Run Tesseract.js (Visual extraction handles newspaper columns natively via PSM 3)
-    const result = await Tesseract.recognize(
-      canvas,
-      'eng',
-      {
-        logger: m => {
-          if (m.status === 'recognizing text') {
-            const p = Math.round(m.progress * 100);
-            const overlayPct = Math.min(95, 10 + (p * 0.8));
-            updateOverlay(`👁️ Visually scanning Page ${pageNum}...`, overlayPct, `OCR Engine: ${p}%`);
-          }
+    // Allow UI to breathe before locking main thread
+    await new Promise(r => setTimeout(r, 50));
+
+    // 2. Initialize Tesseract Worker with safe logging
+    const worker = await Tesseract.createWorker("eng", 1, {
+      logger: m => {
+        if (m.status === 'recognizing text') {
+          const p = Math.round(m.progress * 100);
+          updateOverlay(`👁️ Visually scanning Page ${pageNum}...`, 10 + (p * 0.8), `Reading: ${p}%`);
+        } else {
+          // Provide live feedback during the ~25MB initial model download
+          let pStr = (m.progress && m.progress > 0 && m.progress < 1) ? ` (${Math.round(m.progress * 100)}%)` : '';
+          updateOverlay(`⚙️ Setup OCR...`, null, `${m.status}${pStr}`);
         }
       }
-    );
+    });
 
-    let text = result.data.text;
+    try {
+      // 3. Failsafe: Wrap OCR in a strict 2-minute timeout so app never freezes
+      const ocrPromise = worker.recognize(canvas);
+      const timeoutPromise = new Promise((_, rej) => setTimeout(() => rej(new Error("OCR engine timed out.")), 120000));
+      
+      const result = await Promise.race([ocrPromise, timeoutPromise]);
+      await worker.terminate();
 
-    // OCR Cleanup: Fix broken newspaper hyphens and normalize line breaks
-    text = text.replace(/([a-zA-Z])-\n([a-zA-Z])/g, '$1$2');
-    text = text.replace(/(?<!\n)\n(?!\n)/g, ' '); 
-    text = text.replace(/\n{3,}/g, '\n\n'); 
+      let text = result.data.text;
 
-    return text.trim();
+      // 4. Clean up OCR layout artifacts
+      text = text.replace(/([a-zA-Z])-\n([a-zA-Z])/g, '$1$2'); // fix hyphens
+      text = text.replace(/(?<!\n)\n(?!\n)/g, ' ');           // fix hard returns
+      text = text.replace(/\n{3,}/g, '\n\n');                 // normalize spacing
+      return text.trim();
+
+    } catch (e) {
+      await worker.terminate();
+      throw e;
+    }
   }
 
   /* ═══════════════════════════════════════════════════════════════════
@@ -1700,4 +1717,139 @@
     _resetUploadBtn();
   }
 
-  /* ════════════════════════════════════════════════════════════════
+  /* ═══════════════════════════════════════════════════════════════════
+     SECTION 11 — EVENT WIRING
+  ═══════════════════════════════════════════════════════════════════ */
+
+  window.addEventListener('load', async () => {
+  try {
+
+    try {
+      await Promise.race([
+        _restoreKeysFromIDB(),
+        new Promise((_, r) => setTimeout(() => r(new Error('IDB Timeout')), 1000))
+      ]);
+    } catch (_) {}
+
+    // ── Key Manager wiring ────────────────────────────────────────
+    DOM.keyMgrBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      DOM.keyManagerBox.classList.contains('open') ? closeKeyManager() : openKeyManager();
+    });
+    DOM.kmCloseBtn.addEventListener('click', closeKeyManager);
+
+    DOM.kmK1Save.addEventListener('click', () => _saveKey(1, (DOM.kmK1Input.value || '').trim()));
+    DOM.kmK2Save.addEventListener('click', () => _saveKey(2, (DOM.kmK2Input.value || '').trim()));
+
+    [DOM.kmK1Input, DOM.kmK2Input].forEach((inp, i) => {
+      inp.addEventListener('keydown', e => {
+        if (e.key === 'Enter')  { e.preventDefault(); (i === 0 ? DOM.kmK1Save : DOM.kmK2Save).click(); }
+        if (e.key === 'Escape') closeKeyManager();
+      });
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!DOM.keyManagerBox.contains(e.target) && e.target !== DOM.keyMgrBtn) {
+        closeKeyManager();
+      }
+    });
+
+    // ── Model selector ────────────────────────────────────────────
+    const VALID_MODELS  = CONFIG.GEMINI_MODELS;
+    const savedModel    = localStorage.getItem('pulse_gemini_model');
+    const activeModel   = VALID_MODELS.includes(savedModel) ? savedModel : VALID_MODELS[0];
+    if (!VALID_MODELS.includes(savedModel)) localStorage.setItem('pulse_gemini_model', VALID_MODELS[0]);
+    DOM.kmModelSelect.value = activeModel;
+    DOM.kmModelSelect.addEventListener('change', function() {
+      localStorage.setItem('pulse_gemini_model', this.value);
+      _idbSet('model', this.value); // persist to IndexedDB
+      _updateKeyStatusBadge();
+      _updateKmStatus();
+    });
+
+    // ── PDF Upload ────────────────────────────────────────────────
+    DOM.uploadPdfBtn.addEventListener('click', () => DOM.pdfFileInput.click());
+    DOM.pdfFileInput.addEventListener('change', async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+      await routeDocumentProcessing(file, null);
+      e.target.value = '';
+    });
+
+    // ── Summary modal ─────────────────────────────────────────────
+    DOM.overallSummaryBtn.addEventListener('click', () => {
+      DOM.summaryBackdrop.classList.add('open');
+      DOM.summaryModal.classList.add('open');
+      document.body.style.overflow = 'hidden';
+    });
+    [DOM.summaryCloseBtn, DOM.summaryBackdrop].forEach(el =>
+      el.addEventListener('click', () => {
+        DOM.summaryBackdrop.classList.remove('open');
+        DOM.summaryModal.classList.remove('open');
+        document.body.style.overflow = '';
+      })
+    );
+
+    // ── Feed → open article inline ────────────────────────
+    DOM.output.addEventListener('click', (e) => {
+      const t = e.target.closest('.reader-trigger');
+      if (t) openReader(t.getAttribute('data-url'));
+    });
+    DOM.output.addEventListener('keydown', (e) => {
+      if (e.key !== 'Enter' && e.key !== ' ') return;
+      const t = e.target.closest('.reader-trigger');
+      if (t) { e.preventDefault(); openReader(t.getAttribute('data-url')); }
+    });
+
+    // ── Reader panel ──────────────────────────────────────────────
+    DOM.readerBack.addEventListener('click', closeReader);
+    DOM.readerBackdrop.addEventListener('click', closeReader);
+    document.addEventListener('keydown', (e) => {
+      if (e.key !== 'Escape') return;
+      if (DOM.readerPanel.classList.contains('open')) closeReader();
+      if (DOM.summaryModal.classList.contains('open')) {
+        DOM.summaryBackdrop.classList.remove('open');
+        DOM.summaryModal.classList.remove('open');
+        document.body.style.overflow = '';
+      }
+    });
+
+    DOM.fontUp.addEventListener('click', () => {
+      readerFontSize = Math.min(CONFIG.READER_FONT_MAX, readerFontSize + 1);
+      document.documentElement.style.setProperty('--reader-font-sz', `${readerFontSize}px`);
+    });
+    DOM.fontDown.addEventListener('click', () => {
+      readerFontSize = Math.max(CONFIG.READER_FONT_MIN, readerFontSize - 1);
+      document.documentElement.style.setProperty('--reader-font-sz', `${readerFontSize}px`);
+    });
+
+    DOM.readerScroll.addEventListener('scroll', () => {
+      const { scrollTop, scrollHeight, clientHeight } = DOM.readerScroll;
+      const denom = scrollHeight - clientHeight;
+      setReaderProgress(denom > 0 ? (scrollTop / denom) * 100 : 0);
+    });
+
+    // ── AI chat panel ─────────────────────────────────────────────
+    DOM.aiToggle.addEventListener('click', toggleAiPanel);
+    DOM.aiCloseBtn.addEventListener('click', closeAiPanel);
+    DOM.aiSubmit.addEventListener('click', () => submitAiPrompt(DOM.aiInput.value));
+    DOM.aiInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') submitAiPrompt(DOM.aiInput.value); });
+    DOM.aiPromptBtns.forEach(btn => btn.addEventListener('click', () => submitAiPrompt(btn.textContent)));
+
+    // ── Initial badge render ──────────────────────────────────────
+    _refreshKmButtonStates();
+    _updateKeyStatusBadge();
+
+    // ── Restore last session if available ─────────────────────────
+    const saved = await _loadSessionFromStorage();
+    if (saved) {
+      _restoreSession(saved);
+    }
+  } catch (fatalErr) {
+    document.body.innerHTML += `<div style="position:fixed;top:0;left:0;right:0;padding:10px;background:#c8102e;color:#000000;font-family:monospace;font-size:12px;z-index:9999;">Startup error: ${fatalErr.message}</div>`;
+  }
+  });
+
+  </script>
+</body>
+</html>
