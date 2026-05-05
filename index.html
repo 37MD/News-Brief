@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width">
-  <title>Pulse v9 — Pure Local Intelligence</title>
+  <title>Pulse v13 — Pure Local Intelligence</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&family=Noto+Sans:wght@400;500&family=Noto+Sans+Devanagari:wght@400;500&display=swap" rel="stylesheet">
   <style>
     /* ═══ BASE ═══ */
@@ -111,19 +111,22 @@
     .container { max-width: 800px; margin: 0 auto; padding: 8px 15px 40px; }
 
     /* ═══ FEED ITEMS ═══ */
-    .feed-item { margin-bottom: 14px; border-bottom: 1px solid var(--rule); padding-bottom: 12px; animation: fadeIn 0.3s ease forwards; }
+    .feed-item { margin-bottom: 14px; border-bottom: 1px solid var(--rule); padding-bottom: 20px; animation: fadeIn 0.3s ease forwards; }
     .feed-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
-    .headline { font-family: 'Playfair Display', serif; font-size: 19px; text-decoration: none; font-weight: 700; display: block; line-height: 1.2; margin-bottom: 5px; word-break: break-word; overflow-wrap: anywhere; cursor: pointer; text-align: center; color: #000000; }
+    /* FIXED: Headline and Description matching Reader Panel typography */
+    .headline { font-family: 'Playfair Display', serif; font-size: 22px; text-decoration: none; font-weight: 700; display: block; line-height: 1.25; margin: 0 auto 10px auto; max-width: 65ch; word-break: break-word; overflow-wrap: anywhere; cursor: pointer; text-align: center; color: #000000; }
     .headline:hover { text-decoration: underline; }
-    .description { font-size: 14px; margin-bottom: 6px; line-height: 1.7; color: #000000; font-weight: 400; text-align: left; hyphens: auto; -webkit-hyphens: auto; max-width: 65ch; word-break: break-word; overflow-wrap: anywhere; }
+    .description { font-size: var(--reader-font-sz); margin: 0 auto 12px auto; line-height: 1.75; color: #000000; font-weight: 400; text-align: justify; hyphens: auto; -webkit-hyphens: auto; max-width: 65ch; word-break: break-word; overflow-wrap: anywhere; cursor: pointer; }
     .description.reader-trigger:hover { text-decoration: underline; }
     .description.translation { border-left: 3px solid var(--accent); background: rgba(26,92,58,0.05); padding: 6px 10px; border-radius: 0 4px 4px 0; font-weight: 400; }
-    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 8px; color: #000000; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; margin: 12px auto 0 auto; color: #000000; max-width: 65ch; display: flex; justify-content: space-between; align-items: center; }
     .system-msg { font-family: 'IBM Plex Mono', monospace; font-size: 12px; text-align: center; margin-top: 30px; line-height: 1.5; color: #000000; }
-    .feed-item-error .headline { color: #000000; font-style: italic; font-size: 16px; }
-    .feed-item-error .error-msg { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #000000; margin: 4px 0 8px; word-break: break-word; overflow-wrap: anywhere; }
+    
+    .feed-item-error .headline { color: #000000; font-style: italic; font-size: 18px; }
+    .feed-item-error .error-msg { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #000000; margin: 4px auto 8px auto; word-break: break-word; overflow-wrap: anywhere; max-width: 65ch; text-align: center; }
+    
     .view-original-btn { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #000000; text-decoration: underline; cursor: pointer; background: none; border: none; padding: 0; letter-spacing: 0.03em; font-weight: 700; }
     .view-original-btn:hover { color: #1a5c3a; }
 
@@ -182,7 +185,19 @@
     .summary-content-area { padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; background: #f5f0e8; }
     .summary-box { border: 1px solid var(--ink); border-radius: 6px; background: #f5f0e8; overflow: hidden; }
     .summary-box-title { background: #e4eaf2; padding: 8px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; text-transform: uppercase; border-bottom: 1px solid var(--ink); text-align: center; color: #000000; }
-    .summary-box-content { padding: 12px; font-size: 13px; line-height: 1.7; white-space: pre-line; background: #f5f0e8; color: #000000; font-weight: 400; text-align: justify; hyphens: auto; -webkit-hyphens: auto; max-width: 65ch; margin: 0 auto; }
+    .summary-box-content { 
+      padding: 15px 20px; 
+      font-size: var(--reader-font-sz); 
+      line-height: 1.75; 
+      background: #f5f0e8; 
+      color: #000000; 
+      font-weight: 400; 
+      text-align: justify; 
+      hyphens: auto; 
+      -webkit-hyphens: auto; 
+      max-width: 65ch; 
+      margin: 0 auto; 
+    }
     .summary-box-content strong, .summary-box-content b { font-weight: 400; }
 
     /* ═══ AI CHAT PANEL ═══ */
@@ -225,8 +240,8 @@
       .tagline { font-size: 8px; }
       .feed-status-bar { font-size: 9px; margin: 2px auto 0; }
       .container { padding: 6px 10px 30px; }
-      .headline { font-size: 16px; margin-bottom: 4px; }
-      .description { font-size: 13px; max-width: 100%; }
+      .headline { font-size: 18px; margin-bottom: 8px; }
+      .description { font-size: var(--reader-font-sz); }
       .meta { font-size: 9px; }
       .feed-item { margin-bottom: 12px; padding-bottom: 10px; }
       .reader-scroll { padding: 15px 14px 40px; }
@@ -235,7 +250,7 @@
       .reader-article-title { font-size: 18px; }
       .reader-body { font-size: 15px; }
       #key-manager-box { width: calc(100vw - 16px); left: 8px; transform: none; }
-      .summary-box-content { font-size: 12px; }
+      .summary-box-content { font-size: var(--reader-font-sz); }
     }
 
     /* ═══ UPLOAD BUTTON SPINNER ═══ */
@@ -352,6 +367,7 @@
 
 <body>
 
+  <!-- ═══ CONTROLS BAR ═══ -->
   <div class="controls-bar">
     <div class="controls-row1">
       <button class="btn-outline" id="overall-summary-btn" style="display:none;">📊 PDF Summary</button>
@@ -362,6 +378,7 @@
     </div>
     <div class="controls-row2" id="key-status-badge"></div>
 
+    <!-- ═══ INLINE KEY MANAGER PANEL (drops down from controls bar) ═══ -->
     <div id="key-manager-box">
       <div class="km-title">🔑 Gemini API Key Manager — K1 &amp; K2</div>
 
@@ -397,8 +414,9 @@
     </div>
   </div>
 
+  <!-- ═══ MASTHEAD ═══ -->
   <div class="masthead">
-    <div class="masthead-title">Pulse<span style="font-size:10px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.6;">v9</span></div>
+    <div class="masthead-title">Pulse<span style="font-size:10px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.6;">v13</span></div>
     <div class="tagline">Pure Local Intelligence</div>
   </div>
   <div class="feed-status-bar"><span id="item-count"></span></div>
@@ -409,6 +427,7 @@
     </div>
   </div>
 
+  <!-- ═══ PROCESSING OVERLAY ═══ -->
   <div id="processing-overlay">
     <div class="proc-spinner"></div>
     <div class="proc-title" id="proc-title">Processing PDF</div>
@@ -417,6 +436,7 @@
     <div class="proc-note" id="proc-note"></div>
   </div>
 
+  <!-- ═══ READER PANEL ═══ -->
   <div id="reader-backdrop" aria-hidden="true"></div>
   <div id="reader-panel" role="dialog" aria-modal="true">
     <div id="reader-progress"></div>
@@ -436,6 +456,7 @@
       </div>
     </div>
 
+    <!-- ═══ AI CHAT PANEL ═══ -->
     <div id="ai-panel">
       <div class="ai-header">
         <span>✨ Gemini Assistant</span>
@@ -456,6 +477,7 @@
     </div>
   </div>
 
+  <!-- ═══ SUMMARY MODAL ═══ -->
   <div id="summary-backdrop" aria-hidden="true"></div>
 
   <div id="summary-modal" role="dialog" aria-modal="true">
@@ -723,10 +745,14 @@
     if (!session || !session.feedItems || !session.feedItems.length) return false;
     feedCache['uploaded-pdf'] = { items: session.feedItems };
     const { summaries, titles, feedItems, fileName } = session;
-    DOM.modalSummary.innerText   = summaries.map((s, i) => `${titles[i]}\n${s}`).join('\n\n─────────────────\n\n');
-    DOM.modalTakeaways.innerText = summaries
-      .map((s, i) => `${titles[i]}:\n${s.split('\n').slice(0,4).join('\n')}`)
-      .join('\n\n');
+    
+    // Inject properly formatted HTML blocks so the browser justification algorithm works
+    DOM.modalSummary.innerHTML   = summaries.map((s, i) => `<div style="margin-bottom:16px;"><div style="font-family:'Playfair Display', serif; font-size:15px; font-weight:700; margin-bottom:8px; color:#000000;">${escapeHtml(titles[i])}</div><div style="text-align:justify; hyphens:auto; -webkit-hyphens:auto; line-height:1.75;">${escapeHtml(s).replace(/\n/g, '<br>')}</div></div>`).join('<hr style="border:none; border-top:1px dashed #000000; opacity:0.3; margin:20px 0;">');
+    
+    DOM.modalTakeaways.innerHTML = summaries
+      .map((s, i) => `<div style="margin-bottom:16px;"><div style="font-family:'Playfair Display', serif; font-size:15px; font-weight:700; margin-bottom:8px; color:#000000;">${escapeHtml(titles[i])}</div><div style="text-align:justify; hyphens:auto; -webkit-hyphens:auto; line-height:1.75;">${escapeHtml(s.split('\n').slice(0,4).join('\n')).replace(/\n/g, '<br>')}</div></div>`)
+      .join('<hr style="border:none; border-top:1px dashed #000000; opacity:0.3; margin:20px 0;">');
+      
     renderFeedItems(feedItems, fileName);
     DOM.overallSummaryBtn.style.display = 'inline-flex';
     DOM.itemCount.textContent =
@@ -859,7 +885,7 @@
   window.openKeyManager    = openKeyManager;
 
   /* ═══════════════════════════════════════════════════════════════════
-     SECTION 5 — GEMINI API ENGINE (Text Only)
+     SECTION 5 — GEMINI API ENGINE
   ═══════════════════════════════════════════════════════════════════ */
 
   async function callGemini(promptText, statusEl) {
@@ -1004,7 +1030,7 @@
           `<span class="headline reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0">${escapeHtml(item.title || 'Untitled')}</span>` +
           (desc ? `<p class="description reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0" style="cursor:pointer;">${desc}</p>` : '') +
           engHtml +
-          `<div class="meta" style="display:flex;justify-content:space-between;align-items:center;">` +
+          `<div class="meta">` +
             `<span>Page ${pNum} · ${escapeHtml(feedName)}</span>` +
             `<button class="view-original-btn" onclick="openPdfPageView(${pNum})">View original PDF page →</button>` +
           `</div>`;
@@ -1497,6 +1523,7 @@
     const paragraphs = pageText.split(/\n\n+/).map(p => p.trim()).filter(Boolean);
     const fullText   = paragraphs.join(' ');
 
+    // ── Title detection ──────────────────────────────────────────
     const detectedTitle = _detectTitle(paragraphs);
     const title = detectedTitle
       ? detectedTitle.substring(0, 90)
@@ -1506,20 +1533,22 @@
       ? fullText.replace(detectedTitle, '').trim()
       : fullText;
 
+    // ── TF-IDF-lite word frequency ────────────────────────────────
     const allWords  = _tokenWords(bodyText);
     const freq      = {};
     for (const w of allWords) freq[w] = (freq[w] || 0) + 1;
     const maxFreq   = Math.max(...Object.values(freq), 1);
     for (const w in freq) freq[w] /= maxFreq;
 
+    // ── Score sentences ───────────────────────────────────────────
     const sentences = _splitSentences(bodyText);
     const scored    = sentences.map((s, idx) => {
       const words   = _tokenWords(s);
       if (!words.length) return { s, score: 0 };
       const tfScore = words.reduce((sum, w) => sum + (freq[w] || 0), 0) / words.length;
 
-      const posBonus    = idx === 0 ? 0.25 : idx <= 2 ? 0.1 : 0;
-      const numBonus    = /\d/.test(s) ? 0.12 : 0;
+      const posBonus    = idx === 0 ? 0.25 : idx <= 2 ? 0.1 : 0;   // early sentences
+      const numBonus    = /\d/.test(s) ? 0.12 : 0;                   // contains numbers/stats
       const lenPenalty  = words.length < 6 || words.length > 45 ? -0.15 : 0;
       const keyBonus    = /key|important|significant|critical|major|result|conclude|show|find|reveal/i.test(s) ? 0.1 : 0;
 
@@ -1558,8 +1587,8 @@
     let html;
     if (item.error) {
       html =
-        `<span class="headline">${escapeHtml(item.title || `Page ${pNum}`)}</span>` +
-        `<p class="error-msg">${escapeHtml(item.title || `Page ${pNum}`)} could not be converted due to a technical error. ` +
+        `<span class="headline">${escapeHtml(item.title)}</span>` +
+        `<p class="error-msg">${escapeHtml(item.title)} could not be converted due to a technical error. ` +
         `If you want to view the original article, ` +
         _makeViewOriginalBtn(pNum) + `</p>` +
         `<div class="meta">Page ${pNum} · ${escapeHtml(fileName)}</div>`;
@@ -1572,9 +1601,9 @@
         `<span class="headline reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0">${escapeHtml(item.title)}</span>` +
         (desc ? `<p class="description reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0" style="cursor:pointer;">${desc}</p>` : '') +
         engHtml +
-        `<div class="meta" style="display:flex;justify-content:space-between;align-items:center;">` +
+        `<div class="meta">` +
           `<span>Page ${pNum} · ${escapeHtml(fileName)}</span>` +
-          _makeViewOriginalBtn(pNum) +
+          `<button class="view-original-btn" onclick="openPdfPageView(${pNum})">View original PDF page →</button>` +
         `</div>`;
     }
 
@@ -1656,7 +1685,8 @@
           if (pageNum === 1) {
             hideOverlay();
             DOM.output.innerHTML =
-              '<div class="system-msg">⚠️ Page 1 appears to be blank or image-only. Try a different file.</div>';
+              '<div class="system-msg">⚠️ Page 1 appears to be blank or image-only (no extractable text). ' +
+              'Try a text-based PDF or a different file.</div>';
             _resetUploadBtn();
           }
           continue;
@@ -1700,11 +1730,34 @@
         }
 
         DOM.itemCount.textContent = `${feedItems.length} of ${totalPages} pages processed`;
+
+        // ── Incremental save after every page ──────────────────────
         void _saveSessionToStorage(file.name, feedItems, summaries, titles);
 
       } catch (err) {
+        let retryResult = null;
+        try {
+          const retryPageText = await extractPageText(pdfDoc, pageNum);
+          if (retryPageText && retryPageText.length >= 30) {
+            retryResult = summarisePageLocal(retryPageText, pageNum, docType);
+          }
+        } catch (retryErr) {
+        }
+
         const idx = feedItems.length;
-        const item = {
+        let item;
+        if (retryResult) {
+          item = {
+            title:             retryResult.title,
+            description:       retryResult.body.substring(0, CONFIG.MAX_DESC_CHARS),
+            full_text:         '',
+            full_text_english: '',
+            summary_english:   ''
+          };
+          titles.push(retryResult.title);
+          summaries.push(retryResult.body);
+        } else {
+          item = {
             title:             `Page ${pageNum}`,
             description:       '',
             full_text:         '',
@@ -1712,9 +1765,10 @@
             summary_english:   '',
             error:             true,
             pageNum
-        };
-        titles.push(`Page ${pageNum}`);
-        summaries.push('');
+          };
+          titles.push(`Page ${pageNum}`);
+          summaries.push('');
+        }
         feedItems.push(item);
         feedCache['uploaded-pdf'] = { items: feedItems };
         renderOneFeedItem(item, idx, file.name, true);
@@ -1731,10 +1785,12 @@
     DOM.itemCount.textContent = `✅ All ${feedItems.length} pages processed · ${file.name}`;
     DOM.overallSummaryBtn.style.display = 'inline-flex';
 
-    DOM.modalSummary.innerText   = summaries.map((s, i) => `${titles[i]}\n${s}`).join('\n\n─────────────────\n\n');
-    DOM.modalTakeaways.innerText = summaries
-      .map((s, i) => `${titles[i]}:\n${s.split('\n').slice(0,4).join('\n')}`)
-      .join('\n\n');
+    // Inject properly formatted HTML blocks so the browser justification algorithm works
+    DOM.modalSummary.innerHTML   = summaries.map((s, i) => `<div style="margin-bottom:16px;"><div style="font-family:'Playfair Display', serif; font-size:15px; font-weight:700; margin-bottom:8px; color:#000000;">${escapeHtml(titles[i])}</div><div style="text-align:justify; hyphens:auto; -webkit-hyphens:auto; line-height:1.75;">${escapeHtml(s).replace(/\n/g, '<br>')}</div></div>`).join('<hr style="border:none; border-top:1px dashed #000000; opacity:0.3; margin:20px 0;">');
+    
+    DOM.modalTakeaways.innerHTML = summaries
+      .map((s, i) => `<div style="margin-bottom:16px;"><div style="font-family:'Playfair Display', serif; font-size:15px; font-weight:700; margin-bottom:8px; color:#000000;">${escapeHtml(titles[i])}</div><div style="text-align:justify; hyphens:auto; -webkit-hyphens:auto; line-height:1.75;">${escapeHtml(s.split('\n').slice(0,4).join('\n')).replace(/\n/g, '<br>')}</div></div>`)
+      .join('<hr style="border:none; border-top:1px dashed #000000; opacity:0.3; margin:20px 0;">');
 
     void _saveSessionToStorage(file.name, feedItems, summaries, titles);
     _updateKeyStatusBadge();
