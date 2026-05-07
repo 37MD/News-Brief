@@ -356,7 +356,7 @@
       text-align: center;
     }
   </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/AIzaSyB3Jm-X1hJWeIqCBlUz0jklwshrlox3zpU1.174/pdf.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
     if (window.pdfjsLib) {
       pdfjsLib.GlobalWorkerOptions.workerSrc =
@@ -400,9 +400,9 @@
         <div>
           <div class="km-label" style="margin-bottom:3px;">Gemini Model</div>
           <select id="km-model-select" class="km-model-select">
-            <option value="gemini-2.5-flash-lite">Gemini 3.1 Flash-Lite — Default (auto-cascades to Flash → Pro on quota)</option>
-            <option value="gemini-2.5-flash">Gemini 3.1 Flash (skip Lite, cascade to Pro on quota)</option>
-            <option value="gemini-2.5-pro">Gemini 3.1 Pro (no cascade — final tier)</option>
+            <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite — Default (auto-cascades to Flash → Pro on quota)</option>
+            <option value="gemini-2.5-flash">Gemini 2.5 Flash (skip Lite, cascade to Pro on quota)</option>
+            <option value="gemini-2.5-pro">Gemini 2.5 Pro (no cascade — final tier)</option>
           </select>
         </div>
         <button id="km-close-btn" class="km-close">✕ Close</button>
@@ -914,8 +914,8 @@
         if (!k) continue;
 
         if (model !== selectedModel || slot === 2) {
-          const modelLabel = model === 'gemini-3.1-flash-lite' ? 'Flash-Lite'
-                           : model === 'gemini-3.1-flash'      ? 'Flash'
+          const modelLabel = model === 'gemini-2.5-flash-lite' ? 'Flash-Lite'
+                           : model === 'gemini-2.5-flash'      ? 'Flash'
                            : 'Pro';
           _notify(`⚡ Quota hit — trying ${modelLabel} / K${slot}…`);
         }
