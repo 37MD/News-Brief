@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width">
-  <title>Pulse version 14 — Pure Local Intelligence</title>
+  <title>Pulse v6G — PDF Intelligence</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&family=Noto+Sans:wght@400;500&family=Noto+Sans+Devanagari:wght@400;500&display=swap" rel="stylesheet">
   <style>
     /* ═══ BASE ═══ */
@@ -111,22 +111,19 @@
     .container { max-width: 800px; margin: 0 auto; padding: 8px 15px 40px; }
 
     /* ═══ FEED ITEMS ═══ */
-    .feed-item { margin-bottom: 14px; border-bottom: 1px solid var(--rule); padding-bottom: 20px; animation: fadeIn 0.3s ease forwards; }
+    .feed-item { margin-bottom: 14px; border-bottom: 1px solid var(--rule); padding-bottom: 12px; animation: fadeIn 0.3s ease forwards; }
     .feed-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
-    /* FIXED: Headline and Description matching Reader Panel typography */
-    .headline { font-family: 'Playfair Display', serif; font-size: 22px; text-decoration: none; font-weight: 700; display: block; line-height: 1.25; margin: 0 auto 10px auto; max-width: 65ch; word-break: break-word; overflow-wrap: anywhere; cursor: pointer; text-align: center; color: #000000; }
+    .headline { font-family: 'Playfair Display', serif; font-size: 19px; text-decoration: none; font-weight: 700; display: block; line-height: 1.2; margin-bottom: 5px; word-break: break-word; overflow-wrap: anywhere; cursor: pointer; text-align: center; color: #000000; }
     .headline:hover { text-decoration: underline; }
-    .description { font-size: var(--reader-font-sz); margin: 0 auto 12px auto; line-height: 1.75; color: #000000; font-weight: 400; text-align: justify; hyphens: auto; -webkit-hyphens: auto; max-width: 65ch; word-break: break-word; overflow-wrap: anywhere; cursor: pointer; }
+    .description { font-size: 14px; margin-bottom: 6px; line-height: 1.7; color: #000000; font-weight: 400; text-align: left; hyphens: auto; -webkit-hyphens: auto; max-width: 65ch; word-break: break-word; overflow-wrap: anywhere; }
     .description.reader-trigger:hover { text-decoration: underline; }
     .description.translation { border-left: 3px solid var(--accent); background: rgba(26,92,58,0.05); padding: 6px 10px; border-radius: 0 4px 4px 0; font-weight: 400; }
-    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; margin: 12px auto 0 auto; color: #000000; max-width: 65ch; display: flex; justify-content: space-between; align-items: center; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 8px; color: #000000; }
     .system-msg { font-family: 'IBM Plex Mono', monospace; font-size: 12px; text-align: center; margin-top: 30px; line-height: 1.5; color: #000000; }
-    
-    .feed-item-error .headline { color: #000000; font-style: italic; font-size: 18px; }
-    .feed-item-error .error-msg { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #000000; margin: 4px auto 8px auto; word-break: break-word; overflow-wrap: anywhere; max-width: 65ch; text-align: center; }
-    
+    .feed-item-error .headline { color: #000000; font-style: italic; font-size: 16px; }
+    .feed-item-error .error-msg { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #000000; margin: 4px 0 8px; word-break: break-word; overflow-wrap: anywhere; }
     .view-original-btn { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #000000; text-decoration: underline; cursor: pointer; background: none; border: none; padding: 0; letter-spacing: 0.03em; font-weight: 700; }
     .view-original-btn:hover { color: #1a5c3a; }
 
@@ -185,19 +182,7 @@
     .summary-content-area { padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; background: #f5f0e8; }
     .summary-box { border: 1px solid var(--ink); border-radius: 6px; background: #f5f0e8; overflow: hidden; }
     .summary-box-title { background: #e4eaf2; padding: 8px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; text-transform: uppercase; border-bottom: 1px solid var(--ink); text-align: center; color: #000000; }
-    .summary-box-content { 
-      padding: 15px 20px; 
-      font-size: var(--reader-font-sz); 
-      line-height: 1.75; 
-      background: #f5f0e8; 
-      color: #000000; 
-      font-weight: 400; 
-      text-align: justify; 
-      hyphens: auto; 
-      -webkit-hyphens: auto; 
-      max-width: 65ch; 
-      margin: 0 auto; 
-    }
+    .summary-box-content { padding: 12px; font-size: 13px; line-height: 1.7; white-space: pre-line; background: #f5f0e8; color: #000000; font-weight: 400; text-align: justify; hyphens: auto; -webkit-hyphens: auto; max-width: 65ch; margin: 0 auto; }
     .summary-box-content strong, .summary-box-content b { font-weight: 400; }
 
     /* ═══ AI CHAT PANEL ═══ */
@@ -240,8 +225,8 @@
       .tagline { font-size: 8px; }
       .feed-status-bar { font-size: 9px; margin: 2px auto 0; }
       .container { padding: 6px 10px 30px; }
-      .headline { font-size: 18px; margin-bottom: 8px; }
-      .description { font-size: var(--reader-font-sz); }
+      .headline { font-size: 16px; margin-bottom: 4px; }
+      .description { font-size: 13px; max-width: 100%; }
       .meta { font-size: 9px; }
       .feed-item { margin-bottom: 12px; padding-bottom: 10px; }
       .reader-scroll { padding: 15px 14px 40px; }
@@ -250,7 +235,7 @@
       .reader-article-title { font-size: 18px; }
       .reader-body { font-size: 15px; }
       #key-manager-box { width: calc(100vw - 16px); left: 8px; transform: none; }
-      .summary-box-content { font-size: var(--reader-font-sz); }
+      .summary-box-content { font-size: 12px; }
     }
 
     /* ═══ UPLOAD BUTTON SPINNER ═══ */
@@ -398,9 +383,9 @@
         <div>
           <div class="km-label" style="margin-bottom:3px;">Gemini Model</div>
           <select id="km-model-select" class="km-model-select">
-            <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash-Lite — Default (auto-cascades to Flash → Pro on quota)</option>
-            <option value="gemini-3-flash">Gemini 3 Flash (skip Lite, cascade to Pro on quota)</option>
-            <option value="gemini-3.1-pro">Gemini 3.1 Pro (no cascade — final tier)</option>
+            <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite — Default (auto-cascades to Flash → Pro on quota)</option>
+            <option value="gemini-2.5-flash">Gemini 2.5 Flash (skip Lite, cascade to Pro on quota)</option>
+            <option value="gemini-2.5-pro">Gemini 2.5 Pro (no cascade — final tier)</option>
           </select>
         </div>
         <button id="km-close-btn" class="km-close">✕ Close</button>
@@ -413,8 +398,8 @@
   </div>
 
   <div class="masthead">
-    <div class="masthead-title">Pulse<span style="font-size:10px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.6;">version 14</span></div>
-    <div class="tagline">Pure Local Intelligence</div>
+    <div class="masthead-title">Pulse<span style="font-size:10px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.6;">v6G</span></div>
+    <div class="tagline">PDF Intelligence Terminal</div>
   </div>
   <div class="feed-status-bar"><span id="item-count"></span></div>
 
@@ -501,7 +486,7 @@
     READER_FONT_MIN: 13,
     READER_FONT_MAX: 24,
     READER_FONT_DEF: 17,
-    GEMINI_MODELS:   ['gemini-3.1-flash-lite', 'gemini-3-flash', 'gemini-3.1-pro']
+    GEMINI_MODELS:   ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-pro']
   });
 
   /* ═══════════════════════════════════════════════════════════════════
@@ -679,14 +664,14 @@
   function showOverlay(title, step, pct, note) {
     DOM.procTitle.textContent = title || 'Processing';
     DOM.procStep.textContent  = step  || '';
-    DOM.procBar.style.width   = (pct !== null ? pct : 0) + '%';
+    DOM.procBar.style.width   = (pct || 0) + '%';
     DOM.procNote.textContent  = note || '';
     DOM.procOverlay.classList.add('active');
   }
   function updateOverlay(step, pct, note) {
-    if (step !== undefined && step !== null) DOM.procStep.textContent = step;
-    if (pct  !== undefined && pct !== null)  DOM.procBar.style.width  = pct + '%';
-    if (note !== undefined && note !== null) DOM.procNote.textContent = note;
+    if (step !== undefined) DOM.procStep.textContent = step;
+    if (pct  !== undefined) DOM.procBar.style.width  = pct + '%';
+    if (note !== undefined) DOM.procNote.textContent = note;
   }
   function hideOverlay() {
     DOM.procOverlay.classList.remove('active');
@@ -738,14 +723,10 @@
     if (!session || !session.feedItems || !session.feedItems.length) return false;
     feedCache['uploaded-pdf'] = { items: session.feedItems };
     const { summaries, titles, feedItems, fileName } = session;
-    
-    // Inject properly formatted HTML blocks so the browser justification algorithm works
-    DOM.modalSummary.innerHTML   = summaries.map((s, i) => `<div style="margin-bottom:16px;"><div style="font-family:'Playfair Display', serif; font-size:15px; font-weight:700; margin-bottom:8px; color:#000000;">${escapeHtml(titles[i])}</div><div style="text-align:justify; hyphens:auto; -webkit-hyphens:auto; line-height:1.75;">${escapeHtml(s).replace(/\n/g, '<br>')}</div></div>`).join('<hr style="border:none; border-top:1px dashed #000000; opacity:0.3; margin:20px 0;">');
-    
-    DOM.modalTakeaways.innerHTML = summaries
-      .map((s, i) => `<div style="margin-bottom:16px;"><div style="font-family:'Playfair Display', serif; font-size:15px; font-weight:700; margin-bottom:8px; color:#000000;">${escapeHtml(titles[i])}</div><div style="text-align:justify; hyphens:auto; -webkit-hyphens:auto; line-height:1.75;">${escapeHtml(s.split('\n').slice(0,4).join('\n')).replace(/\n/g, '<br>')}</div></div>`)
-      .join('<hr style="border:none; border-top:1px dashed #000000; opacity:0.3; margin:20px 0;">');
-      
+    DOM.modalSummary.innerText   = summaries.map((s, i) => `${titles[i]}\n${s}`).join('\n\n─────────────────\n\n');
+    DOM.modalTakeaways.innerText = summaries
+      .map((s, i) => `${titles[i]}:\n${s.split('\n').slice(0,4).join('\n')}`)
+      .join('\n\n');
     renderFeedItems(feedItems, fileName);
     DOM.overallSummaryBtn.style.display = 'inline-flex';
     DOM.itemCount.textContent =
@@ -907,8 +888,8 @@
         if (!k) continue;
 
         if (model !== selectedModel || slot === 2) {
-          const modelLabel = model === 'gemini-3.1-flash-lite' ? 'Flash-Lite'
-                           : model === 'gemini-3-flash'      ? 'Flash'
+          const modelLabel = model === 'gemini-2.5-flash-lite' ? 'Flash-Lite'
+                           : model === 'gemini-2.5-flash'      ? 'Flash'
                            : 'Pro';
           _notify(`⚡ Quota hit — trying ${modelLabel} / K${slot}…`);
         }
@@ -1023,7 +1004,7 @@
           `<span class="headline reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0">${escapeHtml(item.title || 'Untitled')}</span>` +
           (desc ? `<p class="description reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0" style="cursor:pointer;">${desc}</p>` : '') +
           engHtml +
-          `<div class="meta">` +
+          `<div class="meta" style="display:flex;justify-content:space-between;align-items:center;">` +
             `<span>Page ${pNum} · ${escapeHtml(feedName)}</span>` +
             `<button class="view-original-btn" onclick="openPdfPageView(${pNum})">View original PDF page →</button>` +
           `</div>`;
@@ -1303,7 +1284,7 @@
       DOM.aiChatArea.removeChild(statusDiv);
       addChatMessage('assistant', cleanAiResponse(rawText));
       const _qModel = _activeCascadeModel && _activeCascadeModel !== getGeminiModel()
-        ? ` · ${_activeCascadeModel.replace('gemini-3.1-flash-lite','Lite').replace('gemini-3-flash','Flash').replace('gemini-3.1-pro','Pro')}`
+        ? ` · ${_activeCascadeModel.replace('gemini-2.5-flash-lite','Lite').replace('gemini-2.5-flash','Flash').replace('gemini-2.5-pro','Pro')}`
         : '';
       DOM.aiQuotaStatus.textContent = _activeKeySlot === 2 ? `⚡ K2${_qModel}` : (_qModel ? `⚡${_qModel}` : '');
 
@@ -1317,7 +1298,7 @@
   }
 
   /* ═══════════════════════════════════════════════════════════════════
-     SECTION 10 — PURE LOCAL RECURSIVE XY-CUT PDF EXTRACTOR (V6H Base)
+     SECTION 10 — BANDED BLOCK-CLUSTERING PDF EXTRACTOR (NEWSPAPER SAFE)
   ═══════════════════════════════════════════════════════════════════ */
 
   function detectDocumentType(file) {
@@ -1373,97 +1354,142 @@
     if (!items.length) return '';
 
     const fontHeights = items.map(i => i.fontH).sort((a, b) => a - b);
-    const medH = Math.max(fontHeights[Math.floor(fontHeights.length / 2)] || 10, 5);
+    const medFontH = Math.max(fontHeights[Math.floor(fontHeights.length / 2)] || 10, 5);
 
-    // Recursive XY-Cut Engine
-    function getBlocks(nodes) {
-      if (nodes.length === 0) return [];
-      
-      // 1. Horizontal Cut (Y-axis)
-      nodes.sort((a, b) => a.y - b.y);
-      let cutYIndex = -1;
-      let maxYSoFar = nodes[0].y + nodes[0].h;
-      
-      for (let i = 1; i < nodes.length; i++) {
-        if (nodes[i].y > maxYSoFar + medH * 0.8) {
-          cutYIndex = i;
-          break;
+    // 1. Group into physical horizontal lines
+    items.sort((a, b) => a.y - b.y);
+    const lines = [];
+    let currentLine = [];
+
+    for (const it of items) {
+      if (!currentLine.length) {
+        currentLine.push(it);
+      } else {
+        const lineY = currentLine.reduce((sum, i) => sum + i.y, 0) / currentLine.length;
+        if (Math.abs(it.y - lineY) < medFontH * 0.4) {
+          currentLine.push(it);
+        } else {
+          lines.push(currentLine);
+          currentLine = [it];
         }
-        maxYSoFar = Math.max(maxYSoFar, nodes[i].y + nodes[i].h);
       }
-      
-      if (cutYIndex !== -1) {
-        return [...getBlocks(nodes.slice(0, cutYIndex)), ...getBlocks(nodes.slice(cutYIndex))];
-      }
-      
-      // 2. Vertical Cut (X-axis)
-      nodes.sort((a, b) => a.x - b.x);
-      let cutXIndex = -1;
-      let maxXSoFar = nodes[0].x + nodes[0].w;
-      
-      for (let i = 1; i < nodes.length; i++) {
-        if (nodes[i].x > maxXSoFar + medH * 1.8) { 
-          cutXIndex = i;
-          break;
-        }
-        maxXSoFar = Math.max(maxXSoFar, nodes[i].x + nodes[i].w);
-      }
-      
-      if (cutXIndex !== -1) {
-        return [...getBlocks(nodes.slice(0, cutXIndex)), ...getBlocks(nodes.slice(cutXIndex))];
-      }
-      
-      return [nodes];
     }
+    if (currentLine.length) lines.push(currentLine);
 
-    const blocks = getBlocks(items);
-    const finalParagraphs = [];
+    // 2. Split lines into continuous segments (breaking at gutters)
+    const segments = [];
+    for (const line of lines) {
+      line.sort((a, b) => a.x - b.x);
+      let currentSeg = null;
 
-    for (const block of blocks) {
-      block.sort((a, b) => {
-        if (Math.abs(a.y - b.y) > medH * 0.4) return a.y - b.y;
-        return a.x - b.x;
-      });
-
-      let paraText = '';
-      for (let i = 0; i < block.length; i++) {
-        const it = block[i];
-        if (i > 0) {
-          const prev = block[i - 1];
-          if (Math.abs(it.y - prev.y) > medH * 0.4) {
-            const match = paraText.match(/([a-zA-Z])[-\u2010-\u2015\u00AD]\s*$/);
-            if (match) {
-              paraText = paraText.replace(/[-\u2010-\u2015\u00AD]\s*$/, '');
-            } else {
-              paraText += ' ';
-            }
-          } else if (it.x - (prev.x + prev.w) > medH * 0.2) {
-            paraText += ' ';
+      for (const it of line) {
+        if (!currentSeg) {
+          currentSeg = { text: it.text, x: it.x, y: it.y, w: it.w, h: it.h, fontH: it.fontH, bold: it.bold };
+          segments.push(currentSeg);
+        } else {
+          const gap = it.x - (currentSeg.x + currentSeg.w);
+          if (gap > medFontH * 2.0) {
+            currentSeg = { text: it.text, x: it.x, y: it.y, w: it.w, h: it.h, fontH: it.fontH, bold: it.bold };
+            segments.push(currentSeg);
+          } else {
+            currentSeg.w = (it.x + it.w) - currentSeg.x;
+            currentSeg.h = Math.max(currentSeg.h, it.h);
+            if (gap > medFontH * 0.2) currentSeg.text += ' ';
+            currentSeg.text += it.text;
+            currentSeg.bold = currentSeg.bold || it.bold;
           }
         }
-        paraText += it.text;
-      }
-
-      paraText = paraText.replace(/\s+/g, ' ').trim();
-      if (paraText.length > 2) {
-        const avgFontH = block.reduce((sum, i) => sum + i.fontH, 0) / block.length;
-        const isBold = block.some(i => i.bold);
-        const isHeading = avgFontH > medH * 1.3 || (paraText.split(' ').length <= 15 && isBold && !/[.!?]$/.test(paraText));
-        finalParagraphs.push(isHeading ? '## ' + paraText : paraText);
       }
     }
 
-    const joined = finalParagraphs.join('\n\n');
-
-    // Detect garbled text: PDFs with custom glyph encodings and no ToUnicode map
-    // produce strings of U+FFFD replacement characters. If >60% of chars are
-    // replacement characters, the page cannot be decoded — return empty.
-    if (joined.length > 0) {
-      const replacementCount = (joined.match(/\uFFFD/g) || []).length;
-      if (replacementCount / joined.length > 0.4) return '';
+    // 3. Group segments into blocks
+    segments.sort((a, b) => a.y - b.y);
+    let blocks = [];
+    for (const seg of segments) {
+      let placed = false;
+      for (const block of blocks) {
+        const vGap = seg.y - block.bottomY;
+        if (vGap > -medFontH && vGap < medFontH * 4) {
+          const segCenter = seg.x + seg.w / 2;
+          const blkCenter = block.x + block.w / 2;
+          if (Math.abs(segCenter - blkCenter) < medFontH * 3 || 
+              (seg.x >= block.x - medFontH && seg.x + seg.w <= block.x + block.w + medFontH)) {
+            block.segments.push(seg);
+            block.bottomY = Math.max(block.bottomY, seg.y + seg.h);
+            block.x = Math.min(block.x, seg.x);
+            block.w = Math.max(block.x + block.w, seg.x + seg.w) - block.x;
+            placed = true;
+            break;
+          }
+        }
+      }
+      if (!placed) {
+        blocks.push({
+          segments: [seg],
+          topY: seg.y, bottomY: seg.y + seg.h,
+          x: seg.x, w: seg.w,
+          fontH: seg.fontH, bold: seg.bold
+        });
+      }
     }
 
-    return joined;
+    // 4. Banded Row Sort (Top-Down, Left-Right)
+    const sortedBlocks = [];
+    let remaining = [...blocks];
+    
+    while (remaining.length > 0) {
+      remaining.sort((a, b) => a.topY - b.topY);
+      const topBlock = remaining[0];
+      
+      const row = remaining.filter(b => {
+        const overlapY = Math.max(0, Math.min(topBlock.bottomY, b.bottomY) - Math.max(topBlock.topY, b.topY));
+        const minH = Math.min(topBlock.bottomY - topBlock.topY, b.bottomY - b.topY) || 1;
+        return overlapY > medFontH || overlapY > minH * 0.25;
+      });
+      
+      row.sort((a, b) => a.x - b.x);
+      sortedBlocks.push(...row);
+      remaining = remaining.filter(b => !row.includes(b));
+    }
+    blocks = sortedBlocks;
+
+    // 5. Build final text and resolve hyphens
+    const finalParagraphs = [];
+    for (const block of blocks) {
+      let paraText = '';
+      block.segments.sort((a, b) => a.y - b.y);
+      
+      for (let i = 0; i < block.segments.length; i++) {
+        const seg = block.segments[i];
+        const segText = seg.text.trim();
+        
+        if (i === 0) {
+           paraText += segText;
+        } else {
+           const prevSeg = block.segments[i - 1];
+           const vGap = seg.y - prevSeg.y;
+           
+           if (vGap > medFontH * 1.6) {
+              paraText += '\n\n' + segText;
+           } else {
+              const match = paraText.match(/([a-zA-Z])[-\u2010-\u2015\u00AD]\s*$/);
+              if (match) {
+                 paraText = paraText.replace(/[-\u2010-\u2015\u00AD]\s*$/, '') + segText;
+              } else {
+                 paraText += ' ' + segText;
+              }
+           }
+        }
+      }
+      
+      const subParas = paraText.split('\n\n').filter(p => p.trim().length > 2);
+      for (const sp of subParas) {
+        const isHeading = block.fontH > medFontH * 1.3 || (sp.split(' ').length <= 15 && block.bold && !/[.!?]$/.test(sp));
+        finalParagraphs.push(isHeading ? '## ' + sp : sp);
+      }
+    }
+
+    return finalParagraphs.join('\n\n');
   }
 
   /* ═══════════════════════════════════════════════════════════════════
@@ -1604,9 +1630,9 @@
         `<span class="headline reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0">${escapeHtml(item.title)}</span>` +
         (desc ? `<p class="description reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0" style="cursor:pointer;">${desc}</p>` : '') +
         engHtml +
-        `<div class="meta">` +
+        `<div class="meta" style="display:flex;justify-content:space-between;align-items:center;">` +
           `<span>Page ${pNum} · ${escapeHtml(fileName)}</span>` +
-          `<button class="view-original-btn" onclick="openPdfPageView(${pNum})">View original PDF page →</button>` +
+          _makeViewOriginalBtn(pNum) +
         `</div>`;
     }
 
@@ -1685,19 +1711,12 @@
         const pageText = await extractPageText(pdfDoc, pageNum);
 
         if (!pageText || pageText.length < 30) {
-          // Skip silently -- page has garbled/undecodable font or is image-only.
-          // Only abort if it is the ONLY page.
-          if (pageNum === 1 && totalPages === 1) {
-            hideOverlay();
-            DOM.output.innerHTML =
-              '<div class="system-msg">⚠️ This PDF appears to be image-only (no extractable text).</div>';
-            _resetUploadBtn();
-            return;
-          }
           if (pageNum === 1) {
             hideOverlay();
-            DOM.overallSummaryBtn.style.display = 'inline-flex';
-            DOM.uploadPdfBtn.innerHTML = '<span class="upload-ring"></span>Processing...';
+            DOM.output.innerHTML =
+              '<div class="system-msg">⚠️ Page 1 appears to be blank or image-only (no extractable text). ' +
+              'Try a text-based PDF or a different file.</div>';
+            _resetUploadBtn();
           }
           continue;
         }
@@ -1795,12 +1814,10 @@
     DOM.itemCount.textContent = `✅ All ${feedItems.length} pages processed · ${file.name}`;
     DOM.overallSummaryBtn.style.display = 'inline-flex';
 
-    // Inject properly formatted HTML blocks so the browser justification algorithm works
-    DOM.modalSummary.innerHTML   = summaries.map((s, i) => `<div style="margin-bottom:16px;"><div style="font-family:'Playfair Display', serif; font-size:15px; font-weight:700; margin-bottom:8px; color:#000000;">${escapeHtml(titles[i])}</div><div style="text-align:justify; hyphens:auto; -webkit-hyphens:auto; line-height:1.75;">${escapeHtml(s).replace(/\n/g, '<br>')}</div></div>`).join('<hr style="border:none; border-top:1px dashed #000000; opacity:0.3; margin:20px 0;">');
-    
-    DOM.modalTakeaways.innerHTML = summaries
-      .map((s, i) => `<div style="margin-bottom:16px;"><div style="font-family:'Playfair Display', serif; font-size:15px; font-weight:700; margin-bottom:8px; color:#000000;">${escapeHtml(titles[i])}</div><div style="text-align:justify; hyphens:auto; -webkit-hyphens:auto; line-height:1.75;">${escapeHtml(s.split('\n').slice(0,4).join('\n')).replace(/\n/g, '<br>')}</div></div>`)
-      .join('<hr style="border:none; border-top:1px dashed #000000; opacity:0.3; margin:20px 0;">');
+    DOM.modalSummary.innerText   = summaries.map((s, i) => `${titles[i]}\n${s}`).join('\n\n─────────────────\n\n');
+    DOM.modalTakeaways.innerText = summaries
+      .map((s, i) => `${titles[i]}:\n${s.split('\n').slice(0,4).join('\n')}`)
+      .join('\n\n');
 
     void _saveSessionToStorage(file.name, feedItems, summaries, titles);
     _updateKeyStatusBadge();
@@ -1813,6 +1830,7 @@
 
   window.addEventListener('load', async () => {
   try {
+
     try {
       await Promise.race([
         _restoreKeysFromIDB(),
