@@ -1453,7 +1453,17 @@
       }
     }
 
-    return finalParagraphs.join('\n\n');
+    const joined = finalParagraphs.join('\n\n');
+
+    // Detect garbled text: PDFs with custom glyph encodings and no ToUnicode map
+    // produce strings of U+FFFD replacement characters. If >60% of chars are
+    // replacement characters, the page cannot be decoded — return empty.
+    if (joined.length > 0) {
+      const replacementCount = (joined.match(/\uFFFD/g) || []).length;
+      if (replacementCount / joined.length > 0.4) return '';
+    }
+
+    return joined;
   }
 
   /* ═══════════════════════════════════════════════════════════════════
@@ -1675,12 +1685,19 @@
         const pageText = await extractPageText(pdfDoc, pageNum);
 
         if (!pageText || pageText.length < 30) {
-          if (pageNum === 1) {
+          // Skip silently -- page has garbled/undecodable font or is image-only.
+          // Only abort if it is the ONLY page.
+          if (pageNum === 1 && totalPages === 1) {
             hideOverlay();
             DOM.output.innerHTML =
-              '<div class="system-msg">⚠️ Page 1 appears to be blank or image-only (no extractable text). ' +
-              'Try a text-based PDF or a different file.</div>';
+              '<div class="system-msg">⚠️ This PDF appears to be image-only (no extractable text).</div>';
             _resetUploadBtn();
+            return;
+          }
+          if (pageNum === 1) {
+            hideOverlay();
+            DOM.overallSummaryBtn.style.display = 'inline-flex';
+            DOM.uploadPdfBtn.innerHTML = '<span class="upload-ring"></span>Processing...';
           }
           continue;
         }
