@@ -2,9 +2,9 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width">
-  <title>Pulse v6G — PDF Intelligence</title>
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&family=Noto+Sans:wght@400;500&family=Noto+Sans+Devanagari:wght@400;500&display=swap" rel="stylesheet">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Pulse v5 — PDF Intelligence</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
     /* ═══ BASE ═══ */
     :root {
@@ -12,21 +12,22 @@
       --paper:          #f5f0e8;
       --accent:         #1a5c3a;
       --rule:           #c8c0b0;
+      --muted:          #111111;
       --error:          #8b0000;
       --reader-font-sz: 17px;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-    body { background: var(--paper); font-family: 'IBM Plex Sans', 'Noto Sans', 'Noto Sans Devanagari', sans-serif; min-height: 100vh; line-height: 1.5; color: var(--ink); }
+    body { background: var(--paper); font-family: 'IBM Plex Sans', sans-serif; min-height: 100vh; line-height: 1.5; color: var(--ink); }
 
     /* ═══ CONTROLS BAR ═══ */
     .controls-bar {
-      position: relative; padding: 5px 20px 0;
+      position: relative; padding: 8px 20px 0;
       display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;
       border-bottom: 1px solid var(--rule); background: #e4eaf2;
     }
     .controls-row1 {
       width: 100%; display: flex; justify-content: center; align-items: center;
-      gap: 8px; flex-wrap: wrap; padding-bottom: 5px;
+      gap: 8px; flex-wrap: wrap; padding-bottom: 8px;
     }
     /* Row 2 — hidden by default, shown only when key manager is open */
     .controls-row2 {
@@ -42,7 +43,6 @@
       background: transparent; border: 1px solid var(--accent);
       padding: 6px 12px; border-radius: 4px; cursor: pointer;
       text-transform: uppercase; font-weight: 700; transition: background 0.2s; white-space: nowrap;
-      color: #000000;
     }
     .btn-outline:hover    { background: #d0d7e0; }
     .btn-outline:disabled { opacity: 0.4; cursor: not-allowed; }
@@ -53,120 +53,108 @@
     #key-manager-box {
       display: none; position: absolute; top: 100%; left: 50%; transform: translateX(-50%);
       width: 340px; max-width: calc(100vw - 20px);
-      background: #f5f0e8; border: 2px solid #009e70; border-radius: 8px;
+      background: #fff; border: 2px solid #009e70; border-radius: 8px;
       box-shadow: 0 8px 30px rgba(0,0,0,0.18); z-index: 2000;
       padding: 14px 16px 12px; font-family: 'IBM Plex Mono', monospace;
-      color: #000000;
     }
     #key-manager-box.open { display: block; }
     .km-title  { font-size: 10px; font-weight: 700; color: #009e70; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 10px; }
-    .km-label  { font-size: 9px; font-weight: 600; color: #000000; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }
+    .km-label  { font-size: 9px; font-weight: 600; color: #404060; text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 3px; }
     .km-row    { display: flex; gap: 6px; align-items: center; margin-bottom: 9px; }
     .km-input  {
       flex: 1; font-size: 11px; padding: 6px 9px; border-radius: 5px;
-      border: 1.5px solid #000000; background: #e4eaf2;
-      outline: none; font-family: monospace; min-width: 0; color: #000000;
+      border: 1.5px solid #b0bece; background: #f2f5f9;
+      outline: none; font-family: monospace;
     }
     .km-input:focus { border-color: #009e70; }
     .km-save {
-      background: #e4eaf2; border: 1.5px solid #000000; border-radius: 5px;
+      background: #fff; border: 1.5px solid #b0bece; border-radius: 5px;
       padding: 6px 10px; font-size: 9px; cursor: pointer; white-space: nowrap;
-      font-family: 'IBM Plex Mono', monospace; font-weight: 600; min-width: 72px; transition: all 0.2s; color: #000000;
+      font-family: 'IBM Plex Mono', monospace; font-weight: 600; min-width: 72px; transition: all 0.2s;
     }
-    .km-save.active { background: #009e70 !important; color: #000000 !important; border-color: #009e70 !important; }
-    .km-status { font-size: 8.5px; color: #000000; line-height: 1.6; margin-bottom: 6px; }
-    .km-footer { font-size: 7.5px; color: #000000; margin-top: 4px; }
+    .km-save.active { background: #009e70 !important; color: #fff !important; border-color: #009e70 !important; }
+    .km-status { font-size: 8.5px; color: #404060; line-height: 1.6; margin-bottom: 6px; }
+    .km-footer { font-size: 7.5px; color: #7090b0; margin-top: 4px; }
     .km-footer span { color: #009e70; font-weight: 600; }
     .km-bottom { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-top: 8px; }
-    .km-bottom > div { flex: 1; min-width: 0; }
     .km-model-select {
       font-family: 'IBM Plex Mono', monospace; font-size: 10px;
-      border: 1px solid #000000; border-radius: 4px; padding: 4px 6px;
-      background: #e4eaf2; cursor: pointer; outline: none; color: #000000;
-      width: 100%; text-overflow: ellipsis; white-space: nowrap; overflow: hidden;
+      border: 1px solid #b0bece; border-radius: 4px; padding: 4px 6px;
+      background: #f2f5f9; cursor: pointer; outline: none;
     }
     .km-close {
-      background: #e4eaf2; border: 1.5px solid #000000; border-radius: 5px;
-      padding: 4px 12px; font-size: 9px; cursor: pointer; font-family: 'IBM Plex Mono', monospace; color: #000000;
+      background: #f2f5f9; border: 1.5px solid #b0bece; border-radius: 5px;
+      padding: 4px 12px; font-size: 9px; cursor: pointer; font-family: 'IBM Plex Mono', monospace;
     }
-    .km-close:hover { background: #c8c0b0; }
+    .km-close:hover { background: #e0e6ef; }
 
     /* ═══ MASTHEAD ═══ */
-    .masthead { border-bottom: 2px solid var(--ink); padding: 7px 20px 6px; text-align: center; background: var(--paper); }
-    .masthead-title { font-family: 'Playfair Display', serif; font-size: 26px; font-weight: 700; line-height: 1.1; }
-    .tagline { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; margin-top: 2px; }
+    .masthead { border-bottom: 2px solid var(--ink); padding: 15px 20px; text-align: center; background: var(--paper); }
+    .masthead-title { font-family: 'Playfair Display', serif; font-size: 36px; font-weight: 700; line-height: 1.1; }
+    .tagline { font-family: 'IBM Plex Mono', monospace; font-size: 10px; letter-spacing: 0.15em; text-transform: uppercase; margin-top: 4px; }
 
     /* ═══ KEY STATUS BADGE (under masthead) ═══ */
     #key-status-badge {
       font-family: 'IBM Plex Mono', monospace; font-size: 9px; text-align: center;
-      padding: 2px 0 1px; letter-spacing: 0.05em; color: #000000;
+      padding: 4px 0 2px; letter-spacing: 0.05em;
     }
 
     .feed-status-bar {
-      max-width: 800px; margin: 4px auto 0; padding: 0 15px;
+      max-width: 800px; margin: 8px auto 0; padding: 0 15px;
       font-family: 'IBM Plex Mono', monospace; font-size: 10px;
       text-transform: uppercase; letter-spacing: 0.05em; text-align: center;
     }
 
-    .container { max-width: 800px; margin: 0 auto; padding: 8px 15px 40px; }
+    .container { max-width: 800px; margin: 0 auto; padding: 15px 15px 40px; }
 
     /* ═══ FEED ITEMS ═══ */
-    .feed-item { margin-bottom: 14px; border-bottom: 1px solid var(--rule); padding-bottom: 12px; animation: fadeIn 0.3s ease forwards; }
+    .feed-item { margin-bottom: 20px; border-bottom: 1px solid var(--rule); padding-bottom: 15px; animation: fadeIn 0.3s ease forwards; }
     .feed-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
     @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
 
-    .headline { font-family: 'Playfair Display', serif; font-size: 19px; text-decoration: none; font-weight: 700; display: block; line-height: 1.2; margin-bottom: 5px; word-break: break-word; overflow-wrap: anywhere; cursor: pointer; text-align: center; color: #000000; }
+    .headline { font-family: 'Playfair Display', serif; font-size: 20px; text-decoration: none; font-weight: 700; display: block; line-height: 1.2; margin-bottom: 8px; word-break: break-word; cursor: pointer; }
     .headline:hover { text-decoration: underline; }
-    .description { font-size: 14px; margin-bottom: 6px; line-height: 1.7; color: #000000; font-weight: 400; text-align: left; hyphens: auto; -webkit-hyphens: auto; max-width: 65ch; word-break: break-word; overflow-wrap: anywhere; }
-    .description.reader-trigger:hover { text-decoration: underline; }
+    .description { font-size: 14px; margin-bottom: 6px; line-height: 1.5; color: #000000; font-weight: 400; }
     .description.translation { border-left: 3px solid var(--accent); background: rgba(26,92,58,0.05); padding: 6px 10px; border-radius: 0 4px 4px 0; font-weight: 400; }
-    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 8px; color: #000000; }
-    .system-msg { font-family: 'IBM Plex Mono', monospace; font-size: 12px; text-align: center; margin-top: 30px; line-height: 1.5; color: #000000; }
-    .feed-item-error .headline { color: #000000; font-style: italic; font-size: 16px; }
-    .feed-item-error .error-msg { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: #000000; margin: 4px 0 8px; word-break: break-word; overflow-wrap: anywhere; }
-    .view-original-btn { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: #000000; text-decoration: underline; cursor: pointer; background: none; border: none; padding: 0; letter-spacing: 0.03em; font-weight: 700; }
-    .view-original-btn:hover { color: #1a5c3a; }
+    .meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 8px; }
+    .system-msg { font-family: 'IBM Plex Mono', monospace; font-size: 12px; text-align: center; margin-top: 30px; line-height: 1.5; }
 
     /* ═══ READER PANEL ═══ */
-    #summary-backdrop {
+    #reader-backdrop, #summary-backdrop {
       display: none; position: fixed; inset: 0;
-      background: rgba(245,240,232,0.85); z-index: 998; backdrop-filter: blur(2px);
+      background: rgba(26,26,24,0.45); z-index: 998; backdrop-filter: blur(2px);
     }
-    #summary-backdrop.open { display: block; }
-    #reader-backdrop { display: none; }
+    #reader-backdrop.open, #summary-backdrop.open { display: block; }
 
     #reader-panel {
-      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
-      width: 100%; height: 100%;
-      background: var(--paper); z-index: 999;
-      display: flex; flex-direction: column;
-      opacity: 0; pointer-events: none;
-      transition: opacity 0.2s ease;
+      position: fixed; top: 0; right: 0; bottom: 0; width: 100%; max-width: 780px;
+      background: var(--paper); z-index: 999; display: flex; flex-direction: column;
+      transform: translateX(100%); transition: transform 0.35s cubic-bezier(.4,0,.2,1);
+      box-shadow: -4px 0 40px rgba(0,0,0,0.18);
     }
-    #reader-panel.open { opacity: 1; pointer-events: all; }
+    #reader-panel.open { transform: translateX(0); }
 
     #reader-progress { position: absolute; top: 0; left: 0; height: 3px; width: 0%; background: var(--ink); transition: width 0.2s; z-index: 5; }
 
-    .reader-topbar { display: flex; align-items: center; gap: 10px; padding: 10px 15px; border-bottom: 1px solid var(--rule); background: #e4eaf2; flex-shrink: 0; position: relative; z-index: 20; color: #000000; }
-    .reader-back-btn { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; text-transform: uppercase; background: transparent; border: 1px solid var(--ink); padding: 5px 14px; border-radius: 4px; cursor: pointer; white-space: nowrap; transition: background 0.2s; letter-spacing: 0.04em; color: #000000; }
-    .reader-back-btn:hover { background: #c8c0b0; }
-    .reader-source-url { font-family: 'IBM Plex Mono', monospace; font-size: 10px; flex: 1; color: #000000; }
+    .reader-topbar { display: flex; align-items: center; gap: 10px; padding: 10px 15px; border-bottom: 1px solid var(--rule); background: #e4eaf2; flex-shrink: 0; position: relative; z-index: 20; }
+    .reader-back-btn { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; text-transform: uppercase; background: transparent; border: 1px solid var(--ink); padding: 4px 10px; border-radius: 4px; cursor: pointer; white-space: nowrap; transition: background 0.2s; }
+    .reader-back-btn:hover { background: #d0d7e0; }
+    .reader-source-url { font-family: 'IBM Plex Mono', monospace; font-size: 10px; flex: 1; }
     .reader-font-ctrl { display: flex; gap: 4px; }
-    .reader-font-ctrl button { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 700; background: transparent; border: 1px solid var(--ink); width: 26px; height: 26px; border-radius: 4px; cursor: pointer; transition: background 0.2s; color: #000000; }
-    .reader-font-ctrl button:hover { background: #c8c0b0; }
-    .reader-open-btn { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700; text-transform: uppercase; background: #e4eaf2; border: 1px solid var(--ink); padding: 4px 8px; border-radius: 4px; cursor: pointer; white-space: nowrap; color: #000000; }
-    .reader-open-btn:hover { background: #c8c0b0; }
+    .reader-font-ctrl button { font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: bold; background: transparent; border: 1px solid var(--rule); width: 26px; height: 26px; border-radius: 4px; cursor: pointer; transition: border-color 0.2s; }
+    .reader-font-ctrl button:hover { border-color: var(--ink); background: #d0d7e0; }
+    .reader-open-btn { font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700; text-transform: uppercase; background: #e4eaf2; border: 1px solid var(--ink); padding: 4px 8px; border-radius: 4px; cursor: pointer; white-space: nowrap; }
+    .reader-open-btn:hover { background: #d0d7e0; }
 
-    .reader-scroll { overflow-y: auto; flex: 1; padding: 28px 20px 60px; position: relative; z-index: 10; }
-    .reader-scroll-inner { max-width: 720px; margin: 0 auto; }
-    .reader-article-title { font-family: 'Playfair Display', serif; font-size: clamp(20px,3vw,28px); font-weight: 700; line-height: 1.2; margin-bottom: 10px; text-align: center; color: #000000; }
-    .reader-article-meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--rule); color: #000000; }
+    .reader-scroll { overflow-y: auto; flex: 1; padding: 20px 25px 40px; position: relative; z-index: 10; }
+    .reader-article-title { font-family: 'Playfair Display', serif; font-size: clamp(20px,3vw,28px); font-weight: 700; line-height: 1.2; margin-bottom: 10px; }
+    .reader-article-meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid var(--rule); }
     .reader-body { font-size: var(--reader-font-sz); line-height: 1.7; padding-bottom: 20px; color: #000000; font-weight: 400; }
-    .reader-body h1,.reader-body h2,.reader-body h3,.reader-body h4 { font-family: 'Playfair Display', serif; margin: 1.2em 0 0.5em; line-height: 1.2; color: #000000; font-weight: 700; text-align: center; }
-    .reader-body p { margin-bottom: 1em; font-weight: 400; color: #000000; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
+    .reader-body h1,.reader-body h2,.reader-body h3,.reader-body h4 { font-family: 'Playfair Display', serif; margin: 1.2em 0 0.5em; line-height: 1.2; color: #000000; font-weight: 700; }
+    .reader-body p { margin-bottom: 1em; font-weight: 400; color: #000000; }
     .reader-body strong, .reader-body b { font-weight: 400; }
     .reader-body em, .reader-body i { font-style: normal; }
-    .translation-header { font-family: 'Playfair Display', serif; font-size: 1.2em; font-weight: 700; margin: 30px 0 15px; padding-top: 20px; border-top: 2px dashed var(--rule); text-align: center; color: #000000; }
+    .translation-header { font-family: 'Playfair Display', serif; font-size: 1.2em; font-weight: bold; margin: 30px 0 15px; padding-top: 20px; border-top: 2px dashed var(--rule); }
 
     /* ═══ SUMMARY MODAL ═══ */
     #summary-modal {
@@ -174,98 +162,53 @@
       position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
       width: 90%; max-width: 800px; max-height: 85vh;
       background: var(--paper); z-index: 1000; border-radius: 8px;
-      box-shadow: 0 10px 40px rgba(0,0,0,0.3); flex-direction: column; border: 2px solid var(--ink);
+      box-shadow: 0 10px 40px rgba(0,0,0,0.3); flex-direction: column; border: 1px solid var(--rule);
     }
     #summary-modal.open { visibility: visible; }
-    .summary-header { display: flex; justify-content: space-between; padding: 12px 16px; border-bottom: 2px solid var(--ink); align-items: center; background: #e4eaf2; border-radius: 6px 6px 0 0; color: #000000; }
-    .summary-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: 700; text-align: center; }
-    .summary-content-area { padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; background: #f5f0e8; }
-    .summary-box { border: 1px solid var(--ink); border-radius: 6px; background: #f5f0e8; overflow: hidden; }
-    .summary-box-title { background: #e4eaf2; padding: 8px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; text-transform: uppercase; border-bottom: 1px solid var(--ink); text-align: center; color: #000000; }
-    .summary-box-content { padding: 12px; font-size: 13px; line-height: 1.7; white-space: pre-line; background: #f5f0e8; color: #000000; font-weight: 400; text-align: justify; hyphens: auto; -webkit-hyphens: auto; max-width: 65ch; margin: 0 auto; }
+    .summary-header { display: flex; justify-content: space-between; padding: 12px 16px; border-bottom: 1px solid var(--rule); align-items: center; background: #e4eaf2; border-radius: 8px 8px 0 0; }
+    .summary-title { font-family: 'Playfair Display', serif; font-size: 18px; font-weight: bold; }
+    .summary-content-area { padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 15px; }
+    .summary-box { border: 1px solid var(--rule); border-radius: 6px; background: #fff; overflow: hidden; }
+    .summary-box-title { background: #e4eaf2; padding: 8px 12px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: bold; text-transform: uppercase; border-bottom: 1px solid var(--rule); text-align: center; }
+    .summary-box-content { padding: 12px; font-size: 13px; line-height: 1.5; white-space: pre-wrap; background: #fff; color: #000000; font-weight: 400; }
     .summary-box-content strong, .summary-box-content b { font-weight: 400; }
 
     /* ═══ AI CHAT PANEL ═══ */
     #ai-panel {
       position: absolute; top: 50px; right: 15px; width: 340px; max-width: calc(100vw - 30px);
-      background: #f5f0e8; border: 2px solid var(--ink); border-radius: 8px;
+      background: #fff; border: 1px solid var(--rule); border-radius: 8px;
       box-shadow: 0 8px 30px rgba(0,0,0,0.15); display: flex; flex-direction: column;
       opacity: 0; pointer-events: none; transform: translateY(-10px);
       transition: all 0.2s ease; max-height: 65vh; z-index: 1005;
     }
     #ai-panel.open { opacity: 1; pointer-events: auto; transform: translateY(0); }
-    .ai-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #e4eaf2; border-bottom: 1px solid var(--ink); border-radius: 6px 6px 0 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; text-transform: uppercase; color: #000000; }
+    .ai-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 12px; background: #e4eaf2; border-bottom: 1px solid var(--rule); border-radius: 8px 8px 0 0; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; text-transform: uppercase; }
 
     /* ═══ AI QUOTA STATUS BAR (inside AI panel header) ═══ */
-    #ai-quota-status { font-size: 8px; font-family: 'IBM Plex Mono', monospace; font-weight: 400; text-transform: none; letter-spacing: 0; color: #000000; flex: 1; text-align: right; padding-right: 6px; }
+    #ai-quota-status { font-size: 8px; font-family: 'IBM Plex Mono', monospace; font-weight: 400; text-transform: none; letter-spacing: 0; color: #404060; flex: 1; text-align: right; padding-right: 6px; }
 
-    .ai-close-btn { background: transparent; border: none; font-size: 18px; cursor: pointer; font-weight: 700; color: #000000; }
-    .ai-chat-area { padding: 12px; overflow-y: auto; flex: 1; font-size: 13px; line-height: 1.5; background: #f5f0e8; }
-    .ai-message { margin-bottom: 12px; padding: 10px 12px; border-radius: 6px; background: #e4eaf2; border: 1px solid #c8c0b0; font-weight: 400; text-align: justify; hyphens: auto; -webkit-hyphens: auto; line-height: 1.7; color: #000000; }
-    .ai-message.user   { background: #d0d7e0; border-left: 3px solid var(--ink); }
-    .ai-message.system { font-style: italic; background: transparent; padding: 0; border: none; }
-    .ai-message.status { font-size: 11px; color: #000000; background: #d0d7e0; border-left: 3px solid #000000; padding: 6px 10px; font-style: italic; text-align: left; }
-    .ai-message strong, .ai-message b { font-weight: 400; }
-    .ai-message p { margin-bottom: 0.8em; text-align: justify; hyphens: auto; -webkit-hyphens: auto; }
-    .ai-quick-prompts { display: flex; gap: 6px; padding: 0 12px 10px; overflow-x: auto; background: #f5f0e8; }
-    .ai-quick-prompts button { background: #e4eaf2; border: 1px solid var(--ink); padding: 4px 10px; border-radius: 15px; font-size: 11px; font-weight: 700; cursor: pointer; color: #000000; }
-    .ai-quick-prompts button:hover { background: #d0d7e0; }
-    .ai-input-area { display: flex; padding: 10px 12px; border-top: 1px solid var(--ink); background: #e4eaf2; border-radius: 0 0 6px 6px; }
-    .ai-input-area input { flex: 1; border: 1px solid var(--ink); border-radius: 4px; padding: 8px 10px; font-size: 13px; outline: none; color: #000000; background: #f5f0e8; }
-    .ai-input-area input:focus { border-color: #1a5c3a; }
-    .ai-input-area button { background: #d0d7e0; border: 1px solid var(--ink); border-radius: 4px; padding: 0 12px; margin-left: 6px; cursor: pointer; font-weight: 700; color: #000000; }
+    .ai-close-btn { background: transparent; border: none; font-size: 18px; cursor: pointer; font-weight: bold; }
+    .ai-chat-area { padding: 12px; overflow-y: auto; flex: 1; font-size: 13px; line-height: 1.5; background: #fff; }
+    .ai-message { margin-bottom: 12px; padding: 10px 12px; border-radius: 6px; background: #f0f0f0; }
+    .ai-message.user   { background: #e4eaf2; border-left: 3px solid var(--ink); }
+    .ai-message.system { font-style: italic; background: transparent; padding: 0; }
+    .ai-message.status { font-size: 11px; color: #f59e0b; background: #fffbeb; border-left: 3px solid #f59e0b; padding: 6px 10px; font-style: italic; }
+    .ai-quick-prompts { display: flex; gap: 6px; padding: 0 12px 10px; overflow-x: auto; background: #fff; }
+    .ai-quick-prompts button { background: #f0f0f0; border: 1px solid var(--rule); padding: 4px 10px; border-radius: 15px; font-size: 11px; font-weight: bold; cursor: pointer; }
+    .ai-quick-prompts button:hover { background: #d0d7e0; border-color: var(--ink); }
+    .ai-input-area { display: flex; padding: 10px 12px; border-top: 1px solid var(--rule); background: #e4eaf2; border-radius: 0 0 8px 8px; }
+    .ai-input-area input { flex: 1; border: 1px solid var(--rule); border-radius: 4px; padding: 8px 10px; font-size: 13px; outline: none; }
+    .ai-input-area input:focus { border-color: var(--ink); }
+    .ai-input-area button { background: #d0d7e0; border: 1px solid var(--ink); border-radius: 4px; padding: 0 12px; margin-left: 6px; cursor: pointer; font-weight: 700; }
 
     /* ═══ MOBILE ═══ */
-    @media (max-width: 600px) {
-      .controls-bar { padding: 4px 8px 0; gap: 5px; }
-      .controls-row1 { gap: 5px; padding-bottom: 4px; flex-wrap: nowrap; overflow-x: auto; }
-      .btn-outline { font-size: 10px; padding: 5px 8px; white-space: nowrap; }
-      .masthead { padding: 5px 12px 4px; }
-      .masthead-title { font-size: 22px; }
-      .tagline { font-size: 8px; }
-      .feed-status-bar { font-size: 9px; margin: 2px auto 0; }
-      .container { padding: 6px 10px 30px; }
-      .headline { font-size: 16px; margin-bottom: 4px; }
-      .description { font-size: 13px; max-width: 100%; }
-      .meta { font-size: 9px; }
-      .feed-item { margin-bottom: 12px; padding-bottom: 10px; }
-      .reader-scroll { padding: 15px 14px 40px; }
+    @media (max-width: 520px) {
+      .controls-bar { padding: 12px 16px; justify-content: flex-end; flex-wrap: wrap; }
+      .masthead { padding: 20px 16px; }
+      .reader-scroll { padding: 20px 18px 0px; }
       .reader-source-url { display: none; }
-      #ai-panel { top: auto; bottom: 10px; right: 6px; left: 6px; width: auto; max-width: none; max-height: 50vh; }
-      .reader-article-title { font-size: 18px; }
-      .reader-body { font-size: 15px; }
-      #key-manager-box { width: calc(100vw - 16px); left: 8px; transform: none; }
-      .summary-box-content { font-size: 12px; }
+      #ai-panel { top: 65px; right: 10px; max-width: calc(100vw - 20px); max-height: 70vh; }
     }
-
-    /* ═══ UPLOAD BUTTON SPINNER ═══ */
-    #upload-pdf-btn {
-      position: relative;
-      overflow: visible;
-      transition: background 0.2s, color 0.2s;
-    }
-    #upload-pdf-btn.uploading {
-      padding-left: 34px;
-      color: #000000;
-      border-color: #1a5c3a;
-      background: #c8c0b0;
-      cursor: wait;
-    }
-    #upload-pdf-btn .upload-ring {
-      display: none;
-      position: absolute;
-      left: 9px;
-      top: 50%;
-      transform: translateY(-50%);
-      width: 14px;
-      height: 14px;
-      border: 2px solid #b0d8be;
-      border-top-color: #000000;
-      border-radius: 50%;
-      animation: uploadSpin 0.75s linear infinite;
-    }
-    #upload-pdf-btn.uploading .upload-ring { display: block; }
-    @keyframes uploadSpin { to { transform: translateY(-50%) rotate(360deg); } }
 
     /* ═══ PROCESSING OVERLAY ═══ */
     #processing-overlay {
@@ -280,7 +223,7 @@
     .proc-spinner {
       width: 44px; height: 44px;
       border: 3px solid #c8c0b0;
-      border-top-color: #000000;
+      border-top-color: #1a5c3a;
       border-radius: 50%;
       animation: spin 0.8s linear infinite;
     }
@@ -288,22 +231,32 @@
 
     .proc-title {
       font-size: 13px; font-weight: 700; text-transform: uppercase;
-      letter-spacing: 0.12em; color: #000000;
+      letter-spacing: 0.12em; color: #1a5c3a;
     }
     .proc-step {
-      font-size: 11px; color: #000000; text-align: center;
+      font-size: 11px; color: #404060; text-align: center;
       max-width: 280px; line-height: 1.6;
     }
     .proc-bar-wrap {
       width: 240px; height: 4px; background: #c8c0b0; border-radius: 2px; overflow: hidden;
     }
     .proc-bar {
-      height: 100%; width: 0%; background: #000000;
+      height: 100%; width: 0%; background: #1a5c3a;
       border-radius: 2px; transition: width 0.4s ease;
     }
     .proc-note {
-      font-size: 9px; color: #000000; text-align: center; max-width: 260px; line-height: 1.5;
+      font-size: 9px; color: #7090b0; text-align: center; max-width: 260px; line-height: 1.5;
     }
+
+    /* ── Doc Type Confirm Bar ── */
+    #doctype-confirm-bar {
+      background: #1a2636; border: 1px solid #2e9e70;
+      border-radius: 6px; padding: 8px 12px;
+      display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+      font-size: 12px; color: #b0c8d8;
+      margin: 6px 12px 0;
+    }
+    #doctype-confirm-msg { flex: 1; min-width: 160px; }
 
     /* ── Reader paragraph text (PDF extract) ── */
     .reader-extract {
@@ -313,16 +266,11 @@
       word-break: normal;
       hyphens: auto;
       -webkit-hyphens: auto;
-      max-width: 65ch;
-      margin-left: auto;
-      margin-right: auto;
     }
     .reader-text-para {
       margin-bottom: 1em;
-      line-height: 1.75;
+      line-height: 1.7;
       text-align: justify;
-      hyphens: auto;
-      -webkit-hyphens: auto;
       font-size: var(--reader-font-sz);
       font-weight: 400;
       color: #000000;
@@ -338,9 +286,10 @@
       margin: 1.4em 0 0.5em;
       line-height: 1.25;
       letter-spacing: 0.01em;
-      text-align: center;
     }
   </style>
+
+  <!-- pdf.js v3.11.174 — UMD build, exposes pdfjsLib as a global reliably -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
   <script>
     if (window.pdfjsLib) {
@@ -352,16 +301,29 @@
 
 <body>
 
+  <!-- ═══ CONTROLS BAR ═══ -->
   <div class="controls-bar">
+    <!-- Row 1: buttons -->
     <div class="controls-row1">
       <button class="btn-outline" id="overall-summary-btn" style="display:none;">📊 PDF Summary</button>
-      <button class="btn-outline" id="upload-pdf-btn"><span class="upload-ring"></span>📄 Upload PDF</button>
+      <button class="btn-outline" id="upload-pdf-btn">📄 Upload PDF</button>
       <input type="file" id="pdf-file-input" accept=".pdf,application/pdf" style="display:none;">
-
+      <select id="doc-type-selector" class="btn-outline" title="Document Type">
+        <option value="auto">Auto Detect</option>
+        <option value="onepager">1-Pager</option>
+        <option value="presentation">Presentation</option>
+        <option value="editorial">Editorial Bundle</option>
+        <option value="book">Book / Long PDF</option>
+        <option value="generic">Generic Report</option>
+      </select>
+      <!-- 🔑 KEY MANAGER BUTTON — symbol only -->
       <button class="btn-outline" id="key-mgr-btn" title="Manage Gemini API Keys" style="padding:6px 10px;font-size:15px;line-height:1;">🔑</button>
     </div>
+
+    <!-- Row 2: live Gemini key/model status -->
     <div class="controls-row2" id="key-status-badge"></div>
 
+    <!-- ═══ INLINE KEY MANAGER PANEL (drops down from controls bar) ═══ -->
     <div id="key-manager-box">
       <div class="km-title">🔑 Gemini API Key Manager — K1 &amp; K2</div>
 
@@ -383,9 +345,9 @@
         <div>
           <div class="km-label" style="margin-bottom:3px;">Gemini Model</div>
           <select id="km-model-select" class="km-model-select">
-            <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite — Default (auto-cascades to Flash → Pro on quota)</option>
-            <option value="gemini-2.5-flash">Gemini 2.5 Flash (skip Lite, cascade to Pro on quota)</option>
-            <option value="gemini-2.5-pro">Gemini 2.5 Pro (no cascade — final tier)</option>
+            <option value="gemini-2.5-flash-lite">Gemini 2.5 Flash-Lite (default)</option>
+            <option value="gemini-2.5-flash">Gemini 2.5 Flash</option>
+            <option value="gemini-2.5-pro">Gemini 2.5 Pro</option>
           </select>
         </div>
         <button id="km-close-btn" class="km-close">✕ Close</button>
@@ -397,10 +359,13 @@
     </div>
   </div>
 
+  <!-- ═══ MASTHEAD ═══ -->
   <div class="masthead">
-    <div class="masthead-title">Pulse<span style="font-size:10px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.6;">v6G</span></div>
+    <div class="masthead-title">Pulse v3B</div>
     <div class="tagline">PDF Intelligence Terminal</div>
   </div>
+
+  <!-- Key status is now in controls-bar row 2 -->
   <div class="feed-status-bar"><span id="item-count"></span></div>
 
   <div class="container">
@@ -409,6 +374,7 @@
     </div>
   </div>
 
+  <!-- ═══ PROCESSING OVERLAY ═══ -->
   <div id="processing-overlay">
     <div class="proc-spinner"></div>
     <div class="proc-title" id="proc-title">Processing PDF</div>
@@ -417,6 +383,7 @@
     <div class="proc-note" id="proc-note"></div>
   </div>
 
+  <!-- ═══ READER PANEL ═══ -->
   <div id="reader-backdrop" aria-hidden="true"></div>
   <div id="reader-panel" role="dialog" aria-modal="true">
     <div id="reader-progress"></div>
@@ -431,11 +398,10 @@
     </div>
 
     <div class="reader-scroll" id="reader-scroll">
-      <div class="reader-scroll-inner">
-        <div id="reader-content"></div>
-      </div>
+      <div id="reader-content"></div>
     </div>
 
+    <!-- ═══ AI CHAT PANEL (inside reader) ═══ -->
     <div id="ai-panel">
       <div class="ai-header">
         <span>✨ Gemini Assistant</span>
@@ -456,8 +422,15 @@
     </div>
   </div>
 
+  <!-- ═══ SUMMARY MODAL ═══ -->
   <div id="summary-backdrop" aria-hidden="true"></div>
 
+  <!-- ═══ DOC TYPE CONFIRM BAR ═══ -->
+  <div id="doctype-confirm-bar" style="display:none;">
+    <span id="doctype-confirm-msg"></span>
+    <select id="doctype-confirm-select" class="btn-outline" style="font-size:12px;padding:3px 6px;"></select>
+    <button id="doctype-confirm-btn" class="btn-outline" style="font-size:12px;padding:4px 10px;background:#009e70;color:#fff;border-color:#009e70;">✓ Confirm &amp; Process</button>
+  </div>
   <div id="summary-modal" role="dialog" aria-modal="true">
     <div class="summary-header">
       <div class="summary-title">Overall PDF Intelligence</div>
@@ -486,7 +459,9 @@
     READER_FONT_MIN: 13,
     READER_FONT_MAX: 24,
     READER_FONT_DEF: 17,
-    GEMINI_MODELS:   ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-pro']
+    // Gemini model cascade: primary → first fallback → second fallback
+    // On 429 from any model, system tries next automatically
+    GEMINI_CASCADE: ['gemini-2.5-flash-lite', 'gemini-2.5-flash', 'gemini-2.5-pro']
   });
 
   /* ═══════════════════════════════════════════════════════════════════
@@ -507,7 +482,9 @@
 
     uploadPdfBtn:      document.getElementById('upload-pdf-btn'),
     pdfFileInput:      document.getElementById('pdf-file-input'),
+    docTypeSelector:   document.getElementById('doc-type-selector'),
 
+    // Key manager
     keyMgrBtn:         document.getElementById('key-mgr-btn'),
     keyManagerBox:     document.getElementById('key-manager-box'),
     kmK1Input:         document.getElementById('km-k1-input'),
@@ -518,12 +495,14 @@
     kmModelSelect:     document.getElementById('km-model-select'),
     kmCloseBtn:        document.getElementById('km-close-btn'),
 
+    // Processing overlay
     procOverlay:       document.getElementById('processing-overlay'),
     procTitle:         document.getElementById('proc-title'),
     procStep:          document.getElementById('proc-step'),
     procBar:           document.getElementById('proc-bar'),
     procNote:          document.getElementById('proc-note'),
 
+    // Reader
     readerPanel:       document.getElementById('reader-panel'),
     readerBackdrop:    document.getElementById('reader-backdrop'),
     readerContent:     document.getElementById('reader-content'),
@@ -534,6 +513,7 @@
     fontUp:            document.getElementById('font-up'),
     fontDown:          document.getElementById('font-down'),
 
+    // AI panel
     aiToggle:          document.getElementById('reader-ai-toggle'),
     aiPanel:           document.getElementById('ai-panel'),
     aiCloseBtn:        document.getElementById('ai-close-btn'),
@@ -542,6 +522,12 @@
     aiSubmit:          document.getElementById('ai-submit'),
     aiQuotaStatus:     document.getElementById('ai-quota-status'),
     aiPromptBtns:      document.querySelectorAll('.ai-prompt-btn'),
+
+    // Rate limit ticker + doctype confirm
+    doctypeBar:        document.getElementById('doctype-confirm-bar'),
+    doctypeMsg:        document.getElementById('doctype-confirm-msg'),
+    doctypeSelect:     document.getElementById('doctype-confirm-select'),
+    doctypeConfirmBtn: document.getElementById('doctype-confirm-btn')
   };
 
   /* ═══════════════════════════════════════════════════════════════════
@@ -550,80 +536,11 @@
   const feedCache          = {};
   let   readerFontSize     = CONFIG.READER_FONT_DEF;
   let   currentArticleText = '';
-  let   currentPdfDoc      = null;
-  let   currentPdfFile     = null;
 
   // ── Dual-Key State ──────────────────────────────────────────────
-  let _activeKeySlot      = 1;
-  let _activeCascadeModel = null;
-
-  /* ──────────────────────────────────────────────────────────────────
-     SECTION 3B — INDEXEDDB STORAGE ENGINE
-  ────────────────────────────────────────────────────────────────── */
-
-  const PULSE_DB       = 'pulse_v5a';
-  const PULSE_DB_VER   = 1;
-  const STORE_KEYS     = 'keys';
-  const STORE_SESSIONS = 'sessions';
-
-  function _idbOpen() {
-    return new Promise((resolve, reject) => {
-      if (!window.indexedDB) return reject(new Error('IDB not supported'));
-      const req = indexedDB.open(PULSE_DB, 1);
-      req.onupgradeneeded = e => {
-        const db = e.target.result;
-        try { if (!db.objectStoreNames.contains(STORE_KEYS))     db.createObjectStore(STORE_KEYS); } catch(_) {}
-        try { if (!db.objectStoreNames.contains(STORE_SESSIONS)) db.createObjectStore(STORE_SESSIONS); } catch(_) {}
-      };
-      req.onblocked = () => { if (req.result) req.result.close(); reject(new Error('IDB blocked')); };
-      req.onsuccess = e => resolve(e.target.result);
-      req.onerror   = () => reject(req.error);
-    });
-  }
-
-  async function _idbSet(key, value) {
-    try {
-      const db = await _idbOpen();
-      await new Promise((res, rej) => {
-        const tx = db.transaction(STORE_KEYS, 'readwrite');
-        tx.objectStore(STORE_KEYS).put(value, key);
-        tx.oncomplete = res;
-        tx.onerror    = () => rej(tx.error);
-      });
-      db.close();
-    } catch (_) {}
-  }
-
-  async function _idbGet(key) {
-    try {
-      const db = await _idbOpen();
-      const result = await new Promise((res, rej) => {
-        const tx  = db.transaction(STORE_KEYS, 'readonly');
-        const req = tx.objectStore(STORE_KEYS).get(key);
-        req.onsuccess = () => res(req.result ?? null);
-        req.onerror   = () => rej(req.error);
-      });
-      db.close();
-      return result;
-    } catch (_) { return null; }
-  }
-
-  async function _restoreKeysFromIDB() {
-    const slots = [
-      { ls: 'pulse_gemini_key1', idb: 'k1' },
-      { ls: 'pulse_gemini_key2', idb: 'k2' },
-      { ls: 'pulse_gemini_model', idb: 'model' }
-    ];
-    for (const { ls, idb } of slots) {
-      const lsVal  = (localStorage.getItem(ls) || '').trim();
-      const idbVal = (await _idbGet(idb) || '').trim();
-      if (!lsVal && idbVal) {
-        localStorage.setItem(ls, idbVal);
-      } else if (lsVal && lsVal !== idbVal) {
-        await _idbSet(idb, lsVal);
-      }
-    }
-  }
+  // pulse_gemini_key1 = Primary (K1)
+  // pulse_gemini_key2 = Backup  (K2) — auto-shifts on 429
+  let _activeKeySlot = 1; // 1 = primary, 2 = backup
 
   /* ═══════════════════════════════════════════════════════════════════
      SECTION 4 — DUAL-KEY MANAGER
@@ -637,6 +554,7 @@
   }
 
   function getGeminiKey() {
+    // Return active key; fall back to the other slot if missing
     const primary = _getRawKey(1);
     const backup  = _getRawKey(2);
     if (_activeKeySlot === 2 && backup) return backup;
@@ -646,7 +564,7 @@
   }
 
   function getGeminiModel() {
-    return localStorage.getItem('pulse_gemini_model') || CONFIG.GEMINI_MODELS[0];
+    return localStorage.getItem('pulse_gemini_model') || CONFIG.GEMINI_CASCADE[0];
   }
 
   function shiftToBackupKey() {
@@ -678,50 +596,35 @@
     DOM.procBar.style.width = '0%';
   }
 
-  /* ═══ SESSION PERSISTENCE ═══ */
+  /* ═══ SESSION PERSISTENCE ═══
+     Saves the last PDF result to localStorage so it survives refresh.
+     Cleared automatically when a new PDF is uploaded.
+  ═══════════════════════════ */
   const STORAGE_KEY = 'pulse_pdf_session';
 
-  async function _saveSessionToStorage(fileName, feedItems, summaries, titles) {
+  function _saveSessionToStorage(fileName, feedItems, summaries, titles) {
     try {
-      const payload = { fileName, feedItems, summaries, titles, savedAt: Date.now() };
-      const db = await _idbOpen();
-      await new Promise((res, rej) => {
-        const tx = db.transaction(STORE_SESSIONS, 'readwrite');
-        tx.objectStore(STORE_SESSIONS).put(payload, STORAGE_KEY);
-        tx.oncomplete = res;
-        tx.onerror    = () => rej(tx.error);
-      });
-      db.close();
-    } catch (_) {
-      try {
-        const slim = feedItems.map(({ full_text, full_text_english, ...rest }) => rest);
-        localStorage.setItem(STORAGE_KEY,
-          JSON.stringify({ fileName, feedItems: slim, summaries, titles, savedAt: Date.now() }));
-      } catch (_2) {}
+      const payload = JSON.stringify({ fileName, feedItems, summaries, titles, savedAt: Date.now() });
+      localStorage.setItem(STORAGE_KEY, payload);
+    } catch (e) {
+      // Silently fail if storage is full (large PDFs)
+      console.warn('Could not persist session:', e.message);
     }
   }
 
-  async function _loadSessionFromStorage() {
-    try {
-      const db = await _idbOpen();
-      const result = await new Promise((res, rej) => {
-        const tx  = db.transaction(STORE_SESSIONS, 'readonly');
-        const req = tx.objectStore(STORE_SESSIONS).get(STORAGE_KEY);
-        req.onsuccess = () => res(req.result ?? null);
-        req.onerror   = () => rej(req.error);
-      });
-      db.close();
-      if (result) return result;
-    } catch (_) {}
+  function _loadSessionFromStorage() {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
-      return raw ? JSON.parse(raw) : null;
-    } catch (_) { return null; }
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (e) { return null; }
   }
 
   function _restoreSession(session) {
     if (!session || !session.feedItems || !session.feedItems.length) return false;
+    // Rebuild feedCache so reader panel works
     feedCache['uploaded-pdf'] = { items: session.feedItems };
+    // Rebuild modal content
     const { summaries, titles, feedItems, fileName } = session;
     DOM.modalSummary.innerText   = summaries.map((s, i) => `${titles[i]}\n${s}`).join('\n\n─────────────────\n\n');
     DOM.modalTakeaways.innerText = summaries
@@ -729,6 +632,7 @@
       .join('\n\n');
     renderFeedItems(feedItems, fileName);
     DOM.overallSummaryBtn.style.display = 'inline-flex';
+    // Show restore notice
     DOM.itemCount.textContent =
       `${feedItems.length} section${feedItems.length !== 1 ? 's' : ''} restored · ${fileName}`;
     return true;
@@ -737,8 +641,6 @@
   function clearGeminiKeys() {
     localStorage.removeItem('pulse_gemini_key1');
     localStorage.removeItem('pulse_gemini_key2');
-    _idbSet('k1', '');
-    _idbSet('k2', '');
     _activeKeySlot = 1;
     _refreshKmButtonStates();
     _updateKmStatus();
@@ -749,6 +651,7 @@
     return k ? `${k.slice(0,6)}…${k.slice(-4)} (${k.length}c)` : '— not saved';
   }
 
+  // Green/default colouring on Save buttons based on stored state
   function _refreshKmButtonStates() {
     const k1 = _getRawKey(1), k2 = _getRawKey(2);
     if (DOM.kmK1Save) {
@@ -764,18 +667,20 @@
   function _updateKmStatus() {
     if (!DOM.kmStatus) return;
     const k1 = _getRawKey(1), k2 = _getRawKey(2);
-    const slot = _activeKeySlot === 2 ? '  <strong style="color:#000000">⚡ K2 active (K1 quota hit)</strong>' : '';
+    const slot = _activeKeySlot === 2 ? '  <strong style="color:#f59e0b">⚡ K2 active (K1 quota hit)</strong>' : '';
     DOM.kmStatus.innerHTML =
-      `<span style="color:${k1?'#009e70':'#000000'};font-weight:700">K1: ${_maskKey(k1)}</span>` +
-      `  <span style="color:${k2?'#009e70':'#000000'};font-weight:700">K2: ${_maskKey(k2)}</span>` +
+      `<span style="color:${k1?'#009e70':'#c8102e'};font-weight:700">K1: ${_maskKey(k1)}</span>` +
+      `  <span style="color:${k2?'#009e70':'#7090b0'};font-weight:700">K2: ${_maskKey(k2)}</span>` +
       (k2 ? ` <span style="color:#009e70"> ✓ fallback ready</span>` : '') +
       slot;
   }
 
+  // Updates the status text in row2 — visibility controlled by openKeyManager/closeKeyManager
   function _updateKeyStatusBadge() {
     if (!DOM.keyStatusBadge) return;
     const k1 = _getRawKey(1), k2 = _getRawKey(2);
 
+    // Welcome message on main page — only prompt for key when none saved
     if (DOM.welcomeMsg && DOM.welcomeMsg.parentElement === DOM.output) {
       if (!k1 && !k2) {
         DOM.welcomeMsg.innerHTML =
@@ -783,23 +688,23 @@
           'Tap <strong>🔑</strong> above to add your Gemini API key before uploading.';
       } else {
         DOM.welcomeMsg.innerHTML =
-          'API key active — tap <strong>📄 Upload PDF</strong> to begin.<br>' +
-          '<span style="font-size:9px;color:#000000;letter-spacing:0.03em;">Key is stored permanently and will be available next session.</span>';
+          'Keys saved — tap <strong>📄 Upload PDF</strong> to begin.';
       }
     }
 
+    // Build status text shown inside row2 (only visible when key panel is open)
     if (!k1 && !k2) {
-      DOM.keyStatusBadge.innerHTML = '<span style="color:#000000; font-weight:700;">⚠ No keys saved</span>';
+      DOM.keyStatusBadge.innerHTML = '<span style="color:#c8102e">⚠ No keys saved</span>';
       return;
     }
     const slotLabel = _activeKeySlot === 2
-      ? '<span style="color:#000000; font-weight:700;">⚡ Using K2 (K1 quota hit)</span>'
+      ? '<span style="color:#f59e0b">⚡ Using K2 (K1 quota hit)</span>'
       : '<span style="color:#009e70">✓ K1 Active</span>';
     const k2label = k2
       ? '<span style="color:#009e70"> · K2 Backup Ready</span>'
-      : '<span style="color:#000000"> · K2 not set</span>';
+      : '<span style="color:#7090b0"> · K2 not set</span>';
     DOM.keyStatusBadge.innerHTML =
-      `Gemini: ${slotLabel}${k2label}  ·  Model: <strong>${getGeminiModel()}</strong>  ·  <span style="color:#000000;font-size:8px;">Stored permanently</span>`;
+      `Gemini: ${slotLabel}${k2label}  ·  Model: <strong>${getGeminiModel()}</strong>`;
   }
 
   function openKeyManager() {
@@ -808,11 +713,7 @@
     DOM.kmK2Input.value = '';
     _refreshKmButtonStates();
     _updateKmStatus();
-    const k1 = _getRawKey(1), k2 = _getRawKey(2);
-    if (k1 || k2) {
-      DOM.kmK1Input.placeholder = k1 ? `Key stored (${_maskKey(k1)}) — paste to replace` : 'AIza… (paste Key 1 here)';
-      DOM.kmK2Input.placeholder = k2 ? `Key stored (${_maskKey(k2)}) — paste to replace` : 'AIza… (paste Key 2 here)';
-    }
+    // Show the status row when key panel is open
     if (DOM.keyStatusBadge) DOM.keyStatusBadge.classList.add('visible');
     setTimeout(() => DOM.kmK1Input.focus(), 80);
   }
@@ -821,37 +722,39 @@
     DOM.keyManagerBox.classList.remove('open');
     DOM.kmK1Input.value = '';
     DOM.kmK2Input.value = '';
+    // Hide status row when key panel closes
     if (DOM.keyStatusBadge) DOM.keyStatusBadge.classList.remove('visible');
   }
 
   function _saveKey(slot, val) {
+    // Validate — Gemini keys start with "AIza" and are 39 chars
     if (!val) {
-      DOM.kmStatus.innerHTML = '<span style="color:#000000;font-weight:700">⚠ Nothing to save — paste your AIza… key first.</span>';
+      DOM.kmStatus.innerHTML = '<span style="color:#c8102e;font-weight:700">⚠ Nothing to save — paste your AIza… key first.</span>';
       return;
     }
     if (!val.startsWith('AIza')) {
-      DOM.kmStatus.innerHTML = '<span style="color:#000000;font-weight:700">⚠ Key should start with "AIza…" — check and paste again.</span>';
+      DOM.kmStatus.innerHTML = '<span style="color:#c8102e;font-weight:700">⚠ Key should start with "AIza…" — check and paste again.</span>';
       return;
     }
-    const lsKey = slot === 2 ? 'pulse_gemini_key2' : 'pulse_gemini_key1';
-    const idbKey = slot === 2 ? 'k2' : 'k1';
-    localStorage.setItem(lsKey, val);
-    _idbSet(idbKey, val);
+    const storageKey = slot === 2 ? 'pulse_gemini_key2' : 'pulse_gemini_key1';
+    localStorage.setItem(storageKey, val);
 
+    // Confirm save immediately in UI
     const btn = slot === 1 ? DOM.kmK1Save : DOM.kmK2Save;
     const inp = slot === 1 ? DOM.kmK1Input : DOM.kmK2Input;
-    if (btn) { btn.textContent = `✅ K${slot} Active`; btn.classList.add('active'); }
+    if (btn) { btn.textContent = `✅ K${slot} Saved`; btn.classList.add('active'); }
     if (inp) inp.value = '';
 
     _updateKmStatus();
     _updateKeyStatusBadge();
 
-    DOM.kmStatus.innerHTML =
-      `<span style="color:#009e70;font-weight:700">✅ K${slot} saved permanently.</span>` +
-      `<br><span style="color:#000000;font-size:8px;">Stored in IndexedDB — survives browser restarts and cache clears.</span>` +
-      (slot === 1 && !_getRawKey(2) ? '<br><span style="color:#000000;">Optionally add K2 as a backup key.</span>' : '');
+    // Show success in status bar — do NOT auto-close so user can optionally add K2
+    DOM.kmStatus.innerHTML +=
+      `<br><span style="color:#009e70;font-weight:700">✅ K${slot} saved successfully.</span>` +
+      (slot === 1 && !_getRawKey(2) ? ' You can also add K2 as a backup.' : '');
   }
 
+  // Expose as globals (referenced by any future sub-scripts, pattern from reference)
   window.getGeminiKey      = getGeminiKey;
   window.getGeminiModel    = getGeminiModel;
   window.shiftToBackupKey  = shiftToBackupKey;
@@ -859,72 +762,66 @@
   window.openKeyManager    = openKeyManager;
 
   /* ═══════════════════════════════════════════════════════════════════
-     SECTION 5 — GEMINI API ENGINE
+     SECTION 5 — GEMINI API ENGINE  (AI chat panel only — user triggered)
+     K1 → K2 on 429. No batch throttle — user-triggered only.
   ═══════════════════════════════════════════════════════════════════ */
 
   async function callGemini(promptText, statusEl) {
-    const k1 = _getRawKey(1);
-    const k2 = _getRawKey(2);
-    if (!k1 && !k2) throw new Error('No API key saved. Tap 🔑 to add one.');
-
+    const model   = getGeminiModel();
     const payload = {
       contents:         [{ role: 'user', parts: [{ text: promptText }] }],
       generationConfig: { temperature: 0.1, maxOutputTokens: 2048 }
     };
 
-    const selectedModel = getGeminiModel();
-    const allModels     = CONFIG.GEMINI_MODELS;
-    const startIdx      = allModels.indexOf(selectedModel);
-    const modelQueue    = allModels.slice(startIdx >= 0 ? startIdx : 0);
+    // ── Exact LD246PAI dualKeyFetch pattern ──────────────────────────
+    // Try K1 first. On 429, switch to K2. If both quota → throw clear error.
+    const slots = [1, 2];
+    for (const slot of slots) {
+      const k = _getRawKey(slot);
+      if (!k) continue; // skip missing slot silently
 
-    function _notify(msg) {
-      if (statusEl)      statusEl.textContent      = msg;
-      if (DOM.itemCount) DOM.itemCount.textContent = msg;
-    }
-
-    for (const model of modelQueue) {
-      for (const slot of [1, 2]) {
-        const k = slot === 1 ? k1 : k2;
-        if (!k) continue;
-
-        if (model !== selectedModel || slot === 2) {
-          const modelLabel = model === 'gemini-2.5-flash-lite' ? 'Flash-Lite'
-                           : model === 'gemini-2.5-flash'      ? 'Flash'
-                           : 'Pro';
-          _notify(`⚡ Quota hit — trying ${modelLabel} / K${slot}…`);
-        }
-
-        const ep = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${k}`;
-        let res;
-        try {
-          res = await fetch(ep, {
-            method:  'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body:    JSON.stringify(payload)
-          });
-        } catch (netErr) {
-          throw new Error(`Network error: ${netErr.message}`);
-        }
-
-        if (res.status === 429) continue;
-
-        _activeKeySlot = slot;
-        _activeCascadeModel = model;
-        return res;
+      if (slot === 2) {
+        const msg = '⚡ K1 quota hit — switching to K2…';
+        if (statusEl)      statusEl.textContent      = msg;
+        if (DOM.itemCount) DOM.itemCount.textContent = msg;
       }
+
+      const ep = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${k}`;
+      let res;
+      try {
+        res = await fetch(ep, {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify(payload)
+        });
+      } catch (netErr) {
+        throw new Error(`Network error: ${netErr.message}`);
+      }
+
+      if (res.status === 429 && slot === 1) continue; // try K2
+      _activeKeySlot = slot;                          // remember working slot
+      return res;                                     // success or error — caller handles
     }
 
-    throw new Error('All API keys and model tiers hit quota (429). Wait a minute and retry.');
+    // Both slots exhausted (no key saved, or both 429)
+    const k1 = _getRawKey(1), k2 = _getRawKey(2);
+    if (!k1 && !k2) throw new Error('No API key saved. Tap 🔑 to add one.');
+    throw new Error('Both API keys hit quota (429). Wait ~1 minute and retry.');
   }
 
+  // Parse and extract text from a Gemini response
   async function parseGeminiResponse(res) {
     if (!res.ok) {
       const errData = await res.json().catch(() => ({}));
       const msg     = errData?.error?.message || `HTTP ${res.status}`;
       const code    = errData?.error?.code;
       if (code === 400 || code === 403) {
-        throw new Error(`API key error (${code}): ${msg} — Check your key in the 🔑 panel.`);
+        localStorage.removeItem('pulse_gemini_key1');
+        _refreshKmButtonStates();
+        _updateKeyStatusBadge();
+        throw new Error(`API key error (${code}): ${msg} — Key cleared, please re-enter.`);
       }
+      // 503 / 529 = model overloaded — treat like 429, caller handles retry
       if (res.status === 503 || res.status === 529) {
         throw new Error(`OVERLOADED:${res.status}`);
       }
@@ -934,12 +831,14 @@
     const candidate    = data.candidates?.[0];
     const finishReason = candidate?.finishReason || '';
 
+    // Safety block / recitation block — return a placeholder, not an error
     if (finishReason === 'SAFETY' || finishReason === 'RECITATION' || finishReason === 'OTHER') {
       return `[Page skipped — Gemini content filter: ${finishReason}]`;
     }
 
     const text = candidate?.content?.parts?.[0]?.text;
     if (!text) {
+      // Empty response but no error — could be a blank page result
       return '[No summary generated for this page]';
     }
     return text;
@@ -951,6 +850,7 @@
 
   function escapeHtml(str) {
     if (str == null) return '';
+    // Build entity strings via concatenation — keeps & out of source
     return String(str)
       .replace(/&/g,  '&amp;')
       .replace(/</g,  '&lt;')
@@ -961,6 +861,7 @@
 
   function parseMarkdown(md) {
     if (!md) return '';
+    // Strip bold and italic markers — render plain text per spec
     let html = md.replace(/\*\*(.*?)\*\*/g, '$1');
     html = html.replace(/\*(.*?)\*/g, '$1');
     html = html.replace(/^[-•]\s+(.*)$/gm, '<ul><li>$1</li></ul>');
@@ -985,211 +886,38 @@
   ═══════════════════════════════════════════════════════════════════ */
 
   function renderFeedItems(items, feedName) {
+    // Replace entire output (clears welcome message)
     DOM.output.innerHTML = items.map((item, idx) => {
-      const pNum = item.pageNum ?? (idx + 1);
-      let inner;
-      if (item.error) {
-        inner =
-          `<span class="headline">${escapeHtml(item.title || `Page ${pNum}`)}</span>` +
-          `<p class="error-msg">${escapeHtml(item.title || `Page ${pNum}`)} could not be converted due to a technical error. ` +
-          `If you want to view the original article, ` +
-          `<button class="view-original-btn" onclick="openPdfPageView(${pNum})">View original PDF page →</button></p>` +
-          `<div class="meta">Page ${pNum} · ${escapeHtml(feedName)}</div>`;
-      } else {
-        const desc    = item.description ? escapeHtml(item.description.substring(0, CONFIG.MAX_DESC_CHARS)) : '';
-        const engHtml = (item.summary_english && item.summary_english.trim().length > 0)
-          ? `<p class="description translation">English Summary:<br>${escapeHtml(item.summary_english.substring(0, CONFIG.MAX_DESC_CHARS))}</p>`
-          : '';
-        inner =
+      const desc    = item.description ? escapeHtml(item.description.substring(0, CONFIG.MAX_DESC_CHARS)) : '';
+      const engHtml = (item.summary_english && item.summary_english.trim().length > 0)
+        ? `<p class="description translation"><strong>English Summary:</strong><br>${escapeHtml(item.summary_english.substring(0, CONFIG.MAX_DESC_CHARS))}</p>`
+        : '';
+      return (
+        `<div class="feed-item" style="animation-delay:${idx*30}ms">` +
           `<span class="headline reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0">${escapeHtml(item.title || 'Untitled')}</span>` +
-          (desc ? `<p class="description reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0" style="cursor:pointer;">${desc}</p>` : '') +
+          (desc ? `<p class="description">${desc}</p>` : '') +
           engHtml +
-          `<div class="meta" style="display:flex;justify-content:space-between;align-items:center;">` +
-            `<span>Page ${pNum} · ${escapeHtml(feedName)}</span>` +
-            `<button class="view-original-btn" onclick="openPdfPageView(${pNum})">View original PDF page →</button>` +
-          `</div>`;
-      }
-      return `<div class="feed-item${item.error ? ' feed-item-error' : ''}" style="animation-delay:${idx*30}ms">${inner}</div>`;
+          `<div class="meta">Section ${idx+1} · ${escapeHtml(feedName)}</div>` +
+        `</div>`
+      );
     }).join('');
     DOM.itemCount.textContent = `${items.length} section${items.length !== 1 ? 's' : ''} extracted`;
   }
 
   /* ═══════════════════════════════════════════════════════════════════
-     SECTION 8A — OPEN ARTICLE IN NEW WINDOW
-  ═══════════════════════════════════════════════════════════════════ */
-
-  function openArticleWindow(url) {
-    if (!url || !url.startsWith('pdf-local-file')) return;
-    const index = parseInt(url.split('-').pop(), 10);
-    const item  = feedCache['uploaded-pdf']?.items[index];
-    if (!item) return;
-
-    const rawParas = (item.full_text || '')
-      .split(/\n\n+/)
-      .map(p => p.trim())
-      .filter(Boolean)
-      .map(p => {
-        if (p.startsWith('## ')) {
-          return `<h3 style="font-family:'Georgia',serif;font-size:1.15em;font-weight:700;color:#000000;margin:1.4em 0 0.5em;line-height:1.25;">${escapeHtml(p.slice(3))}</h3>`;
-        }
-        return `<p style="margin-bottom:1em;line-height:1.75;text-align:justify;hyphens:auto;-webkit-hyphens:auto;font-size:17px;color:#000000;font-weight:400;">${escapeHtml(p.replace(/\n/g,' ').trim())}</p>`;
-      })
-      .join('');
-
-    const translationHtml = (item.full_text_english && item.full_text_english.trim().length > 0)
-      ? `<hr style="border:none;border-top:2px dashed #000000;margin:32px 0;">
-         <h2 style="font-family:'Georgia',serif;font-size:1.3em;margin-bottom:18px;color:#000000;">English Translation</h2>
-         <div style="font-size:17px;line-height:1.75;color:#000000;">${parseMarkdown(item.full_text_english)}</div>`
-      : '';
-
-    const html = `<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width">
-  <title>${escapeHtml(item.title)}</title>
-  <link href="[https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap](https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&display=swap)" rel="stylesheet">
-  <style>
-    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
-    body{background:#f5f0e8;font-family:'IBM Plex Sans',sans-serif;padding:0 0 60px;color:#000000;}
-    .topbar{background:#e4eaf2;border-bottom:1px solid #000000;padding:10px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10;color:#000000;}
-    .close-btn{font-family:'IBM Plex Mono',monospace;font-size:11px;font-weight:700;text-transform:uppercase;background:transparent;border:1px solid #000;padding:5px 12px;border-radius:4px;cursor:pointer;color:#000000;}
-    .close-btn:hover{background:#d0d7e0;}
-    .source-label{font-family:'IBM Plex Mono',monospace;font-size:10px;color:#000000;letter-spacing:0.05em;text-transform:uppercase;}
-    .article{max-width:720px;margin:0 auto;padding:32px 24px 0;}
-    h1{font-family:'Playfair Display',serif;font-size:clamp(22px,4vw,32px);font-weight:700;line-height:1.2;margin-bottom:12px;color:#000000;text-align:center;}
-    .meta{font-family:'IBM Plex Mono',monospace;font-size:10px;text-transform:uppercase;letter-spacing:0.05em;color:#000000;margin-bottom:24px;padding-bottom:14px;border-bottom:1px solid #000000;}
-    strong,b{font-weight:400;color:#000000;}em,i{font-style:normal;color:#000000;}
-    ul{padding-left:1.4em;margin-bottom:1em;}li{margin-bottom:0.4em;line-height:1.7;font-size:17px;}
-    p{hyphens:auto;-webkit-hyphens:auto;}
-    h3{text-align:center;font-weight:700;}
-    .article{max-width:65ch;}
-  </style>
-</head>
-<body>
-  <div class="topbar">
-    <button class="close-btn" onclick="window.close()">✕ Close</button>
-    <span class="source-label">PDF Extraction · Page ${index + 1}</span>
-    <button class="close-btn" style="margin-left:auto;" onclick="window.opener && window.opener.openPdfPageView(${index + 1})">📄 View Original Page</button>
-  </div>
-  <div class="article">
-    <h1>${escapeHtml(item.title)}</h1>
-    <div class="meta">PDF Extraction</div>
-    <div>${rawParas || escapeHtml(item.full_text || '')}</div>
-    ${translationHtml}
-  </div>
-</body>
-</html>`;
-
-    const win = window.open('', '_blank', 'width=820,height=800,resizable=yes,scrollbars=yes');
-    if (win) {
-      win.document.open();
-      win.document.write(html);
-      win.document.close();
-    }
-  }
-
-
-  /* ═══════════════════════════════════════════════════════════════════
-     SECTION 8B — ORIGINAL PDF PAGE VIEWER
-  ═══════════════════════════════════════════════════════════════════ */
-
-  window.openPdfPageView = async function(pageNum) {
-    if (!currentPdfDoc) {
-      alert('Original PDF is no longer in memory. Please re-upload the file to view the original page.');
-      return;
-    }
-
-    const win = window.open('', '_blank', 'width=900,height=900,resizable=yes,scrollbars=yes');
-    if (!win) return;
-
-    const fileName = currentPdfFile ? currentPdfFile.name : 'PDF';
-
-    win.document.open();
-    win.document.write(`<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width">
-  <title>Page ${pageNum} — ${escapeHtml(fileName)}</title>
-  <style>
-    *{box-sizing:border-box;margin:0;padding:0;}
-    body{background:#f5f0e8;display:flex;flex-direction:column;min-height:100vh;font-family:'IBM Plex Mono',monospace;color:#000000;}
-    .topbar{background:#e4eaf2;color:#000000;padding:10px 16px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10;font-size:11px;border-bottom:2px solid #000000;}
-    .close-btn{background:#f5f0e8;border:1px solid #000000;color:#000000;padding:4px 12px;border-radius:4px;cursor:pointer;font-size:10px;font-family:inherit;text-transform:uppercase;font-weight:700;}
-    .close-btn:hover{background:#d0d7e0;}
-    .nav-btn{background:#f5f0e8;border:1px solid #000000;color:#000000;padding:4px 10px;border-radius:4px;cursor:pointer;font-size:10px;font-family:inherit;font-weight:700;}
-    .nav-btn:hover{background:#d0d7e0;}
-    .page-label{flex:1;text-align:center;font-weight:700;}
-    .canvas-wrap{display:flex;justify-content:center;align-items:flex-start;padding:20px;flex:1;}
-    canvas{background:#fff;box-shadow:0 4px 24px rgba(0,0,0,0.5);max-width:100%;border:1px solid #000000;}
-    .loading{color:#000000;text-align:center;padding:60px 20px;font-size:13px;font-weight:700;}
-  </style>
-</head>
-<body>
-  <div class="topbar">
-    <button class="close-btn" onclick="window.close()">✕ Close</button>
-    <button class="nav-btn" id="prev-btn">← Prev</button>
-    <span class="page-label" id="page-label">Page ${pageNum}</span>
-    <button class="nav-btn" id="next-btn">Next →</button>
-  </div>
-  <div class="canvas-wrap" id="canvas-wrap">
-    <div class="loading" id="loading-msg">Rendering page ${pageNum}…</div>
-  </div>
-</body>
-</html>`);
-    win.document.close();
-
-    const pdfDoc = currentPdfDoc;
-    const total  = pdfDoc.numPages;
-    let   cur    = Math.max(1, Math.min(pageNum, total));
-
-    async function renderPage(n) {
-      const wrap  = win.document.getElementById('canvas-wrap');
-      const label = win.document.getElementById('page-label');
-      if (!wrap || !label) return;
-      wrap.innerHTML = '<div class="loading">Rendering…</div>';
-      label.textContent = `Page ${n} of ${total}`;
-
-      try {
-        const page     = await pdfDoc.getPage(n);
-        const scale    = Math.min(2.0, (win.innerWidth - 40) / page.getViewport({ scale: 1 }).width);
-        const vp       = page.getViewport({ scale });
-        const canvas   = win.document.createElement('canvas');
-        canvas.width   = vp.width;
-        canvas.height  = vp.height;
-        const ctx      = canvas.getContext('2d');
-        await page.render({ canvasContext: ctx, viewport: vp }).promise;
-        wrap.innerHTML = '';
-        wrap.appendChild(canvas);
-      } catch (e) {
-        wrap.innerHTML = `<div class="loading">Could not render page ${n}: ${e.message}</div>`;
-      }
-    }
-
-    await renderPage(cur);
-
-    win.document.getElementById('prev-btn').addEventListener('click', async () => {
-      if (cur > 1) { cur--; await renderPage(cur); }
-    });
-    win.document.getElementById('next-btn').addEventListener('click', async () => {
-      if (cur < total) { cur++; await renderPage(cur); }
-    });
-  };
-
-  /* ═══════════════════════════════════════════════════════════════════
-     SECTION 8 — READER PANEL (full-page overlay; Escape/back to close)
+     SECTION 8 — READER PANEL
   ═══════════════════════════════════════════════════════════════════ */
 
   function openReader(url) {
     DOM.readerPanel.classList.add('open');
+    DOM.readerBackdrop.classList.add('open');
     document.body.style.overflow = 'hidden';
     DOM.aiToggle.style.display   = 'none';
     closeAiPanel();
     DOM.aiChatArea.innerHTML = `<div class="ai-message system">Ask me anything about this section.</div>`;
     currentArticleText = '';
 
-    if (url && url.startsWith('pdf-local-file')) {
+    if (url.startsWith('pdf-local-file')) {
       const index = parseInt(url.split('-').pop(), 10);
       const item  = feedCache['uploaded-pdf']?.items[index];
       DOM.readerUrlLabel.textContent = 'Local PDF Extraction';
@@ -1199,6 +927,7 @@
       if (item) {
         currentArticleText = item.full_text || '';
 
+        // Render extracted text: ## lines → headings, rest → paragraphs with wrap
         const rawParas = (item.full_text || '')
           .split(/\n\n+/)
           .map(p => p.trim())
@@ -1207,6 +936,7 @@
             if (p.startsWith('## ')) {
               return `<h3 class="reader-extract-heading">${escapeHtml(p.slice(3))}</h3>`;
             }
+            // Join soft-wrapped lines and render as paragraph
             const text = p.replace(/\n/g, ' ').trim();
             return `<p class="reader-text-para">${escapeHtml(text)}</p>`;
           })
@@ -1231,6 +961,7 @@
 
   function closeReader() {
     DOM.readerPanel.classList.remove('open');
+    DOM.readerBackdrop.classList.remove('open');
     document.body.style.overflow = '';
     closeAiPanel();
     DOM.aiToggle.style.display = 'none';
@@ -1263,6 +994,7 @@
     DOM.aiSubmit.disabled    = true;
     DOM.aiSubmit.textContent = '…';
 
+    // Status message that we update live during cascade
     const statusDiv = addChatMessage('status', 'Thinking…');
     DOM.aiQuotaStatus.textContent = '';
 
@@ -1283,10 +1015,7 @@
 
       DOM.aiChatArea.removeChild(statusDiv);
       addChatMessage('assistant', cleanAiResponse(rawText));
-      const _qModel = _activeCascadeModel && _activeCascadeModel !== getGeminiModel()
-        ? ` · ${_activeCascadeModel.replace('gemini-2.5-flash-lite','Lite').replace('gemini-2.5-flash','Flash').replace('gemini-2.5-pro','Pro')}`
-        : '';
-      DOM.aiQuotaStatus.textContent = _activeKeySlot === 2 ? `⚡ K2${_qModel}` : (_qModel ? `⚡${_qModel}` : '');
+      DOM.aiQuotaStatus.textContent = _activeKeySlot === 2 ? '⚡ K2' : '';
 
     } catch (err) {
       statusDiv.textContent  = `⚠ ${err.message}`;
@@ -1298,10 +1027,18 @@
   }
 
   /* ═══════════════════════════════════════════════════════════════════
-     SECTION 10 — BANDED BLOCK-CLUSTERING PDF EXTRACTOR (NEWSPAPER SAFE)
+     SECTION 10 — PDF PROCESSING ENGINE
+     Architecture: page-by-page streaming
+     - Open PDF, get page count
+     - Process page 1 → render immediately → user can browse
+     - Process pages 2,3,4… in background one at a time
+     - Each page = one Gemini call (small, never hits token limit)
+     - No chunking, no batching
   ═══════════════════════════════════════════════════════════════════ */
 
   function detectDocumentType(file) {
+    const selected = DOM.docTypeSelector?.value || 'auto';
+    if (selected !== 'auto') return selected;
     const name = (file.name || '').toLowerCase();
     if (name.includes('editorial')) return 'editorial';
     if (name.includes('ppt') || name.includes('slide')) return 'presentation';
@@ -1310,190 +1047,140 @@
   }
 
   async function routeDocumentProcessing(file, confirmedType) {
-    try {
-      await processPdf(file, confirmedType);
-    } catch (fatalErr) {
-      hideOverlay();
-      _resetUploadBtn();
-      DOM.output.innerHTML =
-        `<div class="system-msg">❌ Upload failed: ${escapeHtml(fatalErr.message || String(fatalErr))}</div>`;
-    }
+    // Do NOT clear storage here — old data stays visible until new page 1 succeeds
+    return processPdf(file, confirmedType);
   }
 
+  // Open the PDF and return a pdfjsLib document object (keeps file open for page-by-page access)
   async function openPdfDocument(file) {
     if (!window.pdfjsLib) throw new Error('PDF engine failed to load. Check internet connection and refresh.');
     if (!pdfjsLib.GlobalWorkerOptions.workerSrc) {
       pdfjsLib.GlobalWorkerOptions.workerSrc =
-        '[https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js](https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js)';
+        'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
     }
     const arrayBuffer = await file.arrayBuffer();
     return pdfjsLib.getDocument({ data: arrayBuffer }).promise;
   }
 
+  // Extract text from a single page — preserves paragraph breaks via y-position grouping
   async function extractPageText(pdfDoc, pageNum) {
-    const page = await pdfDoc.getPage(pageNum);
+    const page    = await pdfDoc.getPage(pageNum);
     const content = await page.getTextContent({ includeMarkedContent: false });
-    const vp = page.getViewport({ scale: 1 });
-    const pgH = vp.height;
+    const vp      = page.getViewport({ scale: 1 });
+    const pgH     = vp.height;
 
+    if (!content.items.length) return '';
+
+    // ── Step 1: Enrich each item with font metrics ───────────────────
     const items = content.items
       .filter(it => it.str && it.str.trim())
-      .map(it => {
-        const fontH = Math.round(Math.abs(it.transform[3]) || Math.abs(it.transform[0]) || 10);
-        return {
-          text: it.str,
-          x: it.transform[4],
-          y: pgH - it.transform[5],
-          w: it.width,
-          h: fontH,
-          fontH: fontH,
-          bold: it.fontName ? /bold|black|heavy/i.test(it.fontName) : false
-        };
-      });
+      .map(it => ({
+        str:    it.str,
+        x:      it.transform[4],
+        y:      pgH - it.transform[5],        // flip to top-down
+        w:      it.width,
+        h:      Math.abs(it.transform[0]) || Math.abs(it.transform[3]) || 10,
+        fontH:  Math.round(Math.abs(it.transform[3]) || Math.abs(it.transform[0]) || 10),
+        bold:   it.fontName ? /bold|black|heavy/i.test(it.fontName) : false,
+        hasEOL: it.hasEOL || false
+      }));
 
     if (!items.length) return '';
 
+    // ── Step 2: Compute median font height (body text size) ──────────
     const fontHeights = items.map(i => i.fontH).sort((a, b) => a - b);
-    const medFontH = Math.max(fontHeights[Math.floor(fontHeights.length / 2)] || 10, 5);
+    const medFontH    = fontHeights[Math.floor(fontHeights.length / 2)] || 10;
+    const lineGap     = medFontH * 0.4;   // same line tolerance
+    const paraGap     = medFontH * 1.2;   // new paragraph threshold
 
-    // 1. Group into physical horizontal lines
-    items.sort((a, b) => a.y - b.y);
+    // ── Step 3: Group items into visual lines (by y proximity) ───────
     const lines = [];
-    let currentLine = [];
+    let   cur   = null;
 
     for (const it of items) {
-      if (!currentLine.length) {
-        currentLine.push(it);
+      if (!cur || Math.abs(it.y - cur.y) > lineGap) {
+        cur = { y: it.y, items: [it], fontH: it.fontH };
+        lines.push(cur);
       } else {
-        const lineY = currentLine.reduce((sum, i) => sum + i.y, 0) / currentLine.length;
-        if (Math.abs(it.y - lineY) < medFontH * 0.4) {
-          currentLine.push(it);
-        } else {
-          lines.push(currentLine);
-          currentLine = [it];
+        cur.items.push(it);
+        cur.fontH = Math.max(cur.fontH, it.fontH);
+      }
+    }
+
+    // Sort lines top-to-bottom
+    lines.sort((a, b) => a.y - b.y);
+
+    // Within each line, sort items left-to-right and merge text
+    for (const ln of lines) {
+      ln.items.sort((a, b) => a.x - b.x);
+
+      // Smart space insertion: add space between items if gap > half a char width
+      let text = '';
+      for (let i = 0; i < ln.items.length; i++) {
+        const it   = ln.items[i];
+        const prev = ln.items[i - 1];
+        if (prev) {
+          const gap = it.x - (prev.x + prev.w);
+          if (gap > medFontH * 0.25) text += ' ';  // visible gap → insert space
         }
+        text += it.str;
       }
-    }
-    if (currentLine.length) lines.push(currentLine);
 
-    // 2. Split lines into continuous segments (breaking at gutters)
-    const segments = [];
-    for (const line of lines) {
-      line.sort((a, b) => a.x - b.x);
-      let currentSeg = null;
-
-      for (const it of line) {
-        if (!currentSeg) {
-          currentSeg = { text: it.text, x: it.x, y: it.y, w: it.w, h: it.h, fontH: it.fontH, bold: it.bold };
-          segments.push(currentSeg);
-        } else {
-          const gap = it.x - (currentSeg.x + currentSeg.w);
-          if (gap > medFontH * 2.0) {
-            currentSeg = { text: it.text, x: it.x, y: it.y, w: it.w, h: it.h, fontH: it.fontH, bold: it.bold };
-            segments.push(currentSeg);
-          } else {
-            currentSeg.w = (it.x + it.w) - currentSeg.x;
-            currentSeg.h = Math.max(currentSeg.h, it.h);
-            if (gap > medFontH * 0.2) currentSeg.text += ' ';
-            currentSeg.text += it.text;
-            currentSeg.bold = currentSeg.bold || it.bold;
-          }
-        }
-      }
+      ln.text    = text.replace(/\s+/g, ' ').trim();
+      ln.isLarge = ln.fontH > medFontH * 1.3;   // heading-size text
+      ln.isBold  = ln.items.some(i => i.bold);
     }
 
-    // 3. Group segments into blocks
-    segments.sort((a, b) => a.y - b.y);
-    let blocks = [];
-    for (const seg of segments) {
-      let placed = false;
-      for (const block of blocks) {
-        const vGap = seg.y - block.bottomY;
-        if (vGap > -medFontH && vGap < medFontH * 4) {
-          const segCenter = seg.x + seg.w / 2;
-          const blkCenter = block.x + block.w / 2;
-          if (Math.abs(segCenter - blkCenter) < medFontH * 3 || 
-              (seg.x >= block.x - medFontH && seg.x + seg.w <= block.x + block.w + medFontH)) {
-            block.segments.push(seg);
-            block.bottomY = Math.max(block.bottomY, seg.y + seg.h);
-            block.x = Math.min(block.x, seg.x);
-            block.w = Math.max(block.x + block.w, seg.x + seg.w) - block.x;
-            placed = true;
-            break;
-          }
-        }
+    // ── Step 4: Classify lines and group into paragraphs ─────────────
+    const blocks = [];
+    let   block  = null;
+    let   prevLn = null;
+
+    for (const ln of lines) {
+      if (!ln.text) continue;
+
+      const yGap      = prevLn ? ln.y - (prevLn.y + prevLn.fontH) : 0;
+      const isHeading = ln.isLarge || (ln.isBold && ln.text.split(' ').length <= 12 && !/[.!?]$/.test(ln.text));
+      const newBlock  = !block || yGap > paraGap || isHeading;
+
+      if (newBlock) {
+        block = { lines: [ln.text], isHeading, fontH: ln.fontH };
+        blocks.push(block);
+      } else {
+        // Check if previous line looks like it ends mid-sentence (soft wrap)
+        const prev      = block.lines[block.lines.length - 1];
+        const softWrap  = prev && !/[-–—.!?:;,]$/.test(prev.trim()) && /^[a-z]/.test(ln.text);
+        block.lines.push(softWrap ? '\u00ad' + ln.text : ln.text); // soft-hyphen marker for wrap join
       }
-      if (!placed) {
-        blocks.push({
-          segments: [seg],
-          topY: seg.y, bottomY: seg.y + seg.h,
-          x: seg.x, w: seg.w,
-          fontH: seg.fontH, bold: seg.bold
-        });
-      }
+      prevLn = ln;
     }
 
-    // 4. Banded Row Sort (Top-Down, Left-Right)
-    const sortedBlocks = [];
-    let remaining = [...blocks];
-    
-    while (remaining.length > 0) {
-      remaining.sort((a, b) => a.topY - b.topY);
-      const topBlock = remaining[0];
-      
-      const row = remaining.filter(b => {
-        const overlapY = Math.max(0, Math.min(topBlock.bottomY, b.bottomY) - Math.max(topBlock.topY, b.topY));
-        const minH = Math.min(topBlock.bottomY - topBlock.topY, b.bottomY - b.topY) || 1;
-        return overlapY > medFontH || overlapY > minH * 0.25;
-      });
-      
-      row.sort((a, b) => a.x - b.x);
-      sortedBlocks.push(...row);
-      remaining = remaining.filter(b => !row.includes(b));
-    }
-    blocks = sortedBlocks;
+    // ── Step 5: Render blocks as clean paragraphs ────────────────────
+    const paragraphs = blocks.map(blk => {
+      // Join lines: soft-wrapped lines join with space, hard-wrapped with newline
+      const text = blk.lines.reduce((acc, ln) => {
+        if (ln.startsWith('\u00ad')) return acc + ' ' + ln.slice(1); // continuation
+        if (acc)                     return acc + '\n' + ln;
+        return ln;
+      }, '');
+      return { text: text.replace(/[ \t]+/g, ' ').trim(), isHeading: blk.isHeading };
+    }).filter(p => p.text.length > 1);
 
-    // 5. Build final text and resolve hyphens
-    const finalParagraphs = [];
-    for (const block of blocks) {
-      let paraText = '';
-      block.segments.sort((a, b) => a.y - b.y);
-      
-      for (let i = 0; i < block.segments.length; i++) {
-        const seg = block.segments[i];
-        const segText = seg.text.trim();
-        
-        if (i === 0) {
-           paraText += segText;
-        } else {
-           const prevSeg = block.segments[i - 1];
-           const vGap = seg.y - prevSeg.y;
-           
-           if (vGap > medFontH * 1.6) {
-              paraText += '\n\n' + segText;
-           } else {
-              const match = paraText.match(/([a-zA-Z])[-\u2010-\u2015\u00AD]\s*$/);
-              if (match) {
-                 paraText = paraText.replace(/[-\u2010-\u2015\u00AD]\s*$/, '') + segText;
-              } else {
-                 paraText += ' ' + segText;
-              }
-           }
-        }
-      }
-      
-      const subParas = paraText.split('\n\n').filter(p => p.trim().length > 2);
-      for (const sp of subParas) {
-        const isHeading = block.fontH > medFontH * 1.3 || (sp.split(' ').length <= 15 && block.bold && !/[.!?]$/.test(sp));
-        finalParagraphs.push(isHeading ? '## ' + sp : sp);
-      }
-    }
-
-    return finalParagraphs.join('\n\n');
+    // ── Step 6: Output as annotated plain text ────────────────────────
+    return paragraphs.map(p => {
+      if (p.isHeading) return '## ' + p.text;   // heading marker
+      return p.text;
+    }).join('\n\n');
   }
 
+  // Summarise a single page's text via Gemini — small prompt, never hits token limit
   /* ═══════════════════════════════════════════════════════════════════
-     SECTION 10B — LOCAL EXTRACTIVE SUMMARISER
+     SECTION 5B — LOCAL EXTRACTIVE SUMMARISER (no AI, no network)
+     Algorithm:
+       1. Title  — first short heading-like line on the page
+       2. Sentences scored by TF-IDF-lite word frequency + position bonus
+       3. Top 4 sentences → bullet points
+       4. Highest-scoring sentence → Insight line
   ═══════════════════════════════════════════════════════════════════ */
 
   const STOP_WORDS = new Set([
@@ -1516,6 +1203,7 @@
     for (const para of paragraphs) {
       const line = para.split('\n')[0].trim();
       if (!line || line.length < 3) continue;
+      // Heading signals: short, no trailing period, Title Case or ALL CAPS
       const words      = line.split(/\s+/);
       const isShort    = words.length <= 12;
       const noEndPunct = !/[.!?]$/.test(line);
@@ -1524,6 +1212,7 @@
       const titleCase  = words.filter(w => /^[A-Z]/.test(w)).length >= Math.ceil(words.length * 0.5);
       if (isShort && noEndPunct && isTitle && (allCaps || titleCase)) return line;
     }
+    // Fallback: first non-empty short line
     for (const para of paragraphs) {
       const line = para.split('\n')[0].trim();
       if (line && line.split(/\s+/).length <= 10 && line.length > 4) return line;
@@ -1532,20 +1221,12 @@
   }
 
   function _splitSentences(text) {
-    const flat = text.replace(/\n+/g, ' ');
-    const parts = [];
-    let start = 0;
-    for (let i = 1; i < flat.length; i++) {
-      if (/[.!?]/.test(flat[i - 1]) && /\s/.test(flat[i])) {
-        const ahead = flat.slice(i).trimStart();
-        if (/^[A-Z]/.test(ahead)) {
-          parts.push(flat.slice(start, i).trim());
-          start = i;
-        }
-      }
-    }
-    parts.push(flat.slice(start).trim());
-    return parts.filter(s => s.length > 20 && s.split(/\s+/).length >= 4);
+    // Split on . ! ? followed by space+capital, or newline
+    return text
+      .replace(/\n+/g, ' ')
+      .split(/(?<=[.!?])\s+(?=[A-Z])|(?<=\n)/)
+      .map(s => s.trim())
+      .filter(s => s.length > 20 && s.split(/\s+/).length >= 4);
   }
 
   function summarisePageLocal(pageText, pageNum, docType) {
@@ -1558,6 +1239,7 @@
       ? detectedTitle.substring(0, 90)
       : `Page ${pageNum}`;
 
+    // Remove title line from body for scoring
     const bodyText = detectedTitle
       ? fullText.replace(detectedTitle, '').trim()
       : fullText;
@@ -1567,6 +1249,7 @@
     const freq      = {};
     for (const w of allWords) freq[w] = (freq[w] || 0) + 1;
     const maxFreq   = Math.max(...Object.values(freq), 1);
+    // Normalise
     for (const w in freq) freq[w] /= maxFreq;
 
     // ── Score sentences ───────────────────────────────────────────
@@ -1576,6 +1259,7 @@
       if (!words.length) return { s, score: 0 };
       const tfScore = words.reduce((sum, w) => sum + (freq[w] || 0), 0) / words.length;
 
+      // Bonuses
       const posBonus    = idx === 0 ? 0.25 : idx <= 2 ? 0.1 : 0;   // early sentences
       const numBonus    = /\d/.test(s) ? 0.12 : 0;                   // contains numbers/stats
       const lenPenalty  = words.length < 6 || words.length > 45 ? -0.15 : 0;
@@ -1584,8 +1268,10 @@
       return { s, score: tfScore + posBonus + numBonus + lenPenalty + keyBonus, idx };
     });
 
+    // Sort by score desc, pick top 4 for bullets + 1 for insight
     const ranked  = [...scored].sort((a, b) => b.score - a.score);
     const topFour = ranked.slice(0, 4);
+    // Re-sort top 4 back into original order for readability
     topFour.sort((a, b) => (a.idx || 0) - (b.idx || 0));
 
     const bullets  = topFour.map(r => `• ${r.s}`).join('\n');
@@ -1593,76 +1279,49 @@
       ? `\n\n💡 Key Insight: ${ranked[0].s}`
       : '';
 
+    // If not enough sentences, fall back to first 3 paragraphs truncated
     const body = bullets.length > 20
       ? bullets + insight
       : paragraphs.slice(0, 3).map(p => `• ${p.substring(0, 200)}`).join('\n');
 
-    const garbageRatio = (body.match(/[◆■□♦●]{1}/g) || []).length / Math.max(body.length, 1);
-    if (garbageRatio > 0.15) {
-      return { title, body: '', garbled: true };
-    }
     return { title, body };
   }
 
-  function _makeViewOriginalBtn(pageNum) {
-    return `<button class="view-original-btn" onclick="openPdfPageView(${pageNum})">View original PDF page →</button>`;
-  }
-
+  // Add or update a single feed item card in the DOM
   function renderOneFeedItem(item, idx, fileName, isNew) {
-    const id       = `feed-item-${idx}`;
+    const id      = `feed-item-${idx}`;
     const existing = document.getElementById(id);
-    const pNum     = item.pageNum ?? (idx + 1);
-
-    let html;
-    if (item.error) {
-      html =
-        `<span class="headline">${escapeHtml(item.title)}</span>` +
-        `<p class="error-msg">${escapeHtml(item.title)} could not be converted due to a technical error. ` +
-        `If you want to view the original article, ` +
-        _makeViewOriginalBtn(pNum) + `</p>` +
-        `<div class="meta">Page ${pNum} · ${escapeHtml(fileName)}</div>`;
-    } else {
-      const engHtml = (item.summary_english && item.summary_english.trim().length > 0)
-        ? `<p class="description translation">English:<br>${escapeHtml(item.summary_english.substring(0, CONFIG.MAX_DESC_CHARS))}</p>`
-        : '';
-      const desc = item.description ? escapeHtml(item.description.substring(0, CONFIG.MAX_DESC_CHARS)) : '';
-      html =
-        `<span class="headline reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0">${escapeHtml(item.title)}</span>` +
-        (desc ? `<p class="description reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0" style="cursor:pointer;">${desc}</p>` : '') +
-        engHtml +
-        `<div class="meta" style="display:flex;justify-content:space-between;align-items:center;">` +
-          `<span>Page ${pNum} · ${escapeHtml(fileName)}</span>` +
-          _makeViewOriginalBtn(pNum) +
-        `</div>`;
-    }
+    const engHtml  = (item.summary_english && item.summary_english.trim().length > 0)
+      ? `<p class="description translation"><strong>English:</strong><br>${escapeHtml(item.summary_english.substring(0, CONFIG.MAX_DESC_CHARS))}</p>`
+      : '';
+    const desc     = item.description ? escapeHtml(item.description.substring(0, CONFIG.MAX_DESC_CHARS)) : '';
+    const html     =
+      `<span class="headline reader-trigger" data-url="pdf-local-file-${idx}" role="button" tabindex="0">${escapeHtml(item.title)}</span>` +
+      (desc ? `<p class="description">${desc}</p>` : '') +
+      engHtml +
+      `<div class="meta">Page ${idx + 1} · ${escapeHtml(fileName)}</div>`;
 
     if (existing) {
       existing.innerHTML = html;
       existing.style.opacity = '1';
     } else {
       const div        = document.createElement('div');
-      div.className    = 'feed-item' + (item.error ? ' feed-item-error' : '');
+      div.className    = 'feed-item';
       div.id           = id;
       div.style.animationDelay = `${Math.min(idx * 30, 300)}ms`;
       if (isNew) div.style.opacity = '0';
       div.innerHTML    = html;
       DOM.output.appendChild(div);
+      // Fade in
       if (isNew) requestAnimationFrame(() => { div.style.transition = 'opacity 0.4s'; div.style.opacity = '1'; });
     }
   }
 
-  function _resetUploadBtn() {
-    DOM.uploadPdfBtn.innerHTML  = '<span class="upload-ring"></span>📄 Upload PDF';
-    DOM.uploadPdfBtn.classList.remove('uploading');
-    DOM.uploadPdfBtn.disabled   = false;
-  }
-
   async function processPdf(file, confirmedType) {
-    const docType = confirmedType || detectDocumentType(file);
-
-    DOM.uploadPdfBtn.innerHTML = '<span class="upload-ring"></span>Reading…';
-    DOM.uploadPdfBtn.classList.add('uploading');
-    DOM.uploadPdfBtn.disabled  = true;
+    const docType         = confirmedType || detectDocumentType(file);
+    const originalBtnText = DOM.uploadPdfBtn.textContent;
+    DOM.uploadPdfBtn.textContent = '⏫ Uploading…';
+    DOM.uploadPdfBtn.disabled    = true;
 
     showOverlay('Opening PDF', `📄 "${file.name}"…`, 5, 'Loading pages…');
 
@@ -1673,25 +1332,16 @@
     } catch (err) {
       hideOverlay();
       DOM.output.innerHTML = `<div class="system-msg">Failed to open PDF: ${escapeHtml(err.message)}</div>`;
-      _resetUploadBtn();
+      DOM.uploadPdfBtn.textContent = originalBtnText;
+      DOM.uploadPdfBtn.disabled    = false;
       return;
     }
 
-    currentPdfDoc       = pdfDoc;
-    currentPdfFile      = file;
-    _activeCascadeModel = null;
     updateOverlay(`📄 ${totalPages} pages found — processing page 1 first…`, 10, '');
-    DOM.uploadPdfBtn.innerHTML = '<span class="upload-ring"></span>Processing…';
+    DOM.uploadPdfBtn.textContent = '⚙ Processing…';
 
     DOM.itemCount.textContent = `0 / ${totalPages} pages processing…`;
     DOM.overallSummaryBtn.style.display = 'none';
-
-    if (totalPages === 0) {
-      hideOverlay();
-      DOM.output.innerHTML = `<div class="system-msg">PDF contains no readable pages.</div>`;
-      _resetUploadBtn();
-      return;
-    }
 
     const feedItems = [];
     const summaries = [];
@@ -1701,27 +1351,33 @@
     for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
       const pct = Math.round((pageNum / totalPages) * 90) + 5;
 
+      // After page 1 is done, hide overlay so user can browse
+      // Background pages update status bar only
       if (pageNum === 1) {
-        updateOverlay(`🧠 Summarising page 1 of ${totalPages}…`, pct, '');
+        updateOverlay(`🧠 Summarising page 1 of ${totalPages}…`, pct,
+          `Gemini ${getGeminiModel()} · ${_activeKeySlot === 2 ? '⚡ K2' : 'K1'}`);
       } else {
+        // Overlay hidden — update the item count bar instead
         DOM.itemCount.textContent = `⚙ Processing page ${pageNum} of ${totalPages}… (${pageNum - 1} ready)`;
       }
 
       try {
+        // Extract this page's text
         const pageText = await extractPageText(pdfDoc, pageNum);
 
+        // Skip blank/near-blank pages silently
         if (!pageText || pageText.length < 30) {
           if (pageNum === 1) {
             hideOverlay();
-            DOM.output.innerHTML =
-              '<div class="system-msg">⚠️ Page 1 appears to be blank or image-only (no extractable text). ' +
-              'Try a text-based PDF or a different file.</div>';
-            _resetUploadBtn();
+            DOM.uploadPdfBtn.textContent = '✅ Ready';
+            setTimeout(() => { DOM.uploadPdfBtn.textContent = originalBtnText; DOM.uploadPdfBtn.disabled = false; }, 1800);
           }
           continue;
         }
 
+        // ── Local extractive summary — instant, no network ──────────
         const { title, body } = summarisePageLocal(pageText, pageNum, docType);
+
         const idx  = feedItems.length;
         const item = {
           title,
@@ -1736,34 +1392,29 @@
         titles.push(title);
         feedCache['uploaded-pdf'] = { items: feedItems };
 
-        if (pageNum === 1) {
-          localStorage.removeItem(STORAGE_KEY);
-          _idbOpen().then(db => {
-            const tx = db.transaction(STORE_SESSIONS, 'readwrite');
-            tx.objectStore(STORE_SESSIONS).delete(STORAGE_KEY);
-            tx.oncomplete = () => db.close();
-          }).catch(() => {});
-          DOM.output.innerHTML = '';
-          renderOneFeedItem(item, idx, file.name, true);
-          updateOverlay('✅ Page 1 ready — processing rest in background…', 20, '');
-          await new Promise(r => setTimeout(r, 280));
-          hideOverlay();
-          DOM.overallSummaryBtn.style.display = 'inline-flex';
-          if (totalPages === 1) {
-            _resetUploadBtn(); // single-page PDF — done immediately
-          } else {
-            DOM.uploadPdfBtn.innerHTML = '<span class="upload-ring"></span>Processing…';
-          }
-        } else {
-          renderOneFeedItem(item, idx, file.name, true);
-        }
-
+        // Render this item immediately — user sees it appear
+        renderOneFeedItem(item, idx, file.name, true);
         DOM.itemCount.textContent = `${feedItems.length} of ${totalPages} pages processed`;
 
-        // ── Incremental save after every page ──────────────────────
-        void _saveSessionToStorage(file.name, feedItems, summaries, titles);
+        // Page 1 done — NOW clear old session and show new content
+        if (pageNum === 1) {
+          localStorage.removeItem(STORAGE_KEY);
+          DOM.output.innerHTML = '';
+          renderOneFeedItem(item, idx, file.name, true);
+          updateOverlay('✅ Page 1 ready — processing rest…', 20, '');
+          await new Promise(r => setTimeout(r, 300));
+          hideOverlay();
+          DOM.uploadPdfBtn.textContent = '✅ Ready';
+          DOM.overallSummaryBtn.style.display = 'inline-flex';
+          setTimeout(() => {
+            DOM.uploadPdfBtn.textContent = originalBtnText;
+            DOM.uploadPdfBtn.disabled    = false;
+          }, 1200);
+        }
 
       } catch (err) {
+        // Auto-retry once after 6s before giving up on this page
+        console.warn(`Page ${pageNum} failed (will retry once):`, err.message);
         let retryResult = null;
         try {
           const retryPageText = await extractPageText(pdfDoc, pageNum);
@@ -1771,6 +1422,7 @@
             retryResult = summarisePageLocal(retryPageText, pageNum, docType);
           }
         } catch (retryErr) {
+          console.warn(`Page ${pageNum} retry also failed:`, retryErr.message);
         }
 
         const idx = feedItems.length;
@@ -1786,14 +1438,13 @@
           titles.push(retryResult.title);
           summaries.push(retryResult.body);
         } else {
+          // Both attempts failed — show soft error card
           item = {
-            title:             `Page ${pageNum}`,
-            description:       '',
+            title:             `Page ${pageNum} — skipped`,
+            description:       `Could not summarise: ${err.message.substring(0, 120)}`,
             full_text:         '',
             full_text_english: '',
-            summary_english:   '',
-            error:             true,
-            pageNum
+            summary_english:   ''
           };
           titles.push(`Page ${pageNum}`);
           summaries.push('');
@@ -1801,42 +1452,35 @@
         feedItems.push(item);
         feedCache['uploaded-pdf'] = { items: feedItems };
         renderOneFeedItem(item, idx, file.name, true);
-        void _saveSessionToStorage(file.name, feedItems, summaries, titles);
 
         if (pageNum === 1) {
           hideOverlay();
-          _resetUploadBtn();
+          DOM.uploadPdfBtn.textContent = originalBtnText;
+          DOM.uploadPdfBtn.disabled    = false;
         }
       }
     }
 
-    // ── All pages done ────────────────────────────────────────────
+    // All pages done
     DOM.itemCount.textContent = `✅ All ${feedItems.length} pages processed · ${file.name}`;
     DOM.overallSummaryBtn.style.display = 'inline-flex';
 
+    // Build summary modal with everything
     DOM.modalSummary.innerText   = summaries.map((s, i) => `${titles[i]}\n${s}`).join('\n\n─────────────────\n\n');
     DOM.modalTakeaways.innerText = summaries
       .map((s, i) => `${titles[i]}:\n${s.split('\n').slice(0,4).join('\n')}`)
       .join('\n\n');
 
-    void _saveSessionToStorage(file.name, feedItems, summaries, titles);
+    // Persist full session
+    _saveSessionToStorage(file.name, feedItems, summaries, titles);
     _updateKeyStatusBadge();
-    _resetUploadBtn();
   }
 
   /* ═══════════════════════════════════════════════════════════════════
      SECTION 11 — EVENT WIRING
   ═══════════════════════════════════════════════════════════════════ */
 
-  window.addEventListener('load', async () => {
-  try {
-
-    try {
-      await Promise.race([
-        _restoreKeysFromIDB(),
-        new Promise((_, r) => setTimeout(() => r(new Error('IDB Timeout')), 1000))
-      ]);
-    } catch (_) {}
+  window.addEventListener('load', () => {
 
     // ── Key Manager wiring ────────────────────────────────────────
     DOM.keyMgrBtn.addEventListener('click', (e) => {
@@ -1855,6 +1499,7 @@
       });
     });
 
+    // Close key manager if clicking outside
     document.addEventListener('click', (e) => {
       if (!DOM.keyManagerBox.contains(e.target) && e.target !== DOM.keyMgrBtn) {
         closeKeyManager();
@@ -1862,42 +1507,74 @@
     });
 
     // ── Model selector ────────────────────────────────────────────
-    const VALID_MODELS  = CONFIG.GEMINI_MODELS;
+    const VALID_MODELS  = CONFIG.GEMINI_CASCADE;
     const savedModel    = localStorage.getItem('pulse_gemini_model');
     const activeModel   = VALID_MODELS.includes(savedModel) ? savedModel : VALID_MODELS[0];
     if (!VALID_MODELS.includes(savedModel)) localStorage.setItem('pulse_gemini_model', VALID_MODELS[0]);
     DOM.kmModelSelect.value = activeModel;
     DOM.kmModelSelect.addEventListener('change', function() {
       localStorage.setItem('pulse_gemini_model', this.value);
-      _idbSet('model', this.value); // persist to IndexedDB
       _updateKeyStatusBadge();
       _updateKmStatus();
     });
 
-    // ── PDF Upload ────────────────────────────────────────────────
+    // ── PDF Upload — with auto-detect confirm ─────────────────────
+    const DOC_TYPES = [
+      { val: 'auto',         label: 'Auto Detect' },
+      { val: 'onepager',     label: '1-Pager' },
+      { val: 'presentation', label: 'Presentation' },
+      { val: 'editorial',    label: 'Editorial Bundle' },
+      { val: 'book',         label: 'Book / Long PDF' },
+      { val: 'generic',      label: 'Generic Report' }
+    ];
+    // Populate confirm select
+    DOC_TYPES.filter(d => d.val !== 'auto').forEach(d => {
+      const opt = document.createElement('option');
+      opt.value = d.val; opt.textContent = d.label;
+      DOM.doctypeSelect.appendChild(opt);
+    });
+
+    let _pendingFile = null;
+
+    function showDoctypeConfirm(file, detected) {
+      _pendingFile = file;
+      DOM.doctypeSelect.value = detected;
+      DOM.doctypeMsg.textContent =
+        `📄 "${file.name}" — Auto-detected: ${DOC_TYPES.find(d=>d.val===detected)?.label || detected}`;
+      DOM.doctypeBar.style.display = 'flex';
+    }
+
+    DOM.doctypeConfirmBtn.addEventListener('click', () => {
+      if (!_pendingFile) return;
+      const chosen = DOM.doctypeSelect.value;
+      DOM.doctypeBar.style.display = 'none';
+      routeDocumentProcessing(_pendingFile, chosen);
+      _pendingFile = null;
+    });
+
     DOM.uploadPdfBtn.addEventListener('click', () => DOM.pdfFileInput.click());
-    DOM.pdfFileInput.addEventListener('change', async (e) => {
+    DOM.pdfFileInput.addEventListener('change', (e) => {
       const file = e.target.files[0];
       if (!file) return;
-      await routeDocumentProcessing(file, null);
-      e.target.value = '';
+      setTimeout(() => { e.target.value = ''; }, 100);
+      // Detect type and ask user to confirm before processing
+      const detected = detectDocumentType(file);
+      showDoctypeConfirm(file, detected);
     });
 
     // ── Summary modal ─────────────────────────────────────────────
     DOM.overallSummaryBtn.addEventListener('click', () => {
       DOM.summaryBackdrop.classList.add('open');
       DOM.summaryModal.classList.add('open');
-      document.body.style.overflow = 'hidden';
     });
     [DOM.summaryCloseBtn, DOM.summaryBackdrop].forEach(el =>
       el.addEventListener('click', () => {
         DOM.summaryBackdrop.classList.remove('open');
         DOM.summaryModal.classList.remove('open');
-        document.body.style.overflow = '';
       })
     );
 
-    // ── Feed → open article inline ────────────────────────
+    // ── Feed → open reader ────────────────────────────────────────
     DOM.output.addEventListener('click', (e) => {
       const t = e.target.closest('.reader-trigger');
       if (t) openReader(t.getAttribute('data-url'));
@@ -1905,7 +1582,7 @@
     DOM.output.addEventListener('keydown', (e) => {
       if (e.key !== 'Enter' && e.key !== ' ') return;
       const t = e.target.closest('.reader-trigger');
-      if (t) { e.preventDefault(); openReader(t.getAttribute('data-url')); }
+      if (t) { e.preventDefault(); t.click(); }
     });
 
     // ── Reader panel ──────────────────────────────────────────────
@@ -1917,7 +1594,6 @@
       if (DOM.summaryModal.classList.contains('open')) {
         DOM.summaryBackdrop.classList.remove('open');
         DOM.summaryModal.classList.remove('open');
-        document.body.style.overflow = '';
       }
     });
 
@@ -1948,13 +1624,10 @@
     _updateKeyStatusBadge();
 
     // ── Restore last session if available ─────────────────────────
-    const saved = await _loadSessionFromStorage();
+    const saved = _loadSessionFromStorage();
     if (saved) {
       _restoreSession(saved);
     }
-  } catch (fatalErr) {
-    document.body.innerHTML += `<div style="position:fixed;top:0;left:0;right:0;padding:10px;background:#c8102e;color:#000000;font-family:monospace;font-size:12px;z-index:9999;">Startup error: ${fatalErr.message}</div>`;
-  }
   });
 
   </script>
