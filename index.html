@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pulse 15A — Local Intelligence Terminal</title>
+  <title>Pulse 15B — Local Intelligence Terminal</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&family=Noto+Sans:wght@400;500&display=swap" rel="stylesheet">
 
   <style>
@@ -221,6 +221,96 @@
     #upload-pdf-btn.uploading { padding-left: 30px; background: var(--rule); cursor: wait; }
     #upload-pdf-btn .upload-ring { display: none; position: absolute; left: 8px; top: 50%; transform: translateY(-50%); width: 13px; height: 13px; border: 2px solid #b0d8be; border-top-color: var(--ink); border-radius: 50%; animation: spin 0.75s linear infinite; }
     #upload-pdf-btn.uploading .upload-ring { display: block; }
+    /* ════════════════════════════════════════
+       §11 FLOATING AI PANEL
+    ════════════════════════════════════════ */
+    #ai-fab {
+      position: fixed; bottom: 28px; right: 24px; z-index: 1200;
+      width: 52px; height: 52px; border-radius: 50%;
+      background: #1a5c3a; color: #f5f0e8;
+      border: none; font-size: 22px; cursor: pointer;
+      box-shadow: 0 4px 18px rgba(0,0,0,0.28);
+      display: none; align-items: center; justify-content: center;
+      transition: transform 0.2s, background 0.2s;
+    }
+    #ai-fab:hover { background: #144a2e; transform: scale(1.08); }
+    #ai-fab.visible { display: flex; }
+    #ai-panel {
+      position: fixed; bottom: 90px; right: 18px; z-index: 1201;
+      width: 360px; max-width: calc(100vw - 24px);
+      background: var(--paper); border: 2px solid var(--ink);
+      border-radius: 10px; box-shadow: 0 8px 40px rgba(0,0,0,0.22);
+      display: flex; flex-direction: column;
+      max-height: calc(100vh - 110px);
+      transform: scale(0.92) translateY(16px); opacity: 0;
+      pointer-events: none; transition: all 0.22s cubic-bezier(.4,0,.2,1);
+    }
+    #ai-panel.open { transform: scale(1) translateY(0); opacity: 1; pointer-events: all; }
+    .ai-panel-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 10px 14px 8px; border-bottom: 1px solid var(--rule);
+      background: #e4eaf2; border-radius: 8px 8px 0 0; flex-shrink: 0;
+    }
+    .ai-panel-title { font-family: 'IBM Plex Mono',monospace; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; }
+    .ai-panel-model { font-family: 'IBM Plex Mono',monospace; font-size: 8.5px; color: var(--muted); }
+    .ai-panel-close { background: none; border: none; font-size: 16px; cursor: pointer; color: var(--muted); padding: 0 2px; }
+    .ai-panel-close:hover { color: var(--ink); }
+    .ai-quick-row { display: flex; gap: 6px; padding: 10px 12px 6px; flex-shrink: 0; flex-wrap: wrap; }
+    .ai-quick-btn {
+      font-family: 'IBM Plex Mono',monospace; font-size: 10px; font-weight: 600;
+      background: #e4eaf2; border: 1.5px solid var(--accent); color: var(--accent);
+      padding: 5px 11px; border-radius: 4px; cursor: pointer; text-transform: uppercase;
+      letter-spacing: 0.06em; transition: all 0.15s; white-space: nowrap;
+    }
+    .ai-quick-btn:hover { background: var(--accent); color: var(--paper); }
+    .ai-quick-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    .ai-chat-history {
+      flex: 1; overflow-y: auto; padding: 10px 14px;
+      display: flex; flex-direction: column; gap: 10px;
+      min-height: 80px; max-height: 300px;
+    }
+    .ai-msg { font-size: 13px; line-height: 1.65; }
+    .ai-msg.user { background: #e4eaf2; border-radius: 6px; padding: 8px 11px; font-style: italic; color: var(--muted); }
+    .ai-msg.ai   { color: var(--ink); }
+    .ai-msg.ai strong { font-weight: 700; }
+    .ai-msg.ai ul { padding-left: 1.2em; margin: 0.4em 0; }
+    .ai-msg.ai li { margin-bottom: 0.25em; }
+    .ai-msg.thinking { color: var(--muted); font-style: italic; font-size: 12px; }
+    .ai-msg.error    { color: var(--error); font-size: 12px; }
+    .ai-msg.no-key {
+      background: #fff8e6; border: 1.5px solid #f0c040; border-radius: 6px;
+      padding: 10px 12px; font-size: 12px; line-height: 1.6;
+    }
+    .ai-msg.no-key button {
+      margin-top: 7px; display: block;
+      font-family: 'IBM Plex Mono',monospace; font-size: 10px;
+      background: var(--accent); color: var(--paper);
+      border: none; padding: 5px 14px; border-radius: 4px; cursor: pointer;
+    }
+    .ai-input-row {
+      display: flex; gap: 6px; padding: 8px 10px 10px;
+      border-top: 1px solid var(--rule); flex-shrink: 0;
+    }
+    #ai-chat-input {
+      flex: 1; font-family: 'IBM Plex Sans',sans-serif; font-size: 13px;
+      border: 1.5px solid var(--rule); border-radius: 5px; padding: 7px 10px;
+      background: var(--paper); outline: none; resize: none; height: 38px;
+      transition: border-color 0.15s;
+    }
+    #ai-chat-input:focus { border-color: var(--accent); }
+    #ai-send-btn {
+      background: var(--accent); color: var(--paper); border: none;
+      border-radius: 5px; padding: 7px 14px;
+      font-family: 'IBM Plex Mono',monospace; font-size: 11px;
+      font-weight: 700; cursor: pointer; transition: background 0.15s; white-space: nowrap;
+    }
+    #ai-send-btn:hover { background: #0e4228; }
+    #ai-send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    @media (max-width: 600px) {
+      #ai-panel { width: calc(100vw - 16px); right: 8px; bottom: 76px; }
+      #ai-fab   { bottom: 18px; right: 14px; width: 46px; height: 46px; font-size: 19px; }
+    }
+
   </style>
 
   <!-- PDF.js for local PDF parsing (no AI needed) -->
@@ -235,15 +325,6 @@
 
 <body>
 
-  <!-- Network sandbox detection banner -->
-  <div id="env-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99999;
-       background:#1a5c3a;color:#f5f0e8;font-family:'IBM Plex Mono',monospace;font-size:12px;
-       padding:10px 20px;text-align:center;line-height:1.6;">
-    ⚠️ Network access blocked in this preview.
-    <strong>Download and open locally in Chrome/Firefox</strong> for full RSS access.
-    <button onclick="document.getElementById('env-banner').style.display='none'"
-            style="margin-left:14px;background:transparent;border:1px solid #f5f0e8;color:#f5f0e8;padding:2px 10px;border-radius:3px;cursor:pointer;font-family:inherit;font-size:11px;">Dismiss</button>
-  </div>
 
   <!-- Controls bar -->
   <div class="controls-bar" style="position:relative;">
@@ -260,6 +341,8 @@
           <option value="https://www.thehindu.com/business/feeder/default.rss">Hindu · Business</option>
           <option value="https://www.thehindu.com/sci-tech/feeder/default.rss">Hindu · Technology</option>
           <option value="https://www.thehindu.com/opinion/feeder/default.rss">Hindu · Editorial</option>
+        
+          <option value="https://www.thehindu.com/news/cities/mumbai/feeder/default.rss">Hindu · Mumbai</option>
         </optgroup>
         <optgroup label="── Hindu Business Line ──">
           <option value="https://www.thehindubusinessline.com/news/feeder/default.rss">HBL · Top News</option>
@@ -267,6 +350,8 @@
           <option value="https://www.thehindubusinessline.com/companies/feeder/default.rss">HBL · Business</option>
           <option value="https://www.thehindubusinessline.com/markets/feeder/default.rss">HBL · Markets</option>
           <option value="https://www.thehindubusinessline.com/opinion/feeder/default.rss">HBL · Editorial</option>
+        
+          <option value="https://www.thehindubusinessline.com/info-tech/feeder/default.rss">HBL · Tech</option>
         </optgroup>
         <optgroup label="── Indian Express ──">
           <option value="https://indianexpress.com/feed/">IE · Top News</option>
@@ -274,12 +359,20 @@
           <option value="https://indianexpress.com/section/business/feed/">IE · Business</option>
           <option value="https://indianexpress.com/section/technology/feed/">IE · Technology</option>
           <option value="https://indianexpress.com/section/opinion/editorials/feed/">IE · Editorial</option>
+        
+          <option value="https://indianexpress.com/section/business/market/feed/">IE · Markets</option>
+          <option value="https://indianexpress.com/section/cities/mumbai/feed/">IE · Mumbai</option>
         </optgroup>
         <optgroup label="── Times of India ──">
           <option value="https://timesofindia.indiatimes.com/rssfeedstopstories.cms" selected>TOI · Top News</option>
           <option value="https://timesofindia.indiatimes.com/business/economy/rssfeedstopstories.cms">TOI · Economy</option>
           <option value="https://timesofindia.indiatimes.com/business/rssfeedstopstories.cms">TOI · Business</option>
           <option value="https://timesofindia.indiatimes.com/tech/rssfeedstopstories.cms">TOI · Technology</option>
+        
+          <option value="https://timesofindia.indiatimes.com/business/markets/rssfeedstopstories.cms">TOI · Markets</option>
+          <option value="https://timesofindia.indiatimes.com/blogs/opinion/rssfeedstopstories.cms">TOI · Opinion</option>
+          <option value="https://timesofindia.indiatimes.com/rssfeeds/-2128936835.cms">TOI · Mumbai</option>
+          <option value="https://timesofindia.indiatimes.com/city/thane/rssfeedsdefault.cms">TOI · Thane</option>
         </optgroup>
         <optgroup label="── Economic Times ──">
           <option value="https://economictimes.indiatimes.com/rssfeedsdefault.cms">ET · Top News</option>
@@ -288,6 +381,9 @@
           <option value="https://economictimes.indiatimes.com/markets/stocks/rssfeedsdefault.cms">ET · Markets – Stocks</option>
           <option value="https://economictimes.indiatimes.com/tech/rssfeedsdefault.cms">ET · Technology</option>
           <option value="https://economictimes.indiatimes.com/opinion/rssfeedsdefault.cms">ET · Editorial</option>
+        
+          <option value="https://economictimes.indiatimes.com/markets/commodities/rssfeedsdefault.cms">ET · Commodities</option>
+          <option value="https://economictimes.indiatimes.com/city/mumbai/rssfeedsdefault.cms">ET · Mumbai</option>
         </optgroup>
         <optgroup label="── Financial Express ──">
           <option value="https://www.financialexpress.com/feed/">FE · Top News</option>
@@ -295,6 +391,8 @@
           <option value="https://www.financialexpress.com/business/feed/">FE · Business</option>
           <option value="https://www.financialexpress.com/market/feed/">FE · Markets</option>
           <option value="https://www.financialexpress.com/opinion/feed/">FE · Editorial</option>
+        
+          <option value="https://www.financialexpress.com/industry/technology/feed/">FE · Technology</option>
         </optgroup>
         <optgroup label="── Business Standard ──">
           <option value="https://www.business-standard.com/rss/home_page_top_stories.rss">BS · Top News</option>
@@ -302,6 +400,10 @@
           <option value="https://www.business-standard.com/rss/companies-news.rss">BS · Business</option>
           <option value="https://www.business-standard.com/rss/markets.rss">BS · Markets</option>
           <option value="https://www.business-standard.com/rss/opinion.rss">BS · Editorial</option>
+        
+          <option value="https://www.business-standard.com/rss/markets-commodities.rss">BS · Commodities</option>
+          <option value="https://www.business-standard.com/rss/technology.rss">BS · Technology</option>
+          <option value="https://www.business-standard.com/rss/mumbai-news.rss">BS · Mumbai</option>
         </optgroup>
         <optgroup label="── Live Mint ──">
           <option value="https://www.livemint.com/rss/news">Mint · Top News</option>
@@ -309,18 +411,33 @@
           <option value="https://www.livemint.com/rss/companies">Mint · Business</option>
           <option value="https://www.livemint.com/rss/markets">Mint · Markets</option>
           <option value="https://www.livemint.com/rss/opinion">Mint · Editorial</option>
+        
+          <option value="https://www.livemint.com/rss/technology">Mint · Technology</option>
         </optgroup>
         <optgroup label="── The Print ──">
           <option value="https://theprint.in/feed/">Print · Top News</option>
           <option value="https://theprint.in/category/economy/feed/">Print · Economy</option>
           <option value="https://theprint.in/category/opinion/feed/">Print · Editorial</option>
+        
+          <option value="https://theprint.in/category/business/feed/">Print · Business</option>
+          <option value="https://theprint.in/category/tech/feed/">Print · Technology</option>
         </optgroup>
         <optgroup label="── Hindustan Times ──">
           <option value="https://www.hindustantimes.com/feeds/rss/topnews/rssfeed.xml">HT · Top News</option>
           <option value="https://www.hindustantimes.com/feeds/rss/business/rssfeed.xml">HT · Business</option>
           <option value="https://www.hindustantimes.com/feeds/rss/editorials/rssfeed.xml">HT · Editorial</option>
+        
+          <option value="https://www.hindustantimes.com/feeds/rss/technology/rssfeed.xml">HT · Technology</option>
+          <option value="https://www.hindustantimes.com/feeds/rss/cities/mumbai/rssfeed.xml">HT · Mumbai</option>
         </optgroup>
-      </select>
+
+        <optgroup label="── Scroll.in ──">
+          <option value="https://feeds.feedburner.com/Scrollin">Scroll · Top News</option>
+          <option value="https://scroll.in/business/feed/">Scroll · Business</option>
+          <option value="https://scroll.in/tech/feed/">Scroll · Technology</option>
+          <option value="https://scroll.in/opinion/feed/">Scroll · Opinion</option>
+        </optgroup>
+            </select>
 
       <!-- Upload PDF -->
       <button class="btn-outline" id="upload-pdf-btn"><span class="upload-ring"></span>📄 PDF</button>
@@ -335,19 +452,31 @@
 
     <!-- Key Manager dropdown -->
     <div id="key-manager-box">
-      <div class="km-title">🔑 Gemini API Keys — Optional (AI chat on web articles only)</div>
-      <div class="km-label">Primary Key (K1)</div>
+      <div class="km-title">🔑 Gemini AI Keys — Stored permanently · Cascade K1→K2→K3 on quota</div>
+      <div class="km-label">Key 1 (Primary)</div>
       <div class="km-row">
         <input id="km-k1-input" class="km-input" type="password" placeholder="AIza… (paste Key 1)" autocomplete="off">
-        <button id="km-k1-save" class="km-save">💾 Save K1</button>
+        <button id="km-k1-save" class="km-save">💾 K1</button>
       </div>
-      <div class="km-label">Backup Key (K2 — auto-activates on quota)</div>
+      <div class="km-label">Key 2 (Auto-backup on quota)</div>
       <div class="km-row">
         <input id="km-k2-input" class="km-input" type="password" placeholder="AIza… (paste Key 2)" autocomplete="off">
-        <button id="km-k2-save" class="km-save">💾 Save K2</button>
+        <button id="km-k2-save" class="km-save">💾 K2</button>
       </div>
+      <div class="km-label">Key 3 (Final fallback)</div>
+      <div class="km-row">
+        <input id="km-k3-input" class="km-input" type="password" placeholder="AIza… (paste Key 3)" autocomplete="off">
+        <button id="km-k3-save" class="km-save">💾 K3</button>
+      </div>
+      <div class="km-label" style="margin-top:6px;">Model (cascade order)</div>
+      <select id="km-model-select" class="km-input" style="width:100%;margin-bottom:8px;height:30px;">
+        <option value="gemini-2.5-flash-preview-05-20">Gemini 2.5 Flash — default</option>
+        <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+        <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash-Lite — fastest/free</option>
+        <option value="gemini-2.5-pro-preview-05-06">Gemini 2.5 Pro — most capable</option>
+      </select>
       <div id="km-status" class="km-status"></div>
-      <div class="km-footer">Get free keys at <span>aistudio.google.com/apikey</span> · PDF reading needs no key</div>
+      <div class="km-footer">Keys saved in IndexedDB — never asked again · <span>aistudio.google.com/apikey</span></div>
       <div class="km-bottom"><button id="km-close-btn" class="km-close">✕ Close</button></div>
     </div>
   </div>
@@ -355,8 +484,8 @@
   <!-- Masthead -->
   <div class="masthead">
     <div class="tagline" id="header-date">Local Intelligence Terminal</div>
-    <div class="masthead-title">Pulse<span style="font-size:11px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.55;">15A</span></div>
-    <div class="tagline">RSS + PDF · Pure Local Engine · No AI Required</div>
+    <div class="masthead-title">Pulse<span style="font-size:11px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.55;">15B</span></div>
+    <div class="tagline">RSS + PDF · Local Engine + AI Panel</div>
   </div>
   <div id="key-status-badge"></div>
 
@@ -489,8 +618,11 @@
     keyManagerBox:     document.getElementById('key-manager-box'),
     kmK1Input:         document.getElementById('km-k1-input'),
     kmK2Input:         document.getElementById('km-k2-input'),
+    kmK3Input:         document.getElementById('km-k3-input'),
     kmK1Save:          document.getElementById('km-k1-save'),
     kmK2Save:          document.getElementById('km-k2-save'),
+    kmK3Save:          document.getElementById('km-k3-save'),
+    kmModelSelect:     document.getElementById('km-model-select'),
     kmStatus:          document.getElementById('km-status'),
     kmCloseBtn:        document.getElementById('km-close-btn'),
   };
@@ -498,7 +630,7 @@
   /* ══════════════════════════════════════════════════════════════
      §4  IDB KEY STORAGE
   ══════════════════════════════════════════════════════════════ */
-  const IDB_NAME = 'pulse15a', IDB_STORE = 'kv', IDB_VER = 1;
+  const IDB_NAME = 'pulse15b', IDB_STORE = 'kv', IDB_VER = 1;
   function _idbOpen() {
     return new Promise((res, rej) => {
       const req = indexedDB.open(IDB_NAME, IDB_VER);
@@ -526,18 +658,18 @@
     });
   }
   async function _restoreKeysFromIDB() {
-    const k1 = await _idbGet('k1');
-    const k2 = await _idbGet('k2');
-    if (k1) sessionStorage.setItem('pk1', k1);
-    if (k2) sessionStorage.setItem('pk2', k2);
+    const [k1, k2, k3] = await Promise.all([_idbGet('k1'), _idbGet('k2'), _idbGet('k3')]);
+    if (k1) { sessionStorage.setItem('pk1', k1); sessionStorage.setItem('ai_k1', k1); }
+    if (k2) { sessionStorage.setItem('pk2', k2); sessionStorage.setItem('ai_k2', k2); }
+    if (k3) { sessionStorage.setItem('pk3', k3); sessionStorage.setItem('ai_k3', k3); }
   }
 
   /* ══════════════════════════════════════════════════════════════
      §5  DUAL-KEY MANAGER
   ══════════════════════════════════════════════════════════════ */
-  function _getRawKey(slot) { return sessionStorage.getItem(`pk${slot}`) || ''; }
+  function _getRawKey(slot) { return sessionStorage.getItem(`pk${slot}`) || sessionStorage.getItem('ai_k'+slot) || ''; }
   function getGeminiKey()   { return _getRawKey(_activeKeySlot) || _getRawKey(1) || _getRawKey(2); }
-  function getGeminiModel() { return localStorage.getItem('pulse15a_model') || CONFIG.GEMINI_MODELS[0]; }
+  function getGeminiModel() { return localStorage.getItem('pulse15b_model') || CONFIG.GEMINI_MODELS[0]; }
 
   function _maskKey(k) { return k ? k.substring(0,6) + '…' + k.slice(-3) : ''; }
 
@@ -545,33 +677,41 @@
     const k1 = _getRawKey(1), k2 = _getRawKey(2);
     DOM.kmK1Save.classList.toggle('active', !!k1);
     DOM.kmK2Save.classList.toggle('active', !!k2);
-    DOM.kmK1Save.textContent = k1 ? `✓ K1 Saved (${_maskKey(k1)})` : '💾 Save K1';
-    DOM.kmK2Save.textContent = k2 ? `✓ K2 Saved (${_maskKey(k2)})` : '💾 Save K2';
+    DOM.kmK1Save.textContent = k1 ? `✓ K1 (${_maskKey(k1)})` : '💾 K1';
+    DOM.kmK2Save.textContent = k2 ? `✓ K2 (${_maskKey(k2)})` : '💾 K2';
+    AI.refreshKmButtons();
   }
   function _updateKmStatus() {
     const k1 = _getRawKey(1), k2 = _getRawKey(2);
-    DOM.kmStatus.textContent = k1 || k2
-      ? `Keys active — AI chat available for web articles. PDF reading needs no key.`
-      : `No keys saved. PDF reading works without keys. Keys only needed for web article AI chat.`;
+    const k3_s = _getRawKey(3);
+    const nKeys = [k1,k2,k3_s].filter(Boolean).length;
+    DOM.kmStatus.textContent = nKeys > 0
+      ? `${nKeys} key(s) stored permanently. AI panel active. Cascade: K1→K2→K3 on quota.`
+      : `No keys saved. PDF & RSS reading work locally. Keys only needed for AI panel.`;
   }
   function _updateKeyStatusBadge() {
     const k1 = _getRawKey(1), k2 = _getRawKey(2);
     if (!k1 && !k2) {
-      DOM.keyStatusBadge.innerHTML = '<span style="font-size:9px;font-family:\'IBM Plex Mono\',monospace;text-align:center;display:block;padding:2px;color:#5a554c;">No AI keys — PDF & RSS work locally · Tap 🔑 to add Gemini key for web article AI chat</span>';
+      DOM.keyStatusBadge.innerHTML = '<span style="font-size:9px;font-family:\'IBM Plex Mono\',monospace;text-align:center;display:block;padding:2px;color:#5a554c;">No AI key saved — tap 🔑 to add free Gemini key (stored permanently, never asked again)</span>';
       return;
     }
-    const slotLabel = _activeKeySlot === 2 ? '⚡ K2 active' : '✓ K1 active';
-    const k2label   = k2 ? ' · K2 backup ready' : ' · K2 not set';
-    DOM.keyStatusBadge.innerHTML = `<span style="font-size:9px;font-family:'IBM Plex Mono',monospace;text-align:center;display:block;padding:2px;color:#5a554c;">Gemini: ${slotLabel}${k2label} · Model: ${getGeminiModel().replace('gemini-2.0-flash-lite','Flash-Lite').replace('gemini-2.0-flash','Flash').replace('gemini-2.5-pro-preview-05-06','Pro')}</span>`;
+    const k3b = _getRawKey(3);
+    const nKeys = [k1,k2,k3b].filter(Boolean).length;
+    const slotLabel = `✓ ${nKeys} key${nKeys>1?'s':''} stored`;
+    const mdl = localStorage.getItem('pulse15b_ai_model') || 'gemini-2.5-flash-preview-05-20';
+    const mdlLabel = mdl.replace('gemini-2.5-flash-preview-05-20','2.5 Flash').replace('gemini-2.0-flash-lite','2.0 Lite').replace('gemini-2.0-flash','2.0 Flash').replace('gemini-2.5-pro-preview-05-06','2.5 Pro');
+    DOM.keyStatusBadge.innerHTML = `<span style="font-size:9px;font-family:'IBM Plex Mono',monospace;text-align:center;display:block;padding:2px;color:#5a554c;">AI: ${slotLabel} · ${mdlLabel} · Cascade K1→K2→K3 on quota · ⚡ panel in reader</span>`;
   }
 
   function openKeyManager() {
     DOM.keyManagerBox.classList.add('open');
     DOM.kmK1Input.value = ''; DOM.kmK2Input.value = '';
     _refreshKmButtons(); _updateKmStatus();
-    const k1 = _getRawKey(1), k2 = _getRawKey(2);
+    const k1 = _getRawKey(1), k2 = _getRawKey(2), k3 = _getRawKey(3);
     DOM.kmK1Input.placeholder = k1 ? `Stored (${_maskKey(k1)}) — paste to replace` : 'AIza… (paste Key 1)';
     DOM.kmK2Input.placeholder = k2 ? `Stored (${_maskKey(k2)}) — paste to replace` : 'AIza… (paste Key 2)';
+    if (DOM.kmK3Input) DOM.kmK3Input.placeholder = k3 ? `Stored (${_maskKey(k3)}) — paste to replace` : 'AIza… (paste Key 3)';
+    if (DOM.kmModelSelect) DOM.kmModelSelect.value = localStorage.getItem('pulse15b_ai_model') || 'gemini-2.5-flash-preview-05-20';
     setTimeout(() => DOM.kmK1Input.focus(), 80);
   }
   function closeKeyManager() {
@@ -582,6 +722,9 @@
     if (!val) return;
     sessionStorage.setItem(`pk${slot}`, val);
     _idbSet(`k${slot}`, val).catch(() => {});
+    // Also store under AI module's key namespace for cross-use
+    sessionStorage.setItem('ai_k' + slot, val);
+    _idbSet('ai_k' + slot, val).catch(() => {});
     _refreshKmButtons(); _updateKmStatus(); _updateKeyStatusBadge();
   }
 
@@ -677,7 +820,7 @@
   function lsKey(feedUrl) {
     let h = 0;
     for (let i = 0; i < feedUrl.length; i++) h = (Math.imul(31, h) + feedUrl.charCodeAt(i)) | 0;
-    return 'pulse15a_' + Math.abs(h).toString(36);
+    return 'pulse15b_' + Math.abs(h).toString(36);
   }
   function lsLoad(feedUrl) {
     try {
@@ -1031,6 +1174,7 @@
 
       if (item) {
         currentArticleText = item.full_text || '';
+        AI.setContext(currentArticleText); AI.show();
         // Use same local reflow engine as web articles — no AI
         const rawParas = (item.full_text || '')
           .split(/\n\n+/).map(p => p.trim()).filter(Boolean)
@@ -1071,6 +1215,7 @@
     DOM.readerPanel.classList.remove('open');
     DOM.readerBackdrop.classList.remove('open');
     document.body.style.overflow = '';
+    AI.hide();
   }
 
   /* Fetch article using proxy cascade, extract & reflow locally — NO AI */
@@ -1123,6 +1268,7 @@
            ↗ Read on Original Site
          </a>
        </div>`;
+    AI.setContext(''); AI.show();
   }
 
   function _renderWebArticle(cleanHtml, title, feedName, pubDate, url) {
@@ -1130,6 +1276,7 @@
       `<h1 class="reader-article-title">${escapeHtml(title)}</h1>` +
       `<div class="reader-article-meta">${pubDate ? timeSince(pubDate) + ' &nbsp;·&nbsp; ' : ''}${escapeHtml(feedName)}</div>` +
       `<div class="reader-body">${cleanHtml}</div>`;
+    AI.setContext(currentArticleText); AI.show();
     setTimeout(() => setReaderProgress(0), 800);
   }
 
@@ -1424,6 +1571,7 @@
     try {
       // Restore keys from IDB
       try { await Promise.race([_restoreKeysFromIDB(), new Promise((_,r) => setTimeout(() => r(), 1000))]); } catch {}
+      try { await AI.loadKeys(); } catch {}
 
       DOM.headerDate.textContent = new Date().toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long' });
 
@@ -1432,9 +1580,19 @@
       DOM.kmCloseBtn.addEventListener('click', closeKeyManager);
       DOM.kmK1Save.addEventListener('click', () => _saveKey(1, (DOM.kmK1Input.value||'').trim()));
       DOM.kmK2Save.addEventListener('click', () => _saveKey(2, (DOM.kmK2Input.value||'').trim()));
-      [DOM.kmK1Input, DOM.kmK2Input].forEach((inp, i) => {
+      if (DOM.kmK3Save) DOM.kmK3Save.addEventListener('click', () => _saveKey(3, (DOM.kmK3Input?.value||'').trim()));
+      // Sync model select from localStorage
+      if (DOM.kmModelSelect) {
+        DOM.kmModelSelect.value = localStorage.getItem('pulse15b_ai_model') || 'gemini-2.5-flash-preview-05-20';
+        DOM.kmModelSelect.addEventListener('change', () => {
+          localStorage.setItem('pulse15b_ai_model', DOM.kmModelSelect.value);
+          _updateKeyStatusBadge();
+        });
+      }
+      [[DOM.kmK1Input, DOM.kmK1Save], [DOM.kmK2Input, DOM.kmK2Save], [DOM.kmK3Input, DOM.kmK3Save]].forEach(([inp, btn]) => {
+        if (!inp) return;
         inp.addEventListener('keydown', e => {
-          if (e.key === 'Enter') (i === 0 ? DOM.kmK1Save : DOM.kmK2Save).click();
+          if (e.key === 'Enter') btn?.click();
           if (e.key === 'Escape') closeKeyManager();
         });
       });
@@ -1442,6 +1600,7 @@
 
       // Feed
       DOM.dropdown.addEventListener('change', () => loadFeed(false));
+      AI.wireEvents();
       DOM.refreshBtn.addEventListener('click', () => {
         Object.keys(feedCache).forEach(k => delete feedCache[k]);
         Object.keys(localStorage).filter(k => k.startsWith('pulse15a_')).forEach(k => localStorage.removeItem(k));
@@ -1507,20 +1666,296 @@
     }
   });
 
-  </script>
+  
+  /* ══════════════════════════════════════════════════
+     AI PANEL — floating thunder button
+     Works on any open reader page (PDF or web article)
+     Keys stored permanently in IDB, cascade K1->K2->K3
+     Models: 2.5-flash (default) -> 2.0-flash -> 2.0-flash-lite -> 2.5-pro
+  ══════════════════════════════════════════════════ */
 
-  <!-- Network detection -->
-  <script>
-  (function() {
-    try {
-      const x = new XMLHttpRequest();
-      x.open('HEAD','https://api.rss2json.com/',true); x.timeout = 3000;
-      x.onerror   = () => document.getElementById('env-banner').style.display = 'block';
-      x.ontimeout = () => document.getElementById('env-banner').style.display = 'block';
-      x.send();
-    } catch { document.getElementById('env-banner').style.display = 'block'; }
+  const AI = (() => {
+    // ── state ──
+    let _busy    = false;
+    let _history = [];   // {role,text} for display
+    let _context = '';   // article text sent to Gemini
+
+    const MODEL_CASCADE = [
+      'gemini-2.5-flash-preview-05-20',
+      'gemini-2.0-flash',
+      'gemini-2.0-flash-lite',
+      'gemini-2.5-pro-preview-05-06'
+    ];
+
+    // ── DOM shortcuts ──
+    const fab       = () => document.getElementById('ai-fab');
+    const panel     = () => document.getElementById('ai-panel');
+    const hist      = () => document.getElementById('ai-chat-history');
+    const chatInput = () => document.getElementById('ai-chat-input');
+    const sendBtn   = () => document.getElementById('ai-send-btn');
+    const modelLbl  = () => document.getElementById('ai-model-label');
+
+    // ── key storage (IDB, permanent) ──
+    async function _idbKey(slot, val) {
+      if (val !== undefined) return _idbSet('ai_k' + slot, val);
+      return _idbGet('ai_k' + slot);
+    }
+    async function _loadKeys() {
+      const [k1, k2, k3] = await Promise.all([_idbKey(1), _idbKey(2), _idbKey(3)]);
+      if (k1) sessionStorage.setItem('ai_k1', k1);
+      if (k2) sessionStorage.setItem('ai_k2', k2);
+      if (k3) sessionStorage.setItem('ai_k3', k3);
+    }
+    function _getKey(slot) { return sessionStorage.getItem('ai_k' + slot) || ''; }
+    function _hasAnyKey()  { return !!(_getKey(1) || _getKey(2) || _getKey(3)); }
+    function _saveKey(slot, val) {
+      if (!val) return;
+      sessionStorage.setItem('ai_k' + slot, val);
+      _idbKey(slot, val).catch(() => {});
+    }
+
+    // ── model preference ──
+    function _getModel() {
+      return localStorage.getItem('pulse15b_ai_model') || MODEL_CASCADE[0];
+    }
+    function _saveModel(m) { localStorage.setItem('pulse15b_ai_model', m); }
+    function _modelLabel(m) {
+      return m.replace('gemini-2.5-flash-preview-05-20','2.5 Flash')
+              .replace('gemini-2.0-flash-lite','2.0 Flash-Lite')
+              .replace('gemini-2.0-flash','2.0 Flash')
+              .replace('gemini-2.5-pro-preview-05-06','2.5 Pro');
+    }
+
+    // ── call Gemini with full cascade ──
+    async function _callGemini(prompt) {
+      const startModel = _getModel();
+      const startIdx   = MODEL_CASCADE.indexOf(startModel);
+      const models     = MODEL_CASCADE.slice(startIdx >= 0 ? startIdx : 0);
+      const slots      = [1, 2, 3];
+
+      for (const model of models) {
+        for (const slot of slots) {
+          const key = _getKey(slot);
+          if (!key) continue;
+          const ep = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
+          try {
+            const res = await fetch(ep, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{ role: 'user', parts: [{ text: prompt }] }],
+                generationConfig: { temperature: 0.2, maxOutputTokens: 1024 }
+              })
+            });
+            if (res.status === 429 || res.status === 503) continue; // quota — try next
+            if (!res.ok) { const e = await res.json().catch(() => ({})); throw new Error(e?.error?.message || `HTTP ${res.status}`); }
+            const data = await res.json();
+            const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            if (modelLbl()) modelLbl().textContent = `Model: ${_modelLabel(model)} · K${slot}`;
+            return text;
+          } catch(e) {
+            if (e.message.includes('quota') || e.message.includes('429')) continue;
+            throw e;
+          }
+        }
+      }
+      throw new Error('All keys quota-exceeded. Try again in a minute.');
+    }
+
+    // ── render a message bubble ──
+    function _addMsg(role, html, cls) {
+      const h   = hist();
+      const div = document.createElement('div');
+      div.className = 'ai-msg ' + (cls || role);
+      div.innerHTML = html;
+      h.appendChild(div);
+      h.scrollTop   = h.scrollHeight;
+      return div;
+    }
+
+    // ── format AI plain text → readable HTML ──
+    function _fmt(text) {
+      return text
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g,     '<em>$1</em>')
+        .replace(/^#{1,3} (.+)$/gm,'<strong>$1</strong>')
+        .replace(/^[•\-] (.+)$/gm, '<li>$1</li>')
+        .replace(/(<li>[\s\S]+?<\/li>)+/g, s => `<ul>${s}</ul>`)
+        .replace(/\n{2,}/g, '</p><p>')
+        .replace(/\n/g, ' ')
+        .replace(/^(?!<)/gm, '<p>')
+        .replace(/(?<!>)$/gm, '</p>')
+        .replace(/<p><\/p>/g,'')
+        .replace(/<p>(<[uo]l>)/g,'$1')
+        .replace(/(<\/[uo]l>)<\/p>/g,'$1');
+    }
+
+    // ── build prompt with article context ──
+    function _buildPrompt(userQ) {
+      const ctx = _context.substring(0, 6000);
+      return `You are a concise news analyst. Answer in clear, readable prose with bullet points where useful.\n\nARTICLE TEXT:\n"""\n${ctx}\n"""\n\nQUESTION: ${userQ}`;
+    }
+
+    // ── send a query ──
+    async function _send(userText) {
+      if (_busy || !userText.trim()) return;
+      if (!_hasAnyKey()) {
+        _addMsg('ai', `<strong>No API key saved.</strong> Tap the &#128274; key button in the toolbar to add your free Gemini key (aistudio.google.com/apikey). Keys are stored permanently.<br><button onclick="document.getElementById('key-mgr-btn').click()">Add Key Now</button>`, 'no-key');
+        return;
+      }
+      if (!_context) {
+        _addMsg('ai', 'No article text available for this page. Open a readable article first.', 'error');
+        return;
+      }
+
+      _busy = true;
+      if (sendBtn()) { sendBtn().disabled = true; sendBtn().textContent = '...'; }
+      document.querySelectorAll('.ai-quick-btn').forEach(b => b.disabled = true);
+
+      _addMsg('user', escapeHtml(userText));
+      const thinking = _addMsg('ai', 'Thinking&hellip;', 'thinking');
+
+      try {
+        const reply = await _callGemini(_buildPrompt(userText));
+        thinking.remove();
+        _addMsg('ai', _fmt(reply), 'ai');
+        _history.push({ role: 'user', text: userText }, { role: 'ai', text: reply });
+      } catch(e) {
+        thinking.remove();
+        _addMsg('ai', `&#10060; ${escapeHtml(e.message)}`, 'error');
+      } finally {
+        _busy = false;
+        if (sendBtn()) { sendBtn().disabled = false; sendBtn().textContent = 'Send'; }
+        document.querySelectorAll('.ai-quick-btn').forEach(b => b.disabled = false);
+      }
+    }
+
+    // ── show / hide ──
+    function show() {
+      fab()?.classList.add('visible');
+    }
+    function hide() {
+      fab()?.classList.remove('visible');
+      closePanel();
+    }
+    function openPanel() {
+      panel()?.classList.add('open');
+      if (modelLbl()) modelLbl().textContent = `Model: ${_modelLabel(_getModel())}`;
+    }
+    function closePanel() {
+      panel()?.classList.remove('open');
+    }
+    function togglePanel() {
+      panel()?.classList.contains('open') ? closePanel() : openPanel();
+    }
+
+    // ── set context (called when reader opens) ──
+    function setContext(text) {
+      _context = text || '';
+      _history = [];
+      if (hist()) hist().innerHTML = '';
+    }
+
+    // ── wire events ──
+    function _wireEvents() {
+      // FAB
+      document.getElementById('ai-fab')?.addEventListener('click', togglePanel);
+
+      // Close X
+      document.getElementById('ai-panel-close')?.addEventListener('click', closePanel);
+
+      // Quick buttons
+      document.querySelectorAll('.ai-quick-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const p = btn.dataset.prompt;
+          if (p === 'summary')   _send('Give me a concise summary of this article in 3-4 sentences.');
+          if (p === 'takeaways') _send('List the 5 most important key takeaways from this article as bullet points.');
+        });
+      });
+
+      // Send button
+      document.getElementById('ai-send-btn')?.addEventListener('click', () => {
+        const inp = chatInput();
+        if (!inp) return;
+        const txt = inp.value.trim();
+        inp.value = '';
+        inp.style.height = '38px';
+        _send(txt);
+      });
+
+      // Enter to send (Shift+Enter = newline)
+      document.getElementById('ai-chat-input')?.addEventListener('keydown', e => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+          e.preventDefault();
+          document.getElementById('ai-send-btn')?.click();
+        }
+      });
+
+      // Auto-grow textarea
+      document.getElementById('ai-chat-input')?.addEventListener('input', function() {
+        this.style.height = '38px';
+        this.style.height = Math.min(this.scrollHeight, 110) + 'px';
+      });
+
+      // ── 3-key manager wiring (replaces old 2-key wiring) ──
+      document.getElementById('km-k3-save')?.addEventListener('click', () => {
+        const inp = document.getElementById('km-k3-input');
+        if (inp?.value.trim()) {
+          _saveKey(3, inp.value.trim());
+          AI.refreshKmButtons();
+        }
+      });
+      document.getElementById('km-k3-input')?.addEventListener('keydown', e => {
+        if (e.key === 'Enter') document.getElementById('km-k3-save')?.click();
+        if (e.key === 'Escape') closeKeyManager();
+      });
+
+      // Model select
+      const modelSel = document.getElementById('km-model-select');
+      if (modelSel) {
+        modelSel.value = _getModel();
+        modelSel.addEventListener('change', () => {
+          _saveModel(modelSel.value);
+          if (modelLbl()) modelLbl().textContent = `Model: ${_modelLabel(modelSel.value)}`;
+        });
+      }
+    }
+
+    // ── refresh km buttons for K3 ──
+    function refreshKmButtons() {
+      const k3 = _getKey(3);
+      const btn = document.getElementById('km-k3-save');
+      const inp = document.getElementById('km-k3-input');
+      if (btn) { btn.classList.toggle('active', !!k3); btn.textContent = k3 ? `✓ K3 (…${k3.slice(-3)})` : '💾 K3'; }
+      if (inp) inp.placeholder = k3 ? `Stored (…${k3.slice(-3)}) — paste to replace` : 'AIza… (paste Key 3)';
+    }
+
+    return { show, hide, setContext, wireEvents: _wireEvents, loadKeys: _loadKeys, saveKey: _saveKey, getKey: _getKey, hasAnyKey: _hasAnyKey, refreshKmButtons };
   })();
-  </script>
+
+</script>
+
+
+
+  <!-- Floating AI Panel -->
+  <button id="ai-fab" title="AI Assistant">&#9889;</button>
+
+  <div id="ai-panel">
+    <div class="ai-panel-header">
+      <span class="ai-panel-title">&#9889; AI Assistant</span>
+      <span class="ai-panel-model" id="ai-model-label"></span>
+      <button class="ai-panel-close" id="ai-panel-close">&times;</button>
+    </div>
+    <div class="ai-quick-row">
+      <button class="ai-quick-btn" data-prompt="summary">&#128203; Summary</button>
+      <button class="ai-quick-btn" data-prompt="takeaways">&#128161; Key Takeaways</button>
+    </div>
+    <div class="ai-chat-history" id="ai-chat-history"></div>
+    <div class="ai-input-row">
+      <textarea id="ai-chat-input" placeholder="Ask anything about this article..." rows="1"></textarea>
+      <button id="ai-send-btn">Send</button>
+    </div>
+  </div>
 
 </body>
 </html>
