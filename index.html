@@ -176,6 +176,10 @@
     .reader-body em,.reader-body i { font-style: italic; }
     .reader-status { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--meta-color); text-align: center; margin-top: 70px; line-height: 2.5; }
     .reader-status.error { color: var(--error); }
+    /* Enhanced reader images */
+    .reader-fig { margin: 20px 0; text-align: center; }
+    .reader-fig img { max-width: 100%; height: auto; border-radius: 4px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
+    .reader-body img { max-width: 100%; height: auto; border-radius: 4px; margin: 16px 0; }
     /* PDF extract styles */
     .reader-extract { max-width: 65ch; margin: 0 auto; }
     .reader-text-para { margin-bottom: 1em; line-height: 1.8; text-align: justify; hyphens: auto; -webkit-hyphens: auto; font-size: var(--reader-font-sz); }
@@ -1167,6 +1171,90 @@
   }
 
   /* ══════════════════════════════════════════════════════════════
+     §11½  ENHANCED ARTICLE RENDERER (add-on, no PDF code touched)
+  ══════════════════════════════════════════════════════════════ */
+  const WEB_ALLOWED = new Set(['p','br','strong','b','em','i','u','h1','h2','h3','h4','h5','h6','ul','ol','li','blockquote','a','img','span','div','section','article','figure','figcaption','picture','source']);
+  const WEB_ATTRS = { a: ['href','title'], img: ['src','alt','width','height','class'], source: ['srcset','media','type'], figure: ['class'], figcaption: ['class'] };
+  function _sanitizeWebNode(node) {
+    Array.from(node.childNodes).forEach(child => {
+      if (child.nodeType === Node.ELEMENT_NODE) {
+        const tag = child.tagName.toLowerCase();
+        if (!WEB_ALLOWED.has(tag)) { while (child.firstChild) node.insertBefore(child.firstChild, child); node.removeChild(child); }
+        else {
+          Array.from(child.attributes).forEach(attr => { if (!(WEB_ATTRS[tag]||[]).includes(attr.name)) child.removeAttribute(attr.name); });
+          _sanitizeWebNode(child);
+        }
+      } else if (child.nodeType === Node.COMMENT_NODE) node.removeChild(child);
+    });
+  }
+  function _sanitizeWebHtml(html) {
+    const wrap = document.createElement('div');
+    wrap.innerHTML = html;
+    _sanitizeWebNode(wrap);
+    Array.from(wrap.querySelectorAll('div,p,section,span,ul,ol,li,blockquote,h1,h2,h3,h4,h5,h6,figure')).reverse()
+      .forEach(el => { if (el.textContent.trim() === '' && !el.querySelector('img')) el.remove(); });
+    wrap.innerHTML = wrap.innerHTML.replace(/(<br\s*\/?>(\s*)){3,}/gi,'</p><p>').replace(/<p>\s*<\/p>/g,'');
+    return wrap.innerHTML;
+  }
+  function _reflowArticleText(text) {
+    const sentences = text.match(/[^.!?…]+(?:[.!?…]+(?:\s|$)|\s*$)/g) || [text];
+    const paras = [];
+    for (let i = 0; i < sentences.length; i += 3) {
+      const chunk = sentences.slice(i, i+3).join(' ').replace(/\s+/g,' ').trim();
+      if (chunk.length > 10) paras.push(`<p>${escapeHtml(chunk)}</p>`);
+    }
+    return paras;
+  }
+  function _buildRichLayout(html) {
+    const wrap = document.createElement('div');
+    wrap.innerHTML = html;
+    const result = [];
+    Array.from(wrap.childNodes).forEach(node => {
+      if (node.nodeType === Node.ELEMENT_NODE) {
+        const tag = node.tagName.toLowerCase();
+        if (/^h[1-6]$/.test(tag) || tag === 'ul' || tag === 'ol' || tag === 'blockquote' || tag === 'figure') {
+          result.push(node.outerHTML); return;
+        }
+        if (tag === 'img') { result.push(`<figure class="reader-fig"><img src="${escapeHtml(node.getAttribute('src')||'')}" alt="${escapeHtml(node.getAttribute('alt')||'')}" loading="lazy" style="max-width:100%;height:auto;border-radius:4px;margin:16px 0;"></figure>`); return; }
+        const text = node.textContent.trim();
+        if (text) result.push(..._reflowArticleText(text));
+      } else if (node.nodeType === Node.TEXT_NODE) {
+        const text = node.textContent.trim();
+        if (text) result.push(..._reflowArticleText(text));
+      }
+    });
+    return result.join('\n') || html;
+  }
+  function extractWebArticle(html, baseUrl) {
+    const parser = new DOMParser();
+    const doc    = parser.parseFromString(html, 'text/html');
+    const base   = doc.createElement('base'); base.href = baseUrl; doc.head.appendChild(base);
+    [
+      'script','style','nav','footer','aside','iframe','noscript','form','header','button','input','select','textarea','object','embed',
+      '.ad','.ads','.advertisement','.advert','.ad-unit','.ad-slot','.ad-container','.dfp-ad','.google-ad',
+      '[id*="google_ads"],[id*="dfp"],[class*="ad-"],[class*="-ad"],[class*="advert"],[class*="sponsor"],[class*="promo"]',
+      '.social-share','.share','.sharing','.related','.recommended','[class*="related"],[class*="recommended"]',
+      '#comments','.comments','[class*="comment"],[class*="newsletter"],[class*="subscribe"],[class*="paywall"]',
+      '.breadcrumb','.tags','.tag-list','.author-bio','[class*="author-bio"]',
+      '[class*="sticky"],[class*="toast"],[class*="popup"],[class*="modal"],[class*="overlay"],[class*="banner"],[class*="widget"]',
+      'figure','picture','.article-image','[class*="hero-img"],[class*="lead-img"],[class*="featured-img"]',
+      '[class*="pull-quote"],[class*="callout"]'
+    ].forEach(sel => { try { doc.querySelectorAll(sel).forEach(el => el.remove()); } catch{} });
+    Array.from(doc.querySelectorAll('div,p,section,span,ul,ol,li,blockquote,h1,h2,h3,h4,h5,h6')).reverse()
+      .forEach(el => { if (el.textContent.trim() === '' && !el.querySelector('img')) el.remove(); });
+    const selectors = ['article[class*="article"]','article[class*="story"]','article','[class*="article-body"]','[class*="story-body"]','[class*="story-content"]','[class*="article-content"]','[class*="entry-content"]','#article-content','#story-content','.content-area','.article-txt','main','[role="main"]'];
+    let mainEl = null;
+    for (const sel of selectors) {
+      const el = doc.querySelector(sel);
+      if (el && el.textContent.trim().length > 300) { mainEl = el; break; }
+    }
+    if (!mainEl) return null;
+    currentArticleText = mainEl.innerText || mainEl.textContent;
+    const cleaned = _sanitizeWebHtml(mainEl.innerHTML);
+    return _buildRichLayout(cleaned);
+  }
+
+  /* ══════════════════════════════════════════════════════════════
      §12  ARTICLE CONTENT EXTRACTION (local, no AI)
      Same pipeline as the PDF extractor — sanitise → extract → reflow
   ══════════════════════════════════════════════════════════════ */
@@ -1360,11 +1448,19 @@
     setReaderProgress(70);
 
     if (rawHtml) {
-      const cleanHtml = extractMainContent(rawHtml, url);
+      const cleanHtml = extractWebArticle(rawHtml, url);
       if (cleanHtml && cleanHtml.length > 200) {
         articleCache[url] = { cleanHtml, articleText: currentArticleText };
         setReaderProgress(100);
         _renderWebArticle(cleanHtml, title, feedName, pubDate, url);
+        return;
+      }
+      // Fallback to original extractor
+      const fallbackHtml = extractMainContent(rawHtml, url);
+      if (fallbackHtml && fallbackHtml.length > 200) {
+        articleCache[url] = { cleanHtml: fallbackHtml, articleText: currentArticleText };
+        setReaderProgress(100);
+        _renderWebArticle(fallbackHtml, title, feedName, pubDate, url);
         return;
       }
     }
