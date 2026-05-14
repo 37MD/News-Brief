@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pulse 15D — Local Intelligence Terminal</title>
+  <title>Pulse 15D1 — Local Intelligence Terminal</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&family=Noto+Sans:wght@400;500&display=swap" rel="stylesheet">
 
   <style>
@@ -445,10 +445,10 @@
       </div>
       <div class="km-label" style="margin-top:6px;">Model (cascade order)</div>
       <select id="km-model-select" class="km-input" style="width:100%;margin-bottom:8px;height:30px;">
-        <option value="gemini-2.5-flash-preview-05-20">Gemini 2.5 Flash — default</option>
-        <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
-        <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash-Lite — fastest/free</option>
-        <option value="gemini-2.5-pro-preview-05-06">Gemini 2.5 Pro — most capable</option>
+        <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash-Lite — default/fastest</option>
+        <option value="gemini-3-flash">Gemini 3 Flash</option>
+        <option value="gemini-3.1-pro">Gemini 3.1 Pro — most capable</option>
+        <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash-Lite — fallback</option>
       </select>
       <div id="km-status" class="km-status"></div>
       <div class="km-footer">Keys saved in IndexedDB — never asked again · <span>aistudio.google.com/apikey</span></div>
@@ -459,7 +459,7 @@
   <!-- Masthead -->
   <div class="masthead">
     <div class="tagline" id="header-date">Local Intelligence Terminal</div>
-    <div class="masthead-title">Pulse<span style="font-size:11px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.55;">15D</span></div>
+    <div class="masthead-title">Pulse<span style="font-size:11px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.55;">15D1</span></div>
     <div class="tagline">RSS + PDF · Local Engine + AI Panel</div>
   </div>
   <div id="key-status-badge"></div>
@@ -536,7 +536,7 @@
     PAGE_SIZE:          10,
     MAX_LS_PER_FEED:    100,
     DEDUP_THRESHOLD:    0.60,
-    GEMINI_MODELS:      ['gemini-2.0-flash-lite', 'gemini-2.0-flash', 'gemini-2.5-pro-preview-05-06']
+    GEMINI_MODELS:      ['gemini-3.1-flash-lite', 'gemini-3-flash', 'gemini-3.1-pro', 'gemini-2.0-flash-lite']
   });
 
   /* ══════════════════════════════════════════════════════════════
@@ -735,33 +735,34 @@
       : `No keys saved. PDF & RSS reading work locally. Keys only needed for AI panel.`;
   }
   function _updateKeyStatusBadge() {
-    const k1 = _getRawKey(1), k2 = _getRawKey(2);
-    if (!k1 && !k2) {
+    const k1 = _getRawKey(1), k2 = _getRawKey(2), k3 = _getRawKey(3);
+    if (!k1 && !k2 && !k3) {
       DOM.keyStatusBadge.innerHTML = '<span style="font-size:9px;font-family:\'IBM Plex Mono\',monospace;text-align:center;display:block;padding:2px;color:#5a554c;">No AI key saved — tap 🔑 to add free Gemini key (stored permanently, never asked again)</span>';
       return;
     }
-    const k3b = _getRawKey(3);
-    const nKeys = [k1,k2,k3b].filter(Boolean).length;
+    const nKeys = [k1,k2,k3].filter(Boolean).length;
     const slotLabel = `✓ ${nKeys} key${nKeys>1?'s':''} stored`;
-    const mdl = localStorage.getItem('pulse15d_ai_model') || 'gemini-2.5-flash-preview-05-20';
-    const mdlLabel = mdl.replace('gemini-2.5-flash-preview-05-20','2.5 Flash').replace('gemini-2.0-flash-lite','2.0 Lite').replace('gemini-2.0-flash','2.0 Flash').replace('gemini-2.5-pro-preview-05-06','2.5 Pro');
+    const mdl = localStorage.getItem('pulse15d_ai_model') || 'gemini-3.1-flash-lite';
+    const mdlLabel = mdl.replace('gemini-3.1-flash-lite','3.1 Flash-Lite').replace('gemini-3-flash','3 Flash').replace('gemini-3.1-pro','3.1 Pro').replace('gemini-2.0-flash-lite','2.0 Flash-Lite');
     DOM.keyStatusBadge.innerHTML = `<span style="font-size:9px;font-family:'IBM Plex Mono',monospace;text-align:center;display:block;padding:2px;color:#5a554c;">AI: ${slotLabel} · ${mdlLabel} · Cascade K1→K2→K3 on quota · ⚡ panel in reader</span>`;
   }
 
   function openKeyManager() {
     DOM.keyManagerBox.classList.add('open');
     DOM.kmK1Input.value = ''; DOM.kmK2Input.value = '';
+    if (DOM.kmK3Input) DOM.kmK3Input.value = '';
     _refreshKmButtons(); _updateKmStatus();
     const k1 = _getRawKey(1), k2 = _getRawKey(2), k3 = _getRawKey(3);
     DOM.kmK1Input.placeholder = k1 ? `Stored (${_maskKey(k1)}) — paste to replace` : 'AIza… (paste Key 1)';
     DOM.kmK2Input.placeholder = k2 ? `Stored (${_maskKey(k2)}) — paste to replace` : 'AIza… (paste Key 2)';
     if (DOM.kmK3Input) DOM.kmK3Input.placeholder = k3 ? `Stored (${_maskKey(k3)}) — paste to replace` : 'AIza… (paste Key 3)';
-    if (DOM.kmModelSelect) DOM.kmModelSelect.value = localStorage.getItem('pulse15d_ai_model') || 'gemini-2.5-flash-preview-05-20';
+    if (DOM.kmModelSelect) DOM.kmModelSelect.value = localStorage.getItem('pulse15d_ai_model') || 'gemini-3.1-flash-lite';
     setTimeout(() => DOM.kmK1Input.focus(), 80);
   }
   function closeKeyManager() {
     DOM.keyManagerBox.classList.remove('open');
     DOM.kmK1Input.value = ''; DOM.kmK2Input.value = '';
+    if (DOM.kmK3Input) DOM.kmK3Input.value = '';
   }
   function _saveKey(slot, val) {
     if (!val) return;
@@ -776,28 +777,11 @@
   /* ══════════════════════════════════════════════════════════════
      §6  GEMINI API (only used for web article AI — optional)
   ══════════════════════════════════════════════════════════════ */
+  /* callGemini — delegates to AI module so all 3 key slots + full model cascade are used */
   async function callGemini(promptText) {
-    const k1 = _getRawKey(1), k2 = _getRawKey(2);
-    if (!k1 && !k2) throw new Error('No API key. Tap 🔑 to add one.');
-    const payload = { contents: [{ role: 'user', parts: [{ text: promptText }] }], generationConfig: { temperature: 0.1, maxOutputTokens: 2048 } };
-    const allModels  = CONFIG.GEMINI_MODELS;
-    const startIdx   = allModels.indexOf(getGeminiModel());
-    const modelQueue = allModels.slice(startIdx >= 0 ? startIdx : 0);
-    for (const model of modelQueue) {
-      for (const slot of [1, 2]) {
-        const k = slot === 1 ? k1 : k2;
-        if (!k) continue;
-        const ep = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${k}`;
-        try {
-          const res = await fetch(ep, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-          if (res.status === 429) continue;
-          _activeKeySlot = slot; _activeCascadeModel = model;
-          _updateKeyStatusBadge();
-          return res;
-        } catch(e) { throw new Error(`Network error: ${e.message}`); }
-      }
-    }
-    throw new Error('All API keys hit quota. Wait a minute and retry.');
+    if (!_getRawKey(1) && !_getRawKey(2) && !_getRawKey(3))
+      throw new Error('No API key. Tap \uD83D\uDD11 to add one.');
+    return AI._callGeminiRaw(promptText);
   }
 
   /* ══════════════════════════════════════════════════════════════
@@ -1101,8 +1085,8 @@
           });
           unique.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
           const label = sectionLabel.replace(/^[📰📊💼💻📝📈🏙️⏱️]\s*/,'');
-          feedCache['section-' + reqId] = { timestamp: Date.now(), items: unique, feedName: label };
-          startPagination(unique, label, 'section-' + reqId);
+          feedCache[feedVal] = { timestamp: Date.now(), items: unique, feedName: label };
+          startPagination(unique, label, feedVal);
         } catch(err) {
           if (reqId !== requestCounter) return;
           DOM.output.innerHTML = `<div class="system-msg error">❌ Error: ${escapeHtml(err.message)}</div>`;
@@ -1757,9 +1741,7 @@
       canvas{max-width:100%;box-shadow:0 4px 20px rgba(0,0,0,0.5);}
       p{color:#fff;font-family:monospace;font-size:12px;text-align:center;}</style></head>
       <body><div><p>Rendering page ${pageNum}…</p><canvas id="c"></canvas></div>
-      <script>
-        const src='${location.href}';
-      <\/script></body></html>`);
+      </body></html>`);
     win.document.close();
     currentPdfDoc.getPage(pageNum).then(pg => {
       const vp  = pg.getViewport({ scale: 1.8 });
@@ -1791,7 +1773,7 @@
       if (DOM.kmK3Save) DOM.kmK3Save.addEventListener('click', () => _saveKey(3, (DOM.kmK3Input?.value||'').trim()));
       // Sync model select from localStorage
       if (DOM.kmModelSelect) {
-        DOM.kmModelSelect.value = localStorage.getItem('pulse15d_ai_model') || 'gemini-2.5-flash-preview-05-20';
+        DOM.kmModelSelect.value = localStorage.getItem('pulse15d_ai_model') || 'gemini-3.1-flash-lite';
         DOM.kmModelSelect.addEventListener('change', () => {
           localStorage.setItem('pulse15d_ai_model', DOM.kmModelSelect.value);
           _updateKeyStatusBadge();
@@ -1811,7 +1793,7 @@
       AI.wireEvents();
       DOM.refreshBtn.addEventListener('click', () => {
         Object.keys(feedCache).forEach(k => delete feedCache[k]);
-        Object.keys(localStorage).filter(k => k.startsWith('pulse15a_')).forEach(k => localStorage.removeItem(k));
+        Object.keys(localStorage).filter(k => k.startsWith('pulse15d_')).forEach(k => localStorage.removeItem(k));
         loadFeed(true);
       });
 
@@ -1889,10 +1871,10 @@
     let _context = '';   // article text sent to Gemini
 
     const MODEL_CASCADE = [
-      'gemini-2.5-flash-preview-05-20',
-      'gemini-2.0-flash',
-      'gemini-2.0-flash-lite',
-      'gemini-2.5-pro-preview-05-06'
+      'gemini-3.1-flash-lite',
+      'gemini-3-flash',
+      'gemini-3.1-pro',
+      'gemini-2.0-flash-lite'
     ];
 
     // ── DOM shortcuts ──
@@ -1928,10 +1910,10 @@
     }
     function _saveModel(m) { localStorage.setItem('pulse15d_ai_model', m); }
     function _modelLabel(m) {
-      return m.replace('gemini-2.5-flash-preview-05-20','2.5 Flash')
-              .replace('gemini-2.0-flash-lite','2.0 Flash-Lite')
-              .replace('gemini-2.0-flash','2.0 Flash')
-              .replace('gemini-2.5-pro-preview-05-06','2.5 Pro');
+      return m.replace('gemini-3.1-flash-lite','3.1 Flash-Lite')
+              .replace('gemini-3-flash','3 Flash')
+              .replace('gemini-3.1-pro','3.1 Pro')
+              .replace('gemini-2.0-flash-lite','2.0 Flash-Lite');
     }
 
     // ── call Gemini with full cascade ──
@@ -2105,20 +2087,7 @@
         this.style.height = Math.min(this.scrollHeight, 110) + 'px';
       });
 
-      // ── 3-key manager wiring (replaces old 2-key wiring) ──
-      document.getElementById('km-k3-save')?.addEventListener('click', () => {
-        const inp = document.getElementById('km-k3-input');
-        if (inp?.value.trim()) {
-          _saveKey(3, inp.value.trim());
-          AI.refreshKmButtons();
-        }
-      });
-      document.getElementById('km-k3-input')?.addEventListener('keydown', e => {
-        if (e.key === 'Enter') document.getElementById('km-k3-save')?.click();
-        if (e.key === 'Escape') closeKeyManager();
-      });
-
-      // Model select
+      // ── Model select (AI panel label sync) ──
       const modelSel = document.getElementById('km-model-select');
       if (modelSel) {
         modelSel.value = _getModel();
@@ -2138,7 +2107,7 @@
       if (inp) inp.placeholder = k3 ? `Stored (…${k3.slice(-3)}) — paste to replace` : 'AIza… (paste Key 3)';
     }
 
-    return { show, hide, setContext, wireEvents: _wireEvents, loadKeys: _loadKeys, saveKey: _saveKey, getKey: _getKey, hasAnyKey: _hasAnyKey, refreshKmButtons };
+    return { show, hide, setContext, wireEvents: _wireEvents, loadKeys: _loadKeys, saveKey: _saveKey, getKey: _getKey, hasAnyKey: _hasAnyKey, refreshKmButtons, _callGeminiRaw: _callGemini };
   })();
 
 </script>
