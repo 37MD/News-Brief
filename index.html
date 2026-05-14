@@ -1007,6 +1007,7 @@
                role="button" tabindex="0">${escapeHtml(item.title || 'Untitled')}</span>` +
         (desc ? `<p class="description">${escapeHtml(desc)}</p>` : '') +
         `<div class="meta"><span>${timeSince(item.pubDate)} &mdash; ${escapeHtml(item._feedName || '')}</span>` +
+        (item._altSources?.length ? `<span class="alt-sources" style="font-size:9px;color:var(--meta-color);">Also in ${item._altSources.map(a => `<a href="${escapeHtml(safeUrl(a.link))}" target="_blank" style="color:var(--accent);text-decoration:underline;cursor:pointer;" title="Open in ${escapeHtml(a.feedName)}">${escapeHtml(a.feedName)}</a>`).join(', ')}</span>` : '') +
         `<button class="view-orig-btn" onclick="window.open('${escapeHtml(safeUrl(item.link))}','_blank')">↗ Original site</button></div>`;
       frag.appendChild(el);
 
@@ -1098,11 +1099,18 @@
           }
           if (reqId !== requestCounter) return;
           if (!allItems.length) { setFeedStatus('📭 No articles found across any source.'); return; }
-          // Deduplicate by title similarity
+          // Deduplicate by title similarity — keep alt sources
           const unique = [];
           allItems.forEach(item => {
-            const dup = unique.some(e => e.id === item.id || similarity(e.title, item.title) >= 0.5);
-            if (!dup) unique.push(item);
+            const dup = unique.find(e => e.id === item.id || similarity(e.title, item.title) >= 0.5);
+            if (dup) {
+              if (!dup._altSources) dup._altSources = [];
+              if (!dup._altSources.some(a => a.feedName === item._feedName)) {
+                dup._altSources.push({ feedName: item._feedName, link: item.link });
+              }
+            } else {
+              unique.push(item);
+            }
           });
           unique.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
           const label = sectionLabel.replace(/^[📰📊💼💻📝📈🏙️⏱️]\s*/,'');
