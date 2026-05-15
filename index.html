@@ -960,19 +960,16 @@
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   }
-  function lsMarkViewed(feedUrl, aid, dateStamp) {
+  function lsMarkViewed(feedUrl, aid) {
+    // HARD DELETE: permanently remove the article from localStorage right now.
+    // "Delete means delete" — it must not come back on restart.
     let obj = lsLoad(feedUrl);
-    // If no LS entry exists yet (common for section-aggregated sources never
-    // loaded individually), create a minimal stub so the flag is persisted.
-    if (!obj) obj = { feedName: feedUrl, items: [] };
-    let found = obj.items.find(i => i.id === aid);
-    if (!found) {
-      found = { id: aid, title: '', viewed: false };
-      obj.items.unshift(found);
+    if (!obj) return; // nothing stored yet for this feed — nothing to remove
+    const before = obj.items.length;
+    obj.items = obj.items.filter(i => i.id !== aid);
+    if (obj.items.length !== before) {
+      lsSave(feedUrl, obj.feedName, obj.items);
     }
-    found.viewed   = true;
-    found.viewedAt = dateStamp || _todayStamp();
-    lsSave(feedUrl, obj.feedName, obj.items);
   }
   function articleId(title) {
     return title ? title.trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').substring(0,60) : '';
@@ -1007,14 +1004,10 @@
   /* ══════════════════════════════════════════════════════════════
      §9b  PURGE (runs on startup)
      • Stories older than 4 days are removed unconditionally.
-     • Articles marked viewed on a PREVIOUS calendar day are removed.
-       (Articles read TODAY stay hidden this session but survive in LS
-        until tomorrow, so they won't reappear if the user refreshes
-        the same day.)
+     • Any item still flagged viewed = delete it (safety net for any
+       legacy entries written before the hard-delete fix).
   ══════════════════════════════════════════════════════════════ */
   function purgeOldStories() {
-    const today  = _todayStamp();
-    const cutoff = Date.now() - CONFIG.STORY_MAX_AGE_MS;
     const keysToCheck = Object.keys(localStorage).filter(k => k.startsWith('pulse15d_'));
     keysToCheck.forEach(lk => {
       try {
@@ -1029,9 +1022,8 @@
             const age = Date.now() - new Date(item.pubDate).getTime();
             if (!isNaN(age) && age >= CONFIG.STORY_MAX_AGE_MS) return false;
           }
-          // 2. Remove if viewed on a PREVIOUS calendar day
-          if (item.viewed && item.viewedAt && item.viewedAt < today) return false;
-          // 3. Keep everything else (including items viewed today — hide in session only)
+          // 2. Remove any legacy viewed-flagged items (safety net)
+          if (item.viewed) return false;
           return true;
         });
         if (obj.items.length !== before) {
@@ -1159,10 +1151,36 @@
     }
   }
   function deleteReadFeeds(upTo) {
+    // Collect article IDs and their feedUrls BEFORE removing DOM nodes
+    const toDelete = {}; // feedUrl → Set of article ids
     const items = DOM.output.querySelectorAll('.feed-item');
     items.forEach(el => {
       const idx = parseInt(el.dataset.globalIdx, 10);
-      if (idx < upTo) el.remove();
+      if (idx < upTo) {
+        // Grab feedUrl from the headline's data attribute
+        const headline = el.querySelector('[data-feed-url]');
+        const feedUrl  = headline ? headline.getAttribute('data-feed-url') : '';
+        const aid      = el.dataset.articleId || (headline ? headline.getAttribute('data-article-id') : '');
+        if (feedUrl && aid) {
+          if (!toDelete[feedUrl]) toDelete[feedUrl] = new Set();
+          toDelete[feedUrl].add(aid);
+        }
+        el.remove();
+      }
+    });
+    // Permanently remove from localStorage so they never come back
+    Object.entries(toDelete).forEach(([feedUrl, ids]) => {
+      let obj = lsLoad(feedUrl);
+      if (!obj) return;
+      obj.items = obj.items.filter(i => !ids.has(i.id));
+      lsSave(feedUrl, obj.feedName, obj.items);
+    });
+    // Also drop from in-memory page list
+    page.items = page.items.filter((_, i) => i >= upTo);
+    // Shift globalIdx on remaining DOM nodes so pagination stays consistent
+    DOM.output.querySelectorAll('.feed-item').forEach(el => {
+      const idx = parseInt(el.dataset.globalIdx, 10);
+      el.dataset.globalIdx = idx - upTo;
     });
   }
 
