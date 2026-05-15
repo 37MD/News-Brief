@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pulse 15G — Local Intelligence Terminal</title>
+  <title>Pulse 15I — Local Intelligence Terminal</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&family=Noto+Sans:wght@400;500&display=swap" rel="stylesheet">
 
   <style>
@@ -31,7 +31,7 @@
       padding: 5px 10px;
       display: flex; justify-content: center; align-items: center;
       border-bottom: 1px solid var(--rule); background: #e4eaf2;
-      position: relative;
+      position: relative; z-index: 500;
     }
     .controls-row {
       display: flex; align-items: center; gap: 6px;
@@ -59,10 +59,10 @@
     .news-feeds-btn .nf-arrow { display: inline-block; transition: transform 0.22s; font-style: normal; font-size: 9px; }
     .news-feeds-btn.open .nf-arrow { transform: rotate(180deg); }
     .news-feeds-menu {
-      display: none; position: absolute; top: calc(100% + 4px); left: 0;
+      display: none; position: fixed;
       background: var(--paper); border: 1.5px solid var(--accent);
-      border-radius: 8px; box-shadow: 0 8px 28px rgba(0,0,0,0.18);
-      z-index: 1500; min-width: 160px; overflow: hidden;
+      border-radius: 8px; box-shadow: 0 8px 28px rgba(0,0,0,0.28);
+      z-index: 9999; min-width: 160px; overflow: hidden;
       animation: nfFade 0.15s ease;
     }
     .news-feeds-menu.open { display: block; }
@@ -96,7 +96,7 @@
       background: #e4eaf2; border-bottom: 1px solid var(--rule);
       overflow: hidden; max-height: 0;
       transition: max-height 0.28s cubic-bezier(.4,0,.2,1);
-      z-index: 100;
+      z-index: 600;
     }
     .sources-drawer.open { max-height: 160px; }
     .sources-drawer-inner {
@@ -166,7 +166,7 @@
     /* ════════════════════════════════════════════════
        §3  MASTHEAD
     ════════════════════════════════════════════════ */
-    .masthead { border-bottom: 3px double var(--ink); padding: 22px 20px 16px; text-align: center; background: var(--paper); position: relative; }
+    .masthead { border-bottom: 3px double var(--ink); padding: 22px 20px 16px; text-align: center; background: var(--paper); position: relative; z-index: 1; }
     .masthead-title { font-family: 'Playfair Display', serif; font-size: clamp(28px, 5vw, 52px); font-weight: 700; }
     .tagline { font-family: 'IBM Plex Mono', monospace; font-size: 9px; letter-spacing: 0.18em; text-transform: uppercase; color: var(--meta-color); margin-top: 5px; }
     #key-status-badge { font-family: 'IBM Plex Mono', monospace; font-size: 9px; text-align: center; padding: 2px 0 1px; letter-spacing: 0.05em; color: var(--ink); }
@@ -574,7 +574,7 @@
   <!-- Masthead -->
   <div class="masthead">
     <div class="tagline" id="header-date">Local Intelligence Terminal</div>
-    <div class="masthead-title">Pulse<span style="font-size:11px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.55;">15G</span></div>
+    <div class="masthead-title">Pulse<span style="font-size:11px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.55;">15I</span></div>
     <div class="tagline">RSS + PDF · Local Engine + AI Panel</div>
   </div>
   <div id="key-status-badge"></div>
@@ -2046,6 +2046,9 @@
         }
 
         function openMenu() {
+          const r = feedsBtn.getBoundingClientRect();
+          feedsMenu.style.top  = (r.bottom + 4) + 'px';
+          feedsMenu.style.left = r.left + 'px';
           feedsMenu.classList.add('open');
           feedsBtn.classList.add('open');
           menuOpen = true;
