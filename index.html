@@ -961,15 +961,17 @@
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   }
   function lsMarkViewed(feedUrl, aid, dateStamp) {
-    const obj = lsLoad(feedUrl);
-    if (!obj) return;
-    obj.items.forEach(i => {
-      if (i.id === aid) {
-        i.viewed    = true;
-        // Store the calendar day it was read; deletion fires on next calendar day
-        i.viewedAt  = dateStamp || _todayStamp();
-      }
-    });
+    let obj = lsLoad(feedUrl);
+    // If no LS entry exists yet (common for section-aggregated sources never
+    // loaded individually), create a minimal stub so the flag is persisted.
+    if (!obj) obj = { feedName: feedUrl, items: [] };
+    let found = obj.items.find(i => i.id === aid);
+    if (!found) {
+      found = { id: aid, title: '', viewed: false };
+      obj.items.unshift(found);
+    }
+    found.viewed   = true;
+    found.viewedAt = dateStamp || _todayStamp();
     lsSave(feedUrl, obj.feedName, obj.items);
   }
   function articleId(title) {
@@ -1238,8 +1240,19 @@
           });
           unique.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
           const label = sectionLabel.replace(/^[📰📊💼💻📝📈🏙️⏱️]\s*/,'');
+
+          // ── Mark viewed status from each source's LS store ──
+          unique.forEach(item => {
+            if (!item._feedUrl) return;
+            const stored = lsLoad(item._feedUrl);
+            if (!stored) return;
+            const match = stored.items.find(s => s.id === item.id);
+            if (match && match.viewed) item.viewed = true;
+          });
+
           feedCache[feedVal] = { timestamp: Date.now(), items: unique, feedName: label };
-          startPagination(unique, label, feedVal);
+          const display = unique.filter(i => !i.viewed);
+          startPagination(display.length ? display : unique, label, feedVal);
         } catch(err) {
           if (reqId !== requestCounter) return;
           DOM.output.innerHTML = `<div class="system-msg error">❌ Error: ${escapeHtml(err.message)}</div>`;
