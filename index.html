@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pulse 16 — Local Intelligence Terminal</title>
+  <title>Pulse 15G — Local Intelligence Terminal</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&family=Noto+Sans:wght@400;500&display=swap" rel="stylesheet">
 
   <style>
@@ -26,13 +26,17 @@
     /* ════════════════════════════════════════════════
        §2  CONTROLS BAR
     ════════════════════════════════════════════════ */
+    /* ── Controls bar — single compact row ── */
     .controls-bar {
-      padding: 5px 16px 0;
+      padding: 5px 10px;
       display: flex; justify-content: center; align-items: center;
-      gap: 8px; flex-wrap: wrap;
       border-bottom: 1px solid var(--rule); background: #e4eaf2;
+      position: relative;
     }
-    .controls-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; padding-bottom: 5px; width: 100%; justify-content: center; }
+    .controls-row {
+      display: flex; align-items: center; gap: 6px;
+      flex-wrap: nowrap; width: 100%; justify-content: center;
+    }
     select {
       font-family: 'IBM Plex Mono', monospace; font-size: 11px;
       background: #e4eaf2; color: var(--ink); border: 1px solid var(--accent);
@@ -40,17 +44,99 @@
       font-weight: 500; max-width: 220px;
     }
     select:hover { border-color: var(--ink); }
+
+    /* ── News Feeds Dropdown ── */
+    .news-feeds-wrapper { position: relative; display: inline-flex; }
+    .news-feeds-btn {
+      font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700;
+      text-transform: uppercase; letter-spacing: 0.05em;
+      padding: 5px 11px; border-radius: 20px; cursor: pointer;
+      border: 1.5px solid var(--accent); background: var(--accent); color: #f5f0e8;
+      white-space: nowrap; transition: all 0.18s; line-height: 1.3;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .news-feeds-btn:hover { background: #13472c; border-color: #13472c; }
+    .news-feeds-btn .nf-arrow { display: inline-block; transition: transform 0.22s; font-style: normal; font-size: 9px; }
+    .news-feeds-btn.open .nf-arrow { transform: rotate(180deg); }
+    .news-feeds-menu {
+      display: none; position: absolute; top: calc(100% + 4px); left: 0;
+      background: var(--paper); border: 1.5px solid var(--accent);
+      border-radius: 8px; box-shadow: 0 8px 28px rgba(0,0,0,0.18);
+      z-index: 1500; min-width: 160px; overflow: hidden;
+      animation: nfFade 0.15s ease;
+    }
+    .news-feeds-menu.open { display: block; }
+    @keyframes nfFade { from { opacity:0; transform:translateY(-4px); } to { opacity:1; transform:translateY(0); } }
+    .nf-item {
+      font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 500;
+      padding: 9px 14px; cursor: pointer; color: var(--ink);
+      border-bottom: 1px solid var(--rule); white-space: nowrap;
+      transition: background 0.13s; display: flex; align-items: center; gap: 7px;
+    }
+    .nf-item:last-child { border-bottom: none; }
+    .nf-item:hover { background: #dde5ee; }
+    .nf-item.active { background: #1a5c3a18; color: var(--accent); font-weight: 700; }
+
+    /* ── Sources button (inline, same row) ── */
+    .sources-toggle-btn {
+      font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 600;
+      letter-spacing: 0.05em; text-transform: uppercase;
+      background: transparent; border: 1px solid var(--rule); border-radius: 20px;
+      padding: 5px 10px; cursor: pointer; color: var(--muted);
+      display: inline-flex; align-items: center; gap: 4px; transition: all 0.18s;
+      white-space: nowrap;
+    }
+    .sources-toggle-btn:hover { border-color: var(--accent); color: var(--ink); }
+    .sources-toggle-btn .stb-arrow { display: inline-block; transition: transform 0.22s; font-size: 9px; }
+    .sources-toggle-btn.open .stb-arrow { transform: rotate(180deg); }
+
+    /* Sources drawer below the bar */
+    .sources-drawer {
+      position: absolute; top: 100%; left: 0; right: 0;
+      background: #e4eaf2; border-bottom: 1px solid var(--rule);
+      overflow: hidden; max-height: 0;
+      transition: max-height 0.28s cubic-bezier(.4,0,.2,1);
+      z-index: 100;
+    }
+    .sources-drawer.open { max-height: 160px; }
+    .sources-drawer-inner {
+      display: flex; flex-wrap: wrap; gap: 5px;
+      justify-content: center; padding: 6px 12px 8px;
+    }
+    .source-chip {
+      font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 500;
+      padding: 3px 10px; border-radius: 14px; cursor: pointer;
+      border: 1px solid var(--rule); background: #f0ece4; color: var(--muted);
+      white-space: nowrap; transition: all 0.15s;
+    }
+    .source-chip:hover { border-color: var(--accent); color: var(--ink); background: #dde5ee; }
+    .source-chip.active { background: #1a5c3a22; border-color: var(--accent); color: var(--accent); font-weight: 700; }
+
+    /* ── Utility icon buttons ── */
     .btn-outline {
       font-family: 'IBM Plex Mono', monospace; font-size: 11px;
       background: transparent; border: 1px solid var(--accent);
-      padding: 5px 11px; border-radius: 4px; cursor: pointer;
+      padding: 5px 9px; border-radius: 4px; cursor: pointer;
       text-transform: uppercase; font-weight: 700; color: var(--ink);
       transition: background 0.2s; white-space: nowrap;
     }
     .btn-outline:hover    { background: #d0d7e0; }
     .btn-outline:disabled { opacity: 0.4; cursor: not-allowed; }
-    #refresh-btn.spinning { animation: spin 1s linear infinite; display: inline-block; }
+
+    /* Circular refresh button */
+    #refresh-btn {
+      width: 30px; height: 30px; padding: 0;
+      border-radius: 50%; border: 1.5px solid var(--accent);
+      background: transparent; cursor: pointer;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 15px; color: var(--ink); transition: background 0.2s;
+      flex-shrink: 0;
+    }
+    #refresh-btn:hover { background: #d0d7e0; }
+    #refresh-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+    #refresh-btn.spinning { animation: spin 1s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
+
     #key-mgr-btn { border-color: #009e70; }
     #key-mgr-btn:hover { background: #d0ede3; }
 
@@ -335,13 +421,9 @@
 
   <!-- Controls bar -->
   <div class="controls-bar" style="position:relative;">
-    <div class="controls-row">
 
-      <!-- PDF Summary button (hidden until PDF loaded) -->
-      <button class="btn-outline" id="overall-summary-btn" style="display:none;">📊 PDF Summary</button>
-
-      <!-- Feed selector -->
-      <select id="feed-dropdown" aria-label="Select news feed">
+    <!-- Hidden legacy select — still the engine that loadFeed() reads -->
+    <select id="feed-dropdown" aria-label="Select news feed" style="display:none;">
         <optgroup label="══ Top News ══">
           <option value="section-topnews" selected>📰 All Top News</option>
           <option value="https://www.thehindu.com/feeder/default.rss"> The Hindu</option>
@@ -354,9 +436,6 @@
           <option value="https://www.dnaindia.com/feeds/latest.xml"> DNA India</option>
           <option value="https://www.hindustantimes.com/feeds/rss/india-news/rssfeed.xml"> Hindustan Times</option>
           <option value="https://feeds.feedburner.com/ScrollinArticles.rss"> Scroll.in</option>
-          <option value="http://timesofindia.indiatimes.com/rssfeedmostread.cms"> TOI Most Read</option>
-          <option value="https://www.thehindu.com/?service=rss"> The Hindu Main</option>
-          <option value="https://www.thehindu.com/news/national/?service=rss"> The Hindu National</option>
         </optgroup>
         <optgroup label="══ Economy ══">
           <option value="section-economy">📊 All Economy</option>
@@ -366,10 +445,6 @@
           <option value="https://timesofindia.indiatimes.com/rssfeeds/1898055.cms?x=1"> Times of India</option>
           <option value="https://economictimes.indiatimes.com/rssfeeds/1373380680.cms"> Economic Times</option>
           <option value="https://www.livemint.com/rss/economy"> Live Mint</option>
-          <option value="http://economictimes.indiatimes.com/rssfeeds/1286551815.cms"> ET Finance</option>
-          <option value="http://economictimes.indiatimes.com/rssfeeds/1200949414.cms"> ET Foreign Trade</option>
-          <option value="http://economictimes.indiatimes.com/rssfeeds/1106944246.cms"> ET Policy</option>
-          <option value="http://economictimes.indiatimes.com/rssfeeds/1202099874.cms"> ET Agriculture</option>
         </optgroup>
         <optgroup label="══ Business ══">
           <option value="section-business">💼 All Business</option>
@@ -381,16 +456,6 @@
           <option value="https://www.livemint.com/rss/companies"> Live Mint</option>
           <option value="https://www.business-standard.com/rss/latest.rss"> Business Standard</option>
           <option value="https://www.hindustantimes.com/feeds/rss/business/rssfeed.xml"> Hindustan Times</option>
-          <option value="http://timesofindia.indiatimes.com/rssfeeds/-2128682902.cms"> TOI Business</option>
-          <option value="https://www.thehindubusinessline.com/feeder/default.rss"> BusinessLine Main</option>
-          <option value="https://www.thehindubusinessline.com/specials/feeder/default.rss"> BL Specials</option>
-          <option value="http://feeds.feedburner.com/ForbesIndia"> Forbes India</option>
-          <option value="http://www.rediff.com/rss/moneyrss.xml"> Rediff Money</option>
-          <option value="http://economictimes.indiatimes.com/News/rssfeeds/1715249553.cms"> ET News</option>
-          <option value="http://economictimes.indiatimes.com/rssfeeds/13352306.cms"> ET Industry</option>
-          <option value="http://economictimes.indiatimes.com/rssfeeds/2143429.cms"> ET Companies</option>
-          <option value="http://www.livemint.com/rss/industry"> Mint Industry</option>
-          <option value="https://www.livemint.com/rss/politics"> Mint Politics</option>
         </optgroup>
         <optgroup label="══ Technology ══">
           <option value="section-technology">💻 All Technology</option>
@@ -401,10 +466,6 @@
           <option value="https://economictimes.indiatimes.com/tech/rssfeedsdefault.cms"> Economic Times</option>
           <option value="https://www.livemint.com/rss/technology"> Live Mint</option>
           <option value="https://www.hindustantimes.com/feeds/rss/technology/rssfeed.xml"> Hindustan Times</option>
-          <option value="http://timesofindia.indiatimes.com/rssfeeds/5880659.cms"> TOI Tech Reviews</option>
-          <option value="https://flipboard.com/@thenewsdesk/technology-shjum1jiz.rss"> Flipboard Tech</option>
-          <option value="http://economictimes.indiatimes.com/Infotech/rssfeeds/13357270.cms"> ET Tech</option>
-          <option value="https://www.livemint.com/rss/AI"> Mint AI</option>
         </optgroup>
         <optgroup label="══ Editorial ══">
           <option value="section-editorial">📝 All Editorial</option>
@@ -414,16 +475,6 @@
           <option value="https://economictimes.indiatimes.com/opinion/opinionshome/rssfeeds/897228639.cms"> Economic Times</option>
           <option value="https://www.livemint.com/rss/opinion"> Live Mint</option>
           <option value="https://www.hindustantimes.com/feeds/rss/editorials/rssfeed.xml"> Hindustan Times</option>
-          <option value="https://blogs.timesofindia.indiatimes.com/feed/defaultrss"> TOI Voices</option>
-          <option value="https://timesofindia.indiatimes.com/rssfeeds/-2128669051.cms"> TOI Editorial</option>
-          <option value="https://www.hindustantimes.com/feeds/rss/opinion/rssfeed.xml"> HT Opinion</option>
-          <option value="https://www.hindustantimes.com/feeds/rss/analysis/rssfeed.xml"> HT Analysis</option>
-          <option value="https://indianexpress.com/section/opinion/feed/"> IE Opinion</option>
-          <option value="https://www.thehindubusinessline.com/opinion/?service=rss"> BL Opinion</option>
-          <option value="https://www.thehindubusinessline.com/data-stories/deep-dive/feeder/default.rss"> BL Deep Dive</option>
-          <option value="http://economictimes.indiatimes.com/Opinion/Editorial/rssfeeds/3376910.cms"> ET Editorial</option>
-          <option value="http://feeds.feedburner.com/InterestingThingOfTheDay"> Interesting Thing</option>
-          <option value="https://thewere42.wordpress.com/feed/"> Interesting Things Blog</option>
         </optgroup>
         <optgroup label="══ Markets ══">
           <option value="section-markets">📈 All Markets</option>
@@ -433,11 +484,6 @@
           <option value="https://economictimes.indiatimes.com/markets/stocks/rssfeedsdefault.cms"> Economic Times</option>
           <option value="https://www.livemint.com/rss/markets"> Live Mint</option>
           <option value="https://www.business-standard.com/rss/latest.rss"> Business Standard</option>
-          <option value="http://economictimes.indiatimes.com/rssfeeds/1808152121.cms"> ET Commodities</option>
-          <option value="http://economictimes.indiatimes.com/rssfeeds/14655708.cms"> ET IPOs/FPOs</option>
-          <option value="http://economictimes.indiatimes.com/rssfeeds/2146846.cms"> ET Bonds</option>
-          <option value="http://economictimes.indiatimes.com/rssfeeds/1150221130.cms"> ET Forex</option>
-          <option value="http://economictimes.indiatimes.com/rssfeeds/344531568.cms"> ET Indicators</option>
         </optgroup>
         <optgroup label="══ Mumbai ══">
           <option value="section-mumbai">🏙️ All Mumbai</option>
@@ -445,69 +491,56 @@
           <option value="https://indianexpress.com/section/cities/mumbai/feed/"> Indian Express</option>
           <option value="https://timesofindia.indiatimes.com/rssfeeds/-2128936835.cms"> Times of India</option>
           <option value="https://economictimes.indiatimes.com/city/mumbai/rssfeedsdefault.cms"> Economic Times</option>
-          <option value="https://www.mid-day.com/Resources/midday/rss/news.xml"> Mid-Day</option>
-          <option value="https://www.thehindubusinessline.com/data-stories/feeder/default.rss"> BL Data Stories</option>
         </optgroup>
         <optgroup label="══ Most Recent ══">
           <option value="section-recent">⏱️ All Most Recent</option>
           <option value="https://timesofindia.indiatimes.com/rssfeedmostrecent.cms"> Times of India</option>
           <option value="https://www.business-standard.com/rss/latest.rss"> Business Standard</option>
         </optgroup>
-        <optgroup label="══ World News ══">
-          <option value="section-world">🌍 All World News</option>
-          <option value="https://www.hindustantimes.com/feeds/rss/world-news/rssfeed.xml"> Hindustan Times</option>
-          <option value="https://timesofindia.indiatimes.com/rssfeeds/296589292.cms"> Times of India</option>
-          <option value="http://economictimes.indiatimes.com/rssfeeds/858478126.cms"> Economic Times</option>
-        </optgroup>
-        <optgroup label="══ Science & Education ══">
-          <option value="section-science">🔬 All Science & Education</option>
-          <option value="https://timesofindia.indiatimes.com/rssfeeds/-2128672765.cms"> TOI Science</option>
-          <option value="http://www.livemint.com/rss/science"> Mint Science</option>
-          <option value="https://www.livemint.com/rss/education"> Mint Education</option>
-          <option value="http://timesofindia.indiatimes.com/rssfeeds/913168846.cms"> TOI Education</option>
-        </optgroup>
-        <optgroup label="══ Entertainment ══">
-          <option value="section-entertainment">🎬 All Entertainment</option>
-          <option value="https://timesofindia.indiatimes.com/rssfeeds/1081479906.cms"> TOI Entertainment</option>
-          <option value="http://www.thehindu.com/entertainment/entertainment-history/?service=rss"> The Hindu Culture</option>
-        </optgroup>
-        <optgroup label="══ Magazine ══">
-          <option value="section-magazine">📖 All Magazine</option>
-          <option value="https://theweekmagazine.tumblr.com/rss"> The Week</option>
-          <option value="http://economictimes.indiatimes.com/Features/etfeatures/rssfeeds/1466318837.cms"> ET Panache</option>
-        </optgroup>
-        <optgroup label="══ Personal Finance ══">
-          <option value="section-personalfinance">💰 All Personal Finance</option>
-          <option value="http://tipssbsense.blogspot.com/feeds/posts/default"> Nifty Chart</option>
-          <option value="https://www.charteredclub.com/feed/"> Chartered Club</option>
-          <option value="http://feeds.feedburner.com/TheInvestorBlog"> Capitalmind</option>
-          <option value="https://www.cashoverflow.in/feed/"> Cash Overflow</option>
-          <option value="https://www.safalniveshak.com/feed/"> Safal Niveshak</option>
-          <option value="http://www.stableinvestor.com/feeds/posts/default"> Stable Investor</option>
-          <option value="http://feeds.feedburner.com/freefincal/XFaU"> freefincal</option>
-          <option value="https://www.relakhs.com/feed/"> ReLakhs</option>
-          <option value="http://economictimes.indiatimes.com/Personal-Finance/Mutual-Funds/rssfeeds/359241701.cms"> ET Mutual Funds</option>
-          <option value="https://www.valueinvestorindia.com/feed/"> Value Investor India</option>
-          <option value="http://feeds.feedburner.com/FinanceAndInvesting"> Jagoinvestor</option>
-          <option value="http://feeds2.feedburner.com/vro/main"> Value Research</option>
-          <option value="http://economictimes.indiatimes.com/rssfeeds/837555174.cms"> ET Wealth</option>
-          <option value="http://www.livemint.com/rss/money"> Mint Money</option>
-          <option value="http://economictimes.indiatimes.com/markets/expert-view/rssfeeds/50649960.cms"> ET Expert Views</option>
-        </optgroup>
         </select>
 
-      <!-- Upload PDF -->
-      <button class="btn-outline" id="upload-pdf-btn"><span class="upload-ring"></span>📄 PDF</button>
+      <!-- ── Single compact row: News Feeds · Sources · PDF · ⟳ · 🔑 ── -->
+      <div class="controls-row">
+        <button class="btn-outline" id="overall-summary-btn" style="display:none;">📊 PDF</button>
+
+        <!-- News Feeds dropdown -->
+        <div class="news-feeds-wrapper" id="news-feeds-wrapper">
+          <button class="news-feeds-btn" id="news-feeds-btn">
+            📰 News Feeds <span class="nf-arrow">▾</span>
+          </button>
+          <div class="news-feeds-menu" id="news-feeds-menu">
+            <div class="nf-item active" data-section="section-topnews">📰 Top News</div>
+            <div class="nf-item" data-section="section-economy">📊 Economy</div>
+            <div class="nf-item" data-section="section-business">💼 Business</div>
+            <div class="nf-item" data-section="section-technology">💻 Tech</div>
+            <div class="nf-item" data-section="section-editorial">📝 Editorial</div>
+            <div class="nf-item" data-section="section-markets">📈 Markets</div>
+            <div class="nf-item" data-section="section-mumbai">🏙️ Mumbai</div>
+            <div class="nf-item" data-section="section-recent">⏱️ Recent</div>
+          </div>
+        </div>
+
+        <!-- Sources toggle — inline same row -->
+        <button class="sources-toggle-btn" id="sources-toggle-btn">
+          Sources <span class="stb-arrow">▾</span>
+        </button>
+
+        <button class="btn-outline" id="upload-pdf-btn"><span class="upload-ring"></span>📄</button>
+        <button id="refresh-btn" title="Refresh feed">⟳</button>
+        <button class="btn-outline" id="key-mgr-btn" title="Gemini API Keys">🔑</button>
+      </div>
+
+      <!-- Sources drawer — drops below the bar -->
+      <div class="sources-drawer" id="sources-drawer">
+        <div class="sources-drawer-inner" id="sources-drawer-inner">
+          <!-- populated by JS -->
+        </div>
+      </div>
+
       <input type="file" id="pdf-file-input" accept=".pdf,application/pdf" style="display:none;">
 
-      <!-- Refresh -->
-      <button class="btn-outline" id="refresh-btn" title="Refresh feed">⟳</button>
-
-      <!-- Key manager -->
-      <button class="btn-outline" id="key-mgr-btn" title="Gemini API Keys (optional — for AI chat on web articles)">🔑</button>
-    </div>
-
     <!-- Key Manager dropdown -->
+
     <div id="key-manager-box">
       <div class="km-title">🔑 Gemini AI Keys — Stored permanently · Cascade K1→K2→K3 on quota</div>
       <div class="km-label">Key 1 (Primary)</div>
@@ -541,7 +574,7 @@
   <!-- Masthead -->
   <div class="masthead">
     <div class="tagline" id="header-date">Local Intelligence Terminal</div>
-    <div class="masthead-title">Pulse<span style="font-size:11px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.55;">16</span></div>
+    <div class="masthead-title">Pulse<span style="font-size:11px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.55;">15G</span></div>
     <div class="tagline">RSS + PDF · Local Engine + AI Panel</div>
   </div>
   <div id="key-status-badge"></div>
@@ -640,10 +673,7 @@
       { url: 'https://www.livemint.com/rss/news', label: 'Live Mint' },
       { url: 'https://www.dnaindia.com/feeds/latest.xml', label: 'DNA India' },
       { url: 'https://www.hindustantimes.com/feeds/rss/india-news/rssfeed.xml', label: 'Hindustan Times' },
-      { url: 'https://feeds.feedburner.com/ScrollinArticles.rss', label: 'Scroll.in' },
-      { url: 'http://timesofindia.indiatimes.com/rssfeedmostread.cms', label: 'TOI Most Read' },
-      { url: 'https://www.thehindu.com/?service=rss', label: 'The Hindu Main' },
-      { url: 'https://www.thehindu.com/news/national/?service=rss', label: 'The Hindu National' }
+      { url: 'https://feeds.feedburner.com/ScrollinArticles.rss', label: 'Scroll.in' }
     ],
     'section-economy': [
       { url: 'https://www.thehindu.com/business/Economy/feeder/default.rss', label: 'The Hindu' },
@@ -651,11 +681,7 @@
       { url: 'https://indianexpress.com/section/business/economy/feed/', label: 'Indian Express' },
       { url: 'https://timesofindia.indiatimes.com/rssfeeds/1898055.cms?x=1', label: 'Times of India' },
       { url: 'https://economictimes.indiatimes.com/rssfeeds/1373380680.cms', label: 'Economic Times' },
-      { url: 'https://www.livemint.com/rss/economy', label: 'Live Mint' },
-      { url: 'http://economictimes.indiatimes.com/rssfeeds/1286551815.cms', label: 'ET Finance' },
-      { url: 'http://economictimes.indiatimes.com/rssfeeds/1200949414.cms', label: 'ET Foreign Trade' },
-      { url: 'http://economictimes.indiatimes.com/rssfeeds/1106944246.cms', label: 'ET Policy' },
-      { url: 'http://economictimes.indiatimes.com/rssfeeds/1202099874.cms', label: 'ET Agriculture' }
+      { url: 'https://www.livemint.com/rss/economy', label: 'Live Mint' }
     ],
     'section-business': [
       { url: 'https://www.thehindu.com/business/feeder/default.rss', label: 'The Hindu' },
@@ -665,17 +691,7 @@
       { url: 'https://economictimes.indiatimes.com/news/company/rssfeedsdefault.cms', label: 'Economic Times' },
       { url: 'https://www.livemint.com/rss/companies', label: 'Live Mint' },
       { url: 'https://www.business-standard.com/rss/latest.rss', label: 'Business Standard' },
-      { url: 'https://www.hindustantimes.com/feeds/rss/business/rssfeed.xml', label: 'Hindustan Times' },
-      { url: 'http://timesofindia.indiatimes.com/rssfeeds/-2128682902.cms', label: 'TOI Business' },
-      { url: 'https://www.thehindubusinessline.com/feeder/default.rss', label: 'BusinessLine Main' },
-      { url: 'https://www.thehindubusinessline.com/specials/feeder/default.rss', label: 'BL Specials' },
-      { url: 'http://feeds.feedburner.com/ForbesIndia', label: 'Forbes India' },
-      { url: 'http://www.rediff.com/rss/moneyrss.xml', label: 'Rediff Money' },
-      { url: 'http://economictimes.indiatimes.com/News/rssfeeds/1715249553.cms', label: 'ET News' },
-      { url: 'http://economictimes.indiatimes.com/rssfeeds/13352306.cms', label: 'ET Industry' },
-      { url: 'http://economictimes.indiatimes.com/rssfeeds/2143429.cms', label: 'ET Companies' },
-      { url: 'http://www.livemint.com/rss/industry', label: 'Mint Industry' },
-      { url: 'https://www.livemint.com/rss/politics', label: 'Mint Politics' }
+      { url: 'https://www.hindustantimes.com/feeds/rss/business/rssfeed.xml', label: 'Hindustan Times' }
     ],
     'section-technology': [
       { url: 'https://www.thehindu.com/sci-tech/feeder/default.rss', label: 'The Hindu' },
@@ -684,11 +700,7 @@
       { url: 'https://timesofindia.indiatimes.com/rssfeeds/66949542.cms', label: 'Times of India' },
       { url: 'https://economictimes.indiatimes.com/tech/rssfeedsdefault.cms', label: 'Economic Times' },
       { url: 'https://www.livemint.com/rss/technology', label: 'Live Mint' },
-      { url: 'https://www.hindustantimes.com/feeds/rss/technology/rssfeed.xml', label: 'Hindustan Times' },
-      { url: 'http://timesofindia.indiatimes.com/rssfeeds/5880659.cms', label: 'TOI Tech Reviews' },
-      { url: 'https://flipboard.com/@thenewsdesk/technology-shjum1jiz.rss', label: 'Flipboard Tech' },
-      { url: 'http://economictimes.indiatimes.com/Infotech/rssfeeds/13357270.cms', label: 'ET Tech' },
-      { url: 'https://www.livemint.com/rss/AI', label: 'Mint AI' }
+      { url: 'https://www.hindustantimes.com/feeds/rss/technology/rssfeed.xml', label: 'Hindustan Times' }
     ],
     'section-editorial': [
       { url: 'https://www.thehindu.com/opinion/feeder/default.rss', label: 'The Hindu' },
@@ -696,17 +708,7 @@
       { url: 'https://indianexpress.com/section/opinion/editorials/feed/', label: 'Indian Express' },
       { url: 'https://economictimes.indiatimes.com/opinion/opinionshome/rssfeeds/897228639.cms', label: 'Economic Times' },
       { url: 'https://www.livemint.com/rss/opinion', label: 'Live Mint' },
-      { url: 'https://www.hindustantimes.com/feeds/rss/editorials/rssfeed.xml', label: 'Hindustan Times' },
-      { url: 'https://blogs.timesofindia.indiatimes.com/feed/defaultrss', label: 'TOI Voices' },
-      { url: 'https://timesofindia.indiatimes.com/rssfeeds/-2128669051.cms', label: 'TOI Editorial' },
-      { url: 'https://www.hindustantimes.com/feeds/rss/opinion/rssfeed.xml', label: 'HT Opinion' },
-      { url: 'https://www.hindustantimes.com/feeds/rss/analysis/rssfeed.xml', label: 'HT Analysis' },
-      { url: 'https://indianexpress.com/section/opinion/feed/', label: 'IE Opinion' },
-      { url: 'https://www.thehindubusinessline.com/opinion/?service=rss', label: 'BL Opinion' },
-      { url: 'https://www.thehindubusinessline.com/data-stories/deep-dive/feeder/default.rss', label: 'BL Deep Dive' },
-      { url: 'http://economictimes.indiatimes.com/Opinion/Editorial/rssfeeds/3376910.cms', label: 'ET Editorial' },
-      { url: 'http://feeds.feedburner.com/InterestingThingOfTheDay', label: 'Interesting Thing' },
-      { url: 'https://thewere42.wordpress.com/feed/', label: 'Interesting Things Blog' }
+      { url: 'https://www.hindustantimes.com/feeds/rss/editorials/rssfeed.xml', label: 'Hindustan Times' }
     ],
     'section-markets': [
       { url: 'https://www.thehindubusinessline.com/markets/feeder/default.rss', label: 'Hindu Business Line' },
@@ -714,60 +716,17 @@
       { url: 'https://timesofindia.indiatimes.com/business/markets/rssfeedstopstories.cms', label: 'Times of India' },
       { url: 'https://economictimes.indiatimes.com/markets/stocks/rssfeedsdefault.cms', label: 'Economic Times' },
       { url: 'https://www.livemint.com/rss/markets', label: 'Live Mint' },
-      { url: 'https://www.business-standard.com/rss/latest.rss', label: 'Business Standard' },
-      { url: 'http://economictimes.indiatimes.com/rssfeeds/1808152121.cms', label: 'ET Commodities' },
-      { url: 'http://economictimes.indiatimes.com/rssfeeds/14655708.cms', label: 'ET IPOs/FPOs' },
-      { url: 'http://economictimes.indiatimes.com/rssfeeds/2146846.cms', label: 'ET Bonds' },
-      { url: 'http://economictimes.indiatimes.com/rssfeeds/1150221130.cms', label: 'ET Forex' },
-      { url: 'http://economictimes.indiatimes.com/rssfeeds/344531568.cms', label: 'ET Indicators' }
+      { url: 'https://www.business-standard.com/rss/latest.rss', label: 'Business Standard' }
     ],
     'section-mumbai': [
       { url: 'https://www.thehindu.com/news/cities/mumbai/feeder/default.rss', label: 'The Hindu' },
       { url: 'https://indianexpress.com/section/cities/mumbai/feed/', label: 'Indian Express' },
       { url: 'https://timesofindia.indiatimes.com/rssfeeds/-2128936835.cms', label: 'Times of India' },
-      { url: 'https://economictimes.indiatimes.com/city/mumbai/rssfeedsdefault.cms', label: 'Economic Times' },
-      { url: 'https://www.mid-day.com/Resources/midday/rss/news.xml', label: 'Mid-Day' },
-      { url: 'https://www.thehindubusinessline.com/data-stories/feeder/default.rss', label: 'BL Data Stories' }
+      { url: 'https://economictimes.indiatimes.com/city/mumbai/rssfeedsdefault.cms', label: 'Economic Times' }
     ],
     'section-recent': [
       { url: 'https://timesofindia.indiatimes.com/rssfeedmostrecent.cms', label: 'Times of India' },
       { url: 'https://www.business-standard.com/rss/latest.rss', label: 'Business Standard' }
-    ],
-    'section-world': [
-      { url: 'https://www.hindustantimes.com/feeds/rss/world-news/rssfeed.xml', label: 'Hindustan Times' },
-      { url: 'https://timesofindia.indiatimes.com/rssfeeds/296589292.cms', label: 'Times of India' },
-      { url: 'http://economictimes.indiatimes.com/rssfeeds/858478126.cms', label: 'Economic Times' }
-    ],
-    'section-science': [
-      { url: 'https://timesofindia.indiatimes.com/rssfeeds/-2128672765.cms', label: 'TOI Science' },
-      { url: 'http://www.livemint.com/rss/science', label: 'Mint Science' },
-      { url: 'https://www.livemint.com/rss/education', label: 'Mint Education' },
-      { url: 'http://timesofindia.indiatimes.com/rssfeeds/913168846.cms', label: 'TOI Education' }
-    ],
-    'section-entertainment': [
-      { url: 'https://timesofindia.indiatimes.com/rssfeeds/1081479906.cms', label: 'TOI Entertainment' },
-      { url: 'http://www.thehindu.com/entertainment/entertainment-history/?service=rss', label: 'The Hindu Culture' }
-    ],
-    'section-magazine': [
-      { url: 'https://theweekmagazine.tumblr.com/rss', label: 'The Week' },
-      { url: 'http://economictimes.indiatimes.com/Features/etfeatures/rssfeeds/1466318837.cms', label: 'ET Panache' }
-    ],
-    'section-personalfinance': [
-      { url: 'http://tipssbsense.blogspot.com/feeds/posts/default', label: 'Nifty Chart' },
-      { url: 'https://www.charteredclub.com/feed/', label: 'Chartered Club' },
-      { url: 'http://feeds.feedburner.com/TheInvestorBlog', label: 'Capitalmind' },
-      { url: 'https://www.cashoverflow.in/feed/', label: 'Cash Overflow' },
-      { url: 'https://www.safalniveshak.com/feed/', label: 'Safal Niveshak' },
-      { url: 'http://www.stableinvestor.com/feeds/posts/default', label: 'Stable Investor' },
-      { url: 'http://feeds.feedburner.com/freefincal/XFaU', label: 'freefincal' },
-      { url: 'https://www.relakhs.com/feed/', label: 'ReLakhs' },
-      { url: 'http://economictimes.indiatimes.com/Personal-Finance/Mutual-Funds/rssfeeds/359241701.cms', label: 'ET Mutual Funds' },
-      { url: 'https://www.valueinvestorindia.com/feed/', label: 'Value Investor India' },
-      { url: 'http://feeds.feedburner.com/FinanceAndInvesting', label: 'Jagoinvestor' },
-      { url: 'http://feeds2.feedburner.com/vro/main', label: 'Value Research' },
-      { url: 'http://economictimes.indiatimes.com/rssfeeds/837555174.cms', label: 'ET Wealth' },
-      { url: 'http://www.livemint.com/rss/money', label: 'Mint Money' },
-      { url: 'http://economictimes.indiatimes.com/markets/expert-view/rssfeeds/50649960.cms', label: 'ET Expert Views' }
     ]
   };
 
@@ -834,7 +793,7 @@
   /* ══════════════════════════════════════════════════════════════
      §4  IDB KEY STORAGE
   ══════════════════════════════════════════════════════════════ */
-  const IDB_NAME = 'pulse16', IDB_STORE = 'kv', IDB_VER = 1;
+  const IDB_NAME = 'pulse15d', IDB_STORE = 'kv', IDB_VER = 1;
   function _idbOpen() {
     return new Promise((res, rej) => {
       const req = indexedDB.open(IDB_NAME, IDB_VER);
@@ -873,7 +832,7 @@
   ══════════════════════════════════════════════════════════════ */
   function _getRawKey(slot) { return sessionStorage.getItem(`pk${slot}`) || sessionStorage.getItem('ai_k'+slot) || ''; }
   function getGeminiKey()   { return _getRawKey(_activeKeySlot) || _getRawKey(1) || _getRawKey(2); }
-  function getGeminiModel() { return localStorage.getItem('pulse16_model') || CONFIG.GEMINI_MODELS[0]; }
+  function getGeminiModel() { return localStorage.getItem('pulse15d_model') || CONFIG.GEMINI_MODELS[0]; }
 
   function _maskKey(k) { return k ? k.substring(0,6) + '…' + k.slice(-3) : ''; }
 
@@ -901,7 +860,7 @@
     }
     const nKeys = [k1,k2,k3].filter(Boolean).length;
     const slotLabel = `✓ ${nKeys} key${nKeys>1?'s':''} stored`;
-    const mdl = localStorage.getItem('pulse16_ai_model') || 'gemini-3.1-flash-lite';
+    const mdl = localStorage.getItem('pulse15d_ai_model') || 'gemini-3.1-flash-lite';
     const mdlLabel = mdl.replace('gemini-3.1-flash-lite','3.1 Flash-Lite').replace('gemini-3-flash','3 Flash').replace('gemini-3.1-pro','3.1 Pro').replace('gemini-2.0-flash-lite','2.0 Flash-Lite');
     DOM.keyStatusBadge.innerHTML = `<span style="font-size:9px;font-family:'IBM Plex Mono',monospace;text-align:center;display:block;padding:2px;color:#5a554c;">AI: ${slotLabel} · ${mdlLabel} · Cascade K1→K2→K3 on quota · ⚡ panel in reader</span>`;
   }
@@ -915,7 +874,7 @@
     DOM.kmK1Input.placeholder = k1 ? `Stored (${_maskKey(k1)}) — paste to replace` : 'AIza… (paste Key 1)';
     DOM.kmK2Input.placeholder = k2 ? `Stored (${_maskKey(k2)}) — paste to replace` : 'AIza… (paste Key 2)';
     if (DOM.kmK3Input) DOM.kmK3Input.placeholder = k3 ? `Stored (${_maskKey(k3)}) — paste to replace` : 'AIza… (paste Key 3)';
-    if (DOM.kmModelSelect) DOM.kmModelSelect.value = localStorage.getItem('pulse16_ai_model') || 'gemini-3.1-flash-lite';
+    if (DOM.kmModelSelect) DOM.kmModelSelect.value = localStorage.getItem('pulse15d_ai_model') || 'gemini-3.1-flash-lite';
     setTimeout(() => DOM.kmK1Input.focus(), 80);
   }
   function closeKeyManager() {
@@ -994,7 +953,7 @@
   function lsKey(feedUrl) {
     let h = 0;
     for (let i = 0; i < feedUrl.length; i++) h = (Math.imul(31, h) + feedUrl.charCodeAt(i)) | 0;
-    return 'pulse16_' + Math.abs(h).toString(36);
+    return 'pulse15d_' + Math.abs(h).toString(36);
   }
   function lsLoad(feedUrl) {
     try {
@@ -1011,10 +970,16 @@
       localStorage.setItem(lsKey(feedUrl), JSON.stringify({ feedName, items: trimmed, savedAt: Date.now() }));
     } catch(e) { if (e.name === 'QuotaExceededError') { try { localStorage.clear(); } catch{} } }
   }
-  function lsMarkViewed(feedUrl, aid) {
+  function lsMarkViewed(feedUrl, aid, dateStamp) {
     const obj = lsLoad(feedUrl);
     if (!obj) return;
-    obj.items.forEach(i => { if (i.id === aid) i.viewed = true; });
+    obj.items.forEach(i => {
+      if (i.id === aid) {
+        i.viewed    = true;
+        // Store the calendar day it was read; deletion fires on next calendar day
+        i.viewedAt  = dateStamp || _todayStamp();
+      }
+    });
     lsSave(feedUrl, obj.feedName, obj.items);
   }
   function articleId(title) {
@@ -1048,11 +1013,17 @@
   }
 
   /* ══════════════════════════════════════════════════════════════
-     §9b  PURGE STORIES OLDER THAN 4 DAYS (runs on startup)
+     §9b  PURGE (runs on startup)
+     • Stories older than 4 days are removed unconditionally.
+     • Articles marked viewed on a PREVIOUS calendar day are removed.
+       (Articles read TODAY stay hidden this session but survive in LS
+        until tomorrow, so they won't reappear if the user refreshes
+        the same day.)
   ══════════════════════════════════════════════════════════════ */
   function purgeOldStories() {
+    const today  = _todayStamp();
     const cutoff = Date.now() - CONFIG.STORY_MAX_AGE_MS;
-    const keysToCheck = Object.keys(localStorage).filter(k => k.startsWith('pulse16_'));
+    const keysToCheck = Object.keys(localStorage).filter(k => k.startsWith('pulse15d_'));
     keysToCheck.forEach(lk => {
       try {
         const raw = localStorage.getItem(lk);
@@ -1061,9 +1032,15 @@
         if (!obj || !Array.isArray(obj.items)) return;
         const before = obj.items.length;
         obj.items = obj.items.filter(item => {
-          if (!item.pubDate) return true;          // no date → keep
-          const age = Date.now() - new Date(item.pubDate).getTime();
-          return isNaN(age) || age < CONFIG.STORY_MAX_AGE_MS;
+          // 1. Remove if older than 4 days
+          if (item.pubDate) {
+            const age = Date.now() - new Date(item.pubDate).getTime();
+            if (!isNaN(age) && age >= CONFIG.STORY_MAX_AGE_MS) return false;
+          }
+          // 2. Remove if viewed on a PREVIOUS calendar day
+          if (item.viewed && item.viewedAt && item.viewedAt < today) return false;
+          // 3. Keep everything else (including items viewed today — hide in session only)
+          return true;
         });
         if (obj.items.length !== before) {
           localStorage.setItem(lk, JSON.stringify(obj));
@@ -1195,20 +1172,31 @@
   }
 
   /* ── Mark-read-on-scroll ── */
+  /* ── "Has the user manually scrolled yet?" gate ──
+     IntersectionObserver fires on page load for items already in viewport.
+     We only activate mark-read after a real user scroll gesture.           */
+  let _userHasScrolled = false;
+  window.addEventListener('scroll', () => { _userHasScrolled = true; }, { passive: true, once: true });
+
+  /* ── Calendar-day helper ── */
+  function _todayStamp() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
+
   function _markItemRead(el) {
     if (el.dataset.markedRead) return;
     el.dataset.markedRead = '1';
     const articleIdVal = el.dataset.articleId;
     const feedUrl      = el.querySelector('.headline[data-feed-url]')?.getAttribute('data-feed-url') || '';
-    // Persist to LS
+    // Store viewedAt date — actual deletion from LS happens next calendar day
     if (articleIdVal && feedUrl && feedUrl !== 'uploaded-pdf') {
-      lsMarkViewed(feedUrl, articleIdVal);
+      lsMarkViewed(feedUrl, articleIdVal, _todayStamp());
     }
-    // Animate out
+    // Hide from current session; LS purge handles next-day deletion
     el.classList.add('marking-read');
     requestAnimationFrame(() => {
       el.classList.add('marked-read');
-      // Remove from DOM after transition completes
       el.addEventListener('transitionend', () => el.remove(), { once: true });
     });
   }
@@ -1216,26 +1204,32 @@
   function attachReadOnScrollObserver() {
     if (readOnScrollObserver) readOnScrollObserver.disconnect();
     const timers = new Map();
+
     readOnScrollObserver = new IntersectionObserver(entries => {
+      // Do nothing until the user has physically scrolled the page
+      if (!_userHasScrolled) return;
+
       entries.forEach(entry => {
-        const el = entry.target;
-        if (entry.isIntersecting && entry.intersectionRatio >= 0.7) {
-          // Start dwell timer
+        const el  = entry.target;
+        const top = el.getBoundingClientRect().top;
+
+        // Trigger only when the headline has scrolled UP past the top of the screen
+        // (top < 0 means the card's top edge is above the viewport)
+        if (top < 0 && !entry.isIntersecting) {
           if (!timers.has(el)) {
             timers.set(el, setTimeout(() => {
               timers.delete(el);
               _markItemRead(el);
-            }, CONFIG.READ_DELAY_MS));
+            }, 400));
           }
         } else {
-          // Scrolled away before timer fired — cancel
+          // Card returned into view — cancel any pending timer
           const t = timers.get(el);
           if (t) { clearTimeout(t); timers.delete(el); }
         }
       });
-    }, { threshold: 0.7 });
+    }, { threshold: 0, rootMargin: '0px 0px 0px 0px' });
 
-    // Observe all current feed items
     DOM.output.querySelectorAll('.feed-item:not([data-marked-read])').forEach(el => {
       readOnScrollObserver.observe(el);
     });
@@ -1262,6 +1256,7 @@
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(async () => {
       const feedVal  = DOM.dropdown.value;
+      const feedUrl  = feedVal;   // alias used by single-feed paths below
       const feedName = DOM.dropdown.options[DOM.dropdown.selectedIndex].text;
 
       // Section aggregator
@@ -1843,7 +1838,7 @@
   }
 
   function _resetUploadBtn() {
-    DOM.uploadPdfBtn.innerHTML = '<span class="upload-ring"></span>📄 PDF';
+    DOM.uploadPdfBtn.innerHTML = '<span class="upload-ring"></span>📄';
     DOM.uploadPdfBtn.classList.remove('uploading');
     DOM.uploadPdfBtn.disabled = false;
   }
@@ -1928,7 +1923,7 @@
           await new Promise(r => setTimeout(r, 250));
           hideOverlay();
           DOM.overallSummaryBtn.style.display = 'inline-flex';
-          DOM.uploadPdfBtn.innerHTML = totalPages === 1 ? '<span class="upload-ring"></span>📄 PDF' : '<span class="upload-ring"></span>Processing…';
+          DOM.uploadPdfBtn.innerHTML = totalPages === 1 ? '<span class="upload-ring"></span>📄' : '<span class="upload-ring"></span>Processing…';
           if (totalPages === 1) { DOM.uploadPdfBtn.classList.remove('uploading'); DOM.uploadPdfBtn.disabled = false; }
         } else {
           renderOneFeedItem(item, idx, file.name, true);
@@ -2001,9 +1996,9 @@
       if (DOM.kmK3Save) DOM.kmK3Save.addEventListener('click', () => _saveKey(3, (DOM.kmK3Input?.value||'').trim()));
       // Sync model select from localStorage
       if (DOM.kmModelSelect) {
-        DOM.kmModelSelect.value = localStorage.getItem('pulse16_ai_model') || 'gemini-3.1-flash-lite';
+        DOM.kmModelSelect.value = localStorage.getItem('pulse15d_ai_model') || 'gemini-3.1-flash-lite';
         DOM.kmModelSelect.addEventListener('change', () => {
-          localStorage.setItem('pulse16_ai_model', DOM.kmModelSelect.value);
+          localStorage.setItem('pulse15d_ai_model', DOM.kmModelSelect.value);
           _updateKeyStatusBadge();
         });
       }
@@ -2018,10 +2013,132 @@
 
       // Feed
       DOM.dropdown.addEventListener('change', () => loadFeed(false));
+
+      // ── News Feeds dropdown → drive hidden select → loadFeed ──
+      (function wireNewsFeeds() {
+        // Map section key → its sources from hidden select options
+        const sectionSources = {};
+        document.querySelectorAll('#feed-dropdown optgroup').forEach(og => {
+          const opts = [...og.querySelectorAll('option')];
+          if (!opts.length) return;
+          const sectionVal = opts[0].value;
+          sectionSources[sectionVal] = opts.slice(1).map(o => ({ label: o.textContent.trim(), value: o.value }));
+        });
+
+        const feedsBtn   = document.getElementById('news-feeds-btn');
+        const feedsMenu  = document.getElementById('news-feeds-menu');
+        const nfItems    = document.querySelectorAll('.nf-item');
+        const drawer     = document.getElementById('sources-drawer');
+        const inner      = document.getElementById('sources-drawer-inner');
+        const toggleBtn  = document.getElementById('sources-toggle-btn');
+
+        let menuOpen   = false;
+        let drawerOpen = false;
+        let activeSection = 'section-topnews';
+
+        function setActiveItem(sectionVal) {
+          activeSection = sectionVal;
+          nfItems.forEach(it => it.classList.toggle('active', it.dataset.section === sectionVal));
+          // Update button label to show current section name
+          const label = document.querySelector(`.nf-item[data-section="${sectionVal}"]`)?.textContent?.trim() || '📰 News Feeds';
+          feedsBtn.innerHTML = `${label} <span class="nf-arrow">▾</span>`;
+          if (menuOpen) feedsBtn.classList.add('open'); else feedsBtn.classList.remove('open');
+        }
+
+        function openMenu() {
+          feedsMenu.classList.add('open');
+          feedsBtn.classList.add('open');
+          menuOpen = true;
+        }
+        function closeMenu() {
+          feedsMenu.classList.remove('open');
+          feedsBtn.classList.remove('open');
+          menuOpen = false;
+        }
+
+        function populateSourceChips(sectionVal, selectedSourceVal) {
+          inner.innerHTML = '';
+          const allChip = document.createElement('button');
+          allChip.className = 'source-chip' + (selectedSourceVal === sectionVal ? ' active' : '');
+          allChip.textContent = 'All Sources';
+          allChip.addEventListener('click', () => {
+            selectFeed(sectionVal, sectionVal);
+            inner.querySelectorAll('.source-chip').forEach((c,i) => c.classList.toggle('active', i === 0));
+          });
+          inner.appendChild(allChip);
+
+          (sectionSources[sectionVal] || []).forEach(src => {
+            const chip = document.createElement('button');
+            chip.className = 'source-chip' + (selectedSourceVal === src.value ? ' active' : '');
+            chip.textContent = src.label;
+            chip.addEventListener('click', () => {
+              selectFeed(src.value, sectionVal);
+              inner.querySelectorAll('.source-chip').forEach(c => c.classList.remove('active'));
+              chip.classList.add('active');
+            });
+            inner.appendChild(chip);
+          });
+        }
+
+        function selectFeed(feedVal, sectionVal) {
+          DOM.dropdown.value = feedVal;
+          setActiveItem(sectionVal);
+          loadFeed(false);
+        }
+
+        function openDrawer(sectionVal, selectedVal) {
+          populateSourceChips(sectionVal, selectedVal || sectionVal);
+          drawer.classList.add('open');
+          if (toggleBtn) { toggleBtn.classList.add('open'); }
+          drawerOpen = true;
+        }
+        function closeDrawer() {
+          drawer.classList.remove('open');
+          if (toggleBtn) toggleBtn.classList.remove('open');
+          drawerOpen = false;
+        }
+
+        // News Feeds button toggle
+        feedsBtn.addEventListener('click', e => {
+          e.stopPropagation();
+          menuOpen ? closeMenu() : openMenu();
+        });
+
+        // Menu item clicks
+        nfItems.forEach(item => {
+          item.addEventListener('click', () => {
+            const sv = item.dataset.section;
+            closeMenu();
+            // If tapping the already-active section, toggle sources drawer
+            if (sv === activeSection) {
+              drawerOpen ? closeDrawer() : openDrawer(sv, DOM.dropdown.value);
+            } else {
+              selectFeed(sv, sv);
+              if (drawerOpen) populateSourceChips(sv, sv);
+            }
+          });
+        });
+
+        // Sources toggle button (▾ below bar)
+        if (toggleBtn) {
+          toggleBtn.addEventListener('click', () => {
+            drawerOpen ? closeDrawer() : openDrawer(activeSection, DOM.dropdown.value);
+          });
+        }
+
+        // Close menu on outside click
+        document.addEventListener('click', e => {
+          if (!document.getElementById('news-feeds-wrapper').contains(e.target)) closeMenu();
+        });
+
+        // Initialise
+        setActiveItem('section-topnews');
+        populateSourceChips('section-topnews', 'section-topnews');
+      })();
       AI.wireEvents();
       DOM.refreshBtn.addEventListener('click', () => {
         Object.keys(feedCache).forEach(k => delete feedCache[k]);
-        Object.keys(localStorage).filter(k => k.startsWith('pulse16_')).forEach(k => localStorage.removeItem(k));
+        Object.keys(localStorage).filter(k => k.startsWith('pulse15d_')).forEach(k => localStorage.removeItem(k));
         loadFeed(true);
       });
 
@@ -2135,9 +2252,9 @@
 
     // ── model preference ──
     function _getModel() {
-      return localStorage.getItem('pulse16_ai_model') || MODEL_CASCADE[0];
+      return localStorage.getItem('pulse15d_ai_model') || MODEL_CASCADE[0];
     }
-    function _saveModel(m) { localStorage.setItem('pulse16_ai_model', m); }
+    function _saveModel(m) { localStorage.setItem('pulse15d_ai_model', m); }
     function _modelLabel(m) {
       return m.replace('gemini-3.1-flash-lite','3.1 Flash-Lite')
               .replace('gemini-3-flash','3 Flash')
