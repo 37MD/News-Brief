@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pulse 15L — Local Intelligence Terminal</title>
+  <title>Pulse 15N — Local Intelligence Terminal</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&family=Noto+Sans:wght@400;500&display=swap" rel="stylesheet">
 
   <style>
@@ -194,7 +194,7 @@
     .meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--meta-color); text-transform: uppercase; letter-spacing: 0.05em; display: flex; justify-content: space-between; align-items: center; }
     .view-orig-btn { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); text-decoration: underline; cursor: pointer; background: none; border: none; padding: 0; letter-spacing: 0.03em; }
     .view-orig-btn:hover { color: var(--accent); }
-    #scroll-sentinel { height: 1px; }
+
     .load-more-indicator { text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--meta-color); padding: 14px 0; letter-spacing: 0.08em; }
     .cached-badge { display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 9px; background: var(--rule); color: var(--muted); padding: 1px 5px; border-radius: 2px; text-transform: uppercase; margin-left: 5px; vertical-align: middle; }
     /* Mark-read on scroll */
@@ -564,7 +564,7 @@
   <!-- Masthead -->
   <div class="masthead">
     <div class="tagline" id="header-date">Local Intelligence Terminal</div>
-    <div class="masthead-title">Pulse<span style="font-size:11px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.55;">15L</span></div>
+    <div class="masthead-title">Pulse<span style="font-size:11px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.55;">15N</span></div>
     <div class="tagline">RSS + PDF · Local Engine + AI Panel</div>
   </div>
   <div id="key-status-badge"></div>
@@ -733,8 +733,7 @@
   let _activeKeySlot     = 1;
   let _activeCascadeModel = null;
   const page = { items: [], displayed: 0 };
-  let scrollObserver = null;
-  let readOnScrollObserver = null;   // marks cards read after dwell time
+
 
   /* ─── §R3  DOM references ─── */
   const DOM = {
@@ -960,6 +959,10 @@
       localStorage.setItem(lsKey(feedUrl), JSON.stringify({ feedName, items: trimmed, savedAt: Date.now() }));
     } catch(e) { if (e.name === 'QuotaExceededError') { try { localStorage.clear(); } catch{} } }
   }
+  function _todayStamp() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  }
   function lsMarkViewed(feedUrl, aid, dateStamp) {
     const obj = lsLoad(feedUrl);
     if (!obj) return;
@@ -1093,7 +1096,7 @@
   /* ══════════════════════════════════════════════════════════════
      §11  FEED RENDERING & PAGINATION
   ══════════════════════════════════════════════════════════════ */
-  function attachScrollObserver() { /* removed — manual Load More used instead */ }
+
   function renderNextBatch() {
     const batch = page.items.slice(page.displayed, page.displayed + CONFIG.PAGE_SIZE);
     if (!batch.length) return;
@@ -1155,7 +1158,6 @@
         renderNextBatch();
       });
     }
-    attachReadOnScrollObserver();
   }
   function deleteReadFeeds(upTo) {
     const items = DOM.output.querySelectorAll('.feed-item');
@@ -1165,77 +1167,12 @@
     });
   }
 
-  /* ── Mark-read-on-scroll ── */
-  /* ── "Has the user manually scrolled yet?" gate ──
-     IntersectionObserver fires on page load for items already in viewport.
-     We only activate mark-read after a real user scroll gesture.           */
-  let _userHasScrolled = false;
-  window.addEventListener('scroll', () => { _userHasScrolled = true; }, { passive: true, once: true });
-
-  /* ── Calendar-day helper ── */
-  function _todayStamp() {
-    const d = new Date();
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  }
-
-  function _markItemRead(el) {
-    if (el.dataset.markedRead) return;
-    el.dataset.markedRead = '1';
-    const articleIdVal = el.dataset.articleId;
-    const feedUrl      = el.querySelector('.headline[data-feed-url]')?.getAttribute('data-feed-url') || '';
-    // Store viewedAt date — actual deletion from LS happens next calendar day
-    if (articleIdVal && feedUrl && feedUrl !== 'uploaded-pdf') {
-      lsMarkViewed(feedUrl, articleIdVal, _todayStamp());
-    }
-    // Hide from current session; LS purge handles next-day deletion
-    el.classList.add('marking-read');
-    requestAnimationFrame(() => {
-      el.classList.add('marked-read');
-      el.addEventListener('transitionend', () => el.remove(), { once: true });
-    });
-  }
-
-  function attachReadOnScrollObserver() {
-    if (readOnScrollObserver) readOnScrollObserver.disconnect();
-    const timers = new Map();
-
-    readOnScrollObserver = new IntersectionObserver(entries => {
-      // Do nothing until the user has physically scrolled the page
-      if (!_userHasScrolled) return;
-
-      entries.forEach(entry => {
-        const el  = entry.target;
-        const top = el.getBoundingClientRect().top;
-
-        // Trigger only when the headline has scrolled UP past the top of the screen
-        // (top < 0 means the card's top edge is above the viewport)
-        if (top < 0 && !entry.isIntersecting) {
-          if (!timers.has(el)) {
-            timers.set(el, setTimeout(() => {
-              timers.delete(el);
-              _markItemRead(el);
-            }, 400));
-          }
-        } else {
-          // Card returned into view — cancel any pending timer
-          const t = timers.get(el);
-          if (t) { clearTimeout(t); timers.delete(el); }
-        }
-      });
-    }, { threshold: 0, rootMargin: '0px 0px 0px 0px' });
-
-    DOM.output.querySelectorAll('.feed-item:not([data-marked-read])').forEach(el => {
-      readOnScrollObserver.observe(el);
-    });
-  }
-  function startPagination(items, feedName, feedUrl, preserveScroll = false) {
-    const savedY = preserveScroll ? window.scrollY : 0;
+  function startPagination(items, feedName, feedUrl) {
     page.items     = items.map(i => ({ ...i, _feedName: i._feedName || feedName, _feedUrl: i._feedUrl || feedUrl }));
     page.displayed = 0;
     DOM.output.innerHTML = '';
     renderNextBatch();
     DOM.itemCount.textContent = `${items.length} articles`;
-    if (preserveScroll && savedY > 0) requestAnimationFrame(() => window.scrollTo(0, savedY));
   }
   function setFeedStatus(msg) { DOM.output.innerHTML = `<div class="system-msg">${msg}</div>`; }
   function setRefreshing(on) { DOM.refreshBtn.disabled = on; DOM.refreshBtn.classList.toggle('spinning', on); }
@@ -1245,10 +1182,10 @@
     countdownTimer = setInterval(() => {
       s--;
       DOM.nextRefresh.textContent = `Refresh in ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
-      if (s <= 0) { clearInterval(countdownTimer); loadFeed(true, true); }
+      if (s <= 0) { clearInterval(countdownTimer); loadFeed(true); }
     }, 1000);
   }
-  async function loadFeed(forceRefresh = false, preserveScroll = false) {
+  async function loadFeed(forceRefresh = false) {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(async () => {
       const feedVal  = DOM.dropdown.value;
@@ -1305,7 +1242,7 @@
           unique.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
           const label = sectionLabel.replace(/^[📰📊💼💻📝📈🏙️⏱️]\s*/,'');
           feedCache[feedVal] = { timestamp: Date.now(), items: unique, feedName: label };
-          startPagination(unique, label, feedVal, preserveScroll);
+          startPagination(unique, label, feedVal);
         } catch(err) {
           if (reqId !== requestCounter) return;
           DOM.output.innerHTML = `<div class="system-msg error">❌ Error: ${escapeHtml(err.message)}</div>`;
@@ -1334,7 +1271,7 @@
       if (!forceRefresh && mem && (Date.now() - mem.timestamp < CONFIG.CACHE_TTL_MS)) {
         const stored = lsLoad(feedUrl);
         const items  = stored ? stored.items.filter(i => !i.viewed) : mem.items;
-        startPagination(items.length ? items : mem.items, feedName, feedUrl, preserveScroll);
+        startPagination(items.length ? items : mem.items, feedName, feedUrl);
         startCountdown();
         return;
       }
@@ -1355,7 +1292,7 @@
 
         feedCache[feedUrl] = { timestamp: Date.now(), items: merged, feedName };
         const display = merged.filter(i => !i.viewed);
-        startPagination(display.length ? display : merged, feedName, feedUrl, preserveScroll);
+        startPagination(display.length ? display : merged, feedName, feedUrl);
         startCountdown();
       } catch(err) {
         if (reqId !== requestCounter) return;
