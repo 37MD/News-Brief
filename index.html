@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pulse 15I — Local Intelligence Terminal</title>
+  <title>Pulse 15K — Local Intelligence Terminal</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&family=Noto+Sans:wght@400;500&display=swap" rel="stylesheet">
 
   <style>
@@ -62,7 +62,7 @@
       display: none; position: fixed;
       background: var(--paper); border: 1.5px solid var(--accent);
       border-radius: 8px; box-shadow: 0 8px 28px rgba(0,0,0,0.28);
-      z-index: 9999; min-width: 160px; overflow: hidden;
+      z-index: 9999; min-width: 160px;
       animation: nfFade 0.15s ease;
     }
     .news-feeds-menu.open { display: block; }
@@ -299,7 +299,7 @@
     ════════════════════════════════════════════════ */
     @media (max-width: 600px) {
       .controls-bar { padding: 4px 8px 0; }
-      .controls-row { gap: 5px; flex-wrap: nowrap; overflow-x: auto; padding-bottom: 4px; }
+      .controls-row { gap: 5px; flex-wrap: nowrap; padding-bottom: 4px; }
       .btn-outline { font-size: 10px; padding: 4px 8px; }
       select { max-width: 160px; font-size: 10px; }
       .masthead { padding: 14px 12px 10px; }
@@ -508,16 +508,6 @@
           <button class="news-feeds-btn" id="news-feeds-btn">
             📰 News Feeds <span class="nf-arrow">▾</span>
           </button>
-          <div class="news-feeds-menu" id="news-feeds-menu">
-            <div class="nf-item active" data-section="section-topnews">📰 Top News</div>
-            <div class="nf-item" data-section="section-economy">📊 Economy</div>
-            <div class="nf-item" data-section="section-business">💼 Business</div>
-            <div class="nf-item" data-section="section-technology">💻 Tech</div>
-            <div class="nf-item" data-section="section-editorial">📝 Editorial</div>
-            <div class="nf-item" data-section="section-markets">📈 Markets</div>
-            <div class="nf-item" data-section="section-mumbai">🏙️ Mumbai</div>
-            <div class="nf-item" data-section="section-recent">⏱️ Recent</div>
-          </div>
         </div>
 
         <!-- Sources toggle — inline same row -->
@@ -574,7 +564,7 @@
   <!-- Masthead -->
   <div class="masthead">
     <div class="tagline" id="header-date">Local Intelligence Terminal</div>
-    <div class="masthead-title">Pulse<span style="font-size:11px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.55;">15I</span></div>
+    <div class="masthead-title">Pulse<span style="font-size:11px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.55;">15K</span></div>
     <div class="tagline">RSS + PDF · Local Engine + AI Panel</div>
   </div>
   <div id="key-status-badge"></div>
@@ -1234,12 +1224,14 @@
       readOnScrollObserver.observe(el);
     });
   }
-  function startPagination(items, feedName, feedUrl) {
+  function startPagination(items, feedName, feedUrl, preserveScroll = false) {
+    const savedY = preserveScroll ? window.scrollY : 0;
     page.items     = items.map(i => ({ ...i, _feedName: i._feedName || feedName, _feedUrl: i._feedUrl || feedUrl }));
     page.displayed = 0;
     DOM.output.innerHTML = '';
     renderNextBatch();
     DOM.itemCount.textContent = `${items.length} articles`;
+    if (preserveScroll && savedY > 0) requestAnimationFrame(() => window.scrollTo(0, savedY));
   }
   function setFeedStatus(msg) { DOM.output.innerHTML = `<div class="system-msg">${msg}</div>`; }
   function setRefreshing(on) { DOM.refreshBtn.disabled = on; DOM.refreshBtn.classList.toggle('spinning', on); }
@@ -1249,10 +1241,10 @@
     countdownTimer = setInterval(() => {
       s--;
       DOM.nextRefresh.textContent = `Refresh in ${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`;
-      if (s <= 0) { clearInterval(countdownTimer); loadFeed(true); }
+      if (s <= 0) { clearInterval(countdownTimer); loadFeed(true, true); }
     }, 1000);
   }
-  async function loadFeed(forceRefresh = false) {
+  async function loadFeed(forceRefresh = false, preserveScroll = false) {
     clearTimeout(debounceTimer);
     debounceTimer = setTimeout(async () => {
       const feedVal  = DOM.dropdown.value;
@@ -1309,7 +1301,7 @@
           unique.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
           const label = sectionLabel.replace(/^[📰📊💼💻📝📈🏙️⏱️]\s*/,'');
           feedCache[feedVal] = { timestamp: Date.now(), items: unique, feedName: label };
-          startPagination(unique, label, feedVal);
+          startPagination(unique, label, feedVal, preserveScroll);
         } catch(err) {
           if (reqId !== requestCounter) return;
           DOM.output.innerHTML = `<div class="system-msg error">❌ Error: ${escapeHtml(err.message)}</div>`;
@@ -1338,7 +1330,7 @@
       if (!forceRefresh && mem && (Date.now() - mem.timestamp < CONFIG.CACHE_TTL_MS)) {
         const stored = lsLoad(feedUrl);
         const items  = stored ? stored.items.filter(i => !i.viewed) : mem.items;
-        startPagination(items.length ? items : mem.items, feedName, feedUrl);
+        startPagination(items.length ? items : mem.items, feedName, feedUrl, preserveScroll);
         startCountdown();
         return;
       }
@@ -1359,7 +1351,7 @@
 
         feedCache[feedUrl] = { timestamp: Date.now(), items: merged, feedName };
         const display = merged.filter(i => !i.viewed);
-        startPagination(display.length ? display : merged, feedName, feedUrl);
+        startPagination(display.length ? display : merged, feedName, feedUrl, preserveScroll);
         startCountdown();
       } catch(err) {
         if (reqId !== requestCounter) return;
@@ -2016,7 +2008,6 @@
 
       // ── News Feeds dropdown → drive hidden select → loadFeed ──
       (function wireNewsFeeds() {
-        // Map section key → its sources from hidden select options
         const sectionSources = {};
         document.querySelectorAll('#feed-dropdown optgroup').forEach(og => {
           const opts = [...og.querySelectorAll('option')];
@@ -2026,29 +2017,54 @@
         });
 
         const feedsBtn   = document.getElementById('news-feeds-btn');
-        const feedsMenu  = document.getElementById('news-feeds-menu');
-        const nfItems    = document.querySelectorAll('.nf-item');
         const drawer     = document.getElementById('sources-drawer');
         const inner      = document.getElementById('sources-drawer-inner');
         const toggleBtn  = document.getElementById('sources-toggle-btn');
+
+        // Build menu and append directly to <body> so NO parent clips it
+        const feedsMenu = document.createElement('div');
+        feedsMenu.id = 'news-feeds-menu';
+        feedsMenu.className = 'news-feeds-menu';
+        const sections = [
+          { section: 'section-topnews',    label: '📰 Top News' },
+          { section: 'section-economy',    label: '📊 Economy'  },
+          { section: 'section-business',   label: '💼 Business' },
+          { section: 'section-technology', label: '💻 Tech'     },
+          { section: 'section-editorial',  label: '📝 Editorial'},
+          { section: 'section-markets',    label: '📈 Markets'  },
+          { section: 'section-mumbai',     label: '🏙️ Mumbai'   },
+          { section: 'section-recent',     label: '⏱️ Recent'   },
+        ];
+        sections.forEach(s => {
+          const el = document.createElement('div');
+          el.className = 'nf-item' + (s.section === 'section-topnews' ? ' active' : '');
+          el.dataset.section = s.section;
+          el.textContent = s.label;
+          feedsMenu.appendChild(el);
+        });
+        document.body.appendChild(feedsMenu);
+        const nfItems = feedsMenu.querySelectorAll('.nf-item');
 
         let menuOpen   = false;
         let drawerOpen = false;
         let activeSection = 'section-topnews';
 
-        function setActiveItem(sectionVal) {
-          activeSection = sectionVal;
-          nfItems.forEach(it => it.classList.toggle('active', it.dataset.section === sectionVal));
-          // Update button label to show current section name
-          const label = document.querySelector(`.nf-item[data-section="${sectionVal}"]`)?.textContent?.trim() || '📰 News Feeds';
-          feedsBtn.innerHTML = `${label} <span class="nf-arrow">▾</span>`;
-          if (menuOpen) feedsBtn.classList.add('open'); else feedsBtn.classList.remove('open');
-        }
-
-        function openMenu() {
+        function positionMenu() {
           const r = feedsBtn.getBoundingClientRect();
           feedsMenu.style.top  = (r.bottom + 4) + 'px';
           feedsMenu.style.left = r.left + 'px';
+        }
+
+        function setActiveItem(sectionVal) {
+          activeSection = sectionVal;
+          nfItems.forEach(it => it.classList.toggle('active', it.dataset.section === sectionVal));
+          const label = [...nfItems].find(it => it.dataset.section === sectionVal)?.textContent?.trim() || '📰 News Feeds';
+          feedsBtn.innerHTML = `${label} <span class="nf-arrow">▾</span>`;
+          feedsBtn.classList.toggle('open', menuOpen);
+        }
+
+        function openMenu() {
+          positionMenu();
           feedsMenu.classList.add('open');
           feedsBtn.classList.add('open');
           menuOpen = true;
@@ -2069,7 +2085,6 @@
             inner.querySelectorAll('.source-chip').forEach((c,i) => c.classList.toggle('active', i === 0));
           });
           inner.appendChild(allChip);
-
           (sectionSources[sectionVal] || []).forEach(src => {
             const chip = document.createElement('button');
             chip.className = 'source-chip' + (selectedSourceVal === src.value ? ' active' : '');
@@ -2092,7 +2107,7 @@
         function openDrawer(sectionVal, selectedVal) {
           populateSourceChips(sectionVal, selectedVal || sectionVal);
           drawer.classList.add('open');
-          if (toggleBtn) { toggleBtn.classList.add('open'); }
+          if (toggleBtn) toggleBtn.classList.add('open');
           drawerOpen = true;
         }
         function closeDrawer() {
@@ -2101,18 +2116,15 @@
           drawerOpen = false;
         }
 
-        // News Feeds button toggle
         feedsBtn.addEventListener('click', e => {
           e.stopPropagation();
           menuOpen ? closeMenu() : openMenu();
         });
 
-        // Menu item clicks
         nfItems.forEach(item => {
           item.addEventListener('click', () => {
             const sv = item.dataset.section;
             closeMenu();
-            // If tapping the already-active section, toggle sources drawer
             if (sv === activeSection) {
               drawerOpen ? closeDrawer() : openDrawer(sv, DOM.dropdown.value);
             } else {
@@ -2122,19 +2134,16 @@
           });
         });
 
-        // Sources toggle button (▾ below bar)
         if (toggleBtn) {
           toggleBtn.addEventListener('click', () => {
             drawerOpen ? closeDrawer() : openDrawer(activeSection, DOM.dropdown.value);
           });
         }
 
-        // Close menu on outside click
         document.addEventListener('click', e => {
-          if (!document.getElementById('news-feeds-wrapper').contains(e.target)) closeMenu();
+          if (!feedsBtn.contains(e.target) && !feedsMenu.contains(e.target)) closeMenu();
         });
 
-        // Initialise
         setActiveItem('section-topnews');
         populateSourceChips('section-topnews', 'section-topnews');
       })();
