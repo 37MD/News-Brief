@@ -197,9 +197,7 @@
 
     .load-more-indicator { text-align: center; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--meta-color); padding: 14px 0; letter-spacing: 0.08em; }
     .cached-badge { display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 9px; background: var(--rule); color: var(--muted); padding: 1px 5px; border-radius: 2px; text-transform: uppercase; margin-left: 5px; vertical-align: middle; }
-    /* Mark-read on scroll */
-    .feed-item.marking-read { transition: opacity 0.6s ease, max-height 0.5s ease 0.5s, margin-bottom 0.5s ease 0.5s, padding-bottom 0.5s ease 0.5s; }
-    .feed-item.marked-read  { opacity: 0; max-height: 0; margin-bottom: 0; padding-bottom: 0; overflow: hidden; pointer-events: none; }
+
 
     /* ════════════════════════════════════════════════
        §6  SYSTEM MESSAGES
@@ -642,7 +640,6 @@
     MAX_LS_PER_FEED:    100,
     DEDUP_THRESHOLD:    0.60,
     GEMINI_MODELS:      ['gemini-3.1-flash-lite', 'gemini-3-flash', 'gemini-3.1-pro', 'gemini-2.0-flash-lite'],
-    READ_DELAY_MS:      2000,          // ms card must stay in view before marked read
     STORY_MAX_AGE_MS:   4 * 24 * 60 * 60 * 1000   // 4 days — older stories purged on load
   });
 
@@ -2258,7 +2255,6 @@
       div.className = 'ai-msg ' + (cls || role);
       div.innerHTML = html;
       h.appendChild(div);
-      h.scrollTop   = h.scrollHeight;
       return div;
     }
 
