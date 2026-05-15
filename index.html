@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pulse 15K — Local Intelligence Terminal</title>
+  <title>Pulse 15L — Local Intelligence Terminal</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&family=Noto+Sans:wght@400;500&display=swap" rel="stylesheet">
 
   <style>
@@ -564,7 +564,7 @@
   <!-- Masthead -->
   <div class="masthead">
     <div class="tagline" id="header-date">Local Intelligence Terminal</div>
-    <div class="masthead-title">Pulse<span style="font-size:11px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.55;">15K</span></div>
+    <div class="masthead-title">Pulse<span style="font-size:11px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.55;">15L</span></div>
     <div class="tagline">RSS + PDF · Local Engine + AI Panel</div>
   </div>
   <div id="key-status-badge"></div>
@@ -1093,14 +1093,7 @@
   /* ══════════════════════════════════════════════════════════════
      §11  FEED RENDERING & PAGINATION
   ══════════════════════════════════════════════════════════════ */
-  function attachScrollObserver() {
-    if (scrollObserver) scrollObserver.disconnect();
-    scrollObserver = new IntersectionObserver(entries => {
-      if (entries[0].isIntersecting) { entries[0].target.remove(); renderNextBatch(); }
-    }, { rootMargin: '200px' });
-    const sentinel = document.getElementById('scroll-sentinel');
-    if (sentinel) scrollObserver.observe(sentinel);
-  }
+  function attachScrollObserver() { /* removed — manual Load More used instead */ }
   function renderNextBatch() {
     const batch = page.items.slice(page.displayed, page.displayed + CONFIG.PAGE_SIZE);
     if (!batch.length) return;
@@ -1140,18 +1133,29 @@
     });
     page.displayed += batch.length;
     if (page.displayed < page.items.length) {
-      const sentinel = document.createElement('div'); sentinel.id = 'scroll-sentinel';
-      const loader   = document.createElement('div'); loader.className = 'load-more-indicator';
-      loader.textContent = `Loading more… (${page.items.length - page.displayed} remaining)`;
-      frag.appendChild(sentinel); frag.appendChild(loader);
+      const remaining = page.items.length - page.displayed;
+      const loadMoreWrap = document.createElement('div');
+      loadMoreWrap.id = 'load-more-wrap';
+      loadMoreWrap.style.cssText = 'text-align:center;margin:18px 0 10px;';
+      loadMoreWrap.innerHTML = `<button class="btn-outline" id="load-more-btn" style="padding:8px 22px;border-radius:20px;font-size:11px;">
+        ↓ Load more (${remaining} remaining)
+      </button>`;
+      frag.appendChild(loadMoreWrap);
     } else {
       const end = document.createElement('div'); end.className = 'load-more-indicator';
       end.textContent = `— All ${page.items.length} articles loaded —`;
       frag.appendChild(end);
     }
     DOM.output.appendChild(frag);
-    if (page.displayed < page.items.length) attachScrollObserver();
-    attachReadOnScrollObserver();   // observe all new + existing cards
+    // Wire Load More button
+    const loadMoreBtn = document.getElementById('load-more-btn');
+    if (loadMoreBtn) {
+      loadMoreBtn.addEventListener('click', () => {
+        document.getElementById('load-more-wrap')?.remove();
+        renderNextBatch();
+      });
+    }
+    attachReadOnScrollObserver();
   }
   function deleteReadFeeds(upTo) {
     const items = DOM.output.querySelectorAll('.feed-item');
