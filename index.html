@@ -1116,16 +1116,15 @@
         `<button class="view-orig-btn" onclick="window.open('${escapeHtml(safeUrl(item.link))}','_blank')">↗ Original site</button></div>`;
       frag.appendChild(el);
 
-      // Insert "Delete Read feeds" button every 25 items
-      if ((globalIdx + 1) % 25 === 0 && globalIdx + 1 < page.items.length) {
-        const delBtn = document.createElement('div');
-        delBtn.className = 'delete-read-btn';
-        delBtn.style.cssText = 'text-align:center;margin:12px 0;padding:8px;';
-        delBtn.innerHTML = `<button class="btn-outline" style="background:#c0392b;color:#fff;border-color:#c0392b;" onclick="deleteReadFeeds(this)">🗑️ Delete Read feeds</button>`;
-        frag.appendChild(delBtn);
-      }
     });
     page.displayed += batch.length;
+
+    // Always show a Delete button after each rendered batch
+    const delBtn = document.createElement('div');
+    delBtn.className = 'delete-read-btn';
+    delBtn.style.cssText = 'text-align:center;margin:12px 0;padding:8px;';
+    delBtn.innerHTML = `<button class="btn-outline" style="background:#c0392b;color:#fff;border-color:#c0392b;" onclick="deleteReadFeeds(this)">🗑️ Delete Read feeds</button>`;
+    frag.appendChild(delBtn);
     if (page.displayed < page.items.length) {
       const remaining = page.items.length - page.displayed;
       const loadMoreWrap = document.createElement('div');
@@ -1151,57 +1150,64 @@
     }
   }
   function deleteReadFeeds(btnEl) {
+    // Step 1: find the wrapper div.delete-read-btn that was clicked
     const btnRow = btnEl.closest('.delete-read-btn') || btnEl.parentElement;
 
-    // Build a lookup map: articleId -> page item (for reliable feedUrl access)
+    // Step 2: build articleId -> pageItem map for reliable feedUrl lookup
     const idToItem = {};
     page.items.forEach(i => { if (i.id) idToItem[i.id] = i; });
 
-    // Collect all .feed-item divs that appear BEFORE the button row in the DOM
+    // Step 3: walk ALL .feed-item nodes in DOM order
+    //   - those BEFORE btnRow  → delete from DOM + localStorage
+    //   - those AFTER  btnRow  → keep
     const deletedIds = new Set();
-    const toDelete   = {}; // feedUrl -> Set of article ids
+    const toDelete   = {}; // feedUrl -> Set<articleId>
 
-    Array.from(DOM.output.querySelectorAll('.feed-item')).forEach(el => {
-      // Skip items that come AFTER the button row
-      if (btnRow && !(el.compareDocumentPosition(btnRow) & Node.DOCUMENT_POSITION_FOLLOWING)) return;
+    const allCards = Array.from(DOM.output.querySelectorAll('.feed-item'));
+    for (const el of allCards) {
+      // Node.DOCUMENT_POSITION_FOLLOWING (4) is set on the result when
+      // the *argument* (btnRow) follows the *reference node* (el),
+      // meaning el comes BEFORE btnRow — so we delete it.
+      const pos = el.compareDocumentPosition(btnRow);
+      const elIsBeforeBtn = !!(pos & Node.DOCUMENT_POSITION_FOLLOWING);
+      if (!elIsBeforeBtn) continue; // el is after or IS the btn row — keep it
 
-      const aid = el.dataset.articleId || '';
-      deletedIds.add(aid);
-
-      // Get feedUrl from page.items (reliable) or fall back to DOM attribute
+      const aid      = el.dataset.articleId || '';
       const pageItem = idToItem[aid];
-      const feedUrl  = (pageItem && pageItem._feedUrl) || el.querySelector('[data-feed-url]')?.getAttribute('data-feed-url') || '';
+      const feedUrl  = (pageItem?._feedUrl) ||
+                       el.querySelector('[data-feed-url]')?.getAttribute('data-feed-url') || '';
 
-      if (feedUrl && aid) {
+      if (aid) deletedIds.add(aid);
+      if (aid && feedUrl) {
         if (!toDelete[feedUrl]) toDelete[feedUrl] = new Set();
         toDelete[feedUrl].add(aid);
       }
       el.remove();
-    });
+    }
 
-    // Remove the delete button row itself
+    // Step 4: remove the button row itself
     btnRow?.remove();
 
-    // Permanently remove from localStorage
-    Object.entries(toDelete).forEach(([feedUrl, ids]) => {
+    // Step 5: persist deletions to localStorage
+    for (const [feedUrl, ids] of Object.entries(toDelete)) {
       const obj = lsLoad(feedUrl);
-      if (!obj) return;
+      if (!obj) continue;
       obj.items = obj.items.filter(i => !ids.has(i.id));
       lsSave(feedUrl, obj.feedName, obj.items);
-    });
+    }
 
-    // Purge from feedCache memory
-    Object.keys(feedCache).forEach(key => {
+    // Step 6: purge from in-memory feedCache
+    for (const key of Object.keys(feedCache)) {
       if (feedCache[key]?.items) {
         feedCache[key].items = feedCache[key].items.filter(i => !deletedIds.has(i.id));
       }
-    });
+    }
 
-    // Sync page.items and recalculate displayed count
+    // Step 7: sync page.items and displayed count
     page.items     = page.items.filter(i => !deletedIds.has(i.id));
     page.displayed = DOM.output.querySelectorAll('.feed-item').length;
 
-    // Update article count display
+    // Step 8: update article count label
     DOM.itemCount.textContent = `${page.items.length} articles`;
   }
 
