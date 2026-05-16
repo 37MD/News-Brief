@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pulse 15N — Local Intelligence Terminal</title>
+  <title>Pulse 15O — Local Intelligence Terminal</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&family=Noto+Sans:wght@400;500&display=swap" rel="stylesheet">
 
   <style>
@@ -562,7 +562,7 @@
   <!-- Masthead -->
   <div class="masthead">
     <div class="tagline" id="header-date">Local Intelligence Terminal</div>
-    <div class="masthead-title">Pulse<span style="font-size:11px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.55;">15N</span></div>
+    <div class="masthead-title">Pulse<span style="font-size:11px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.55;">15O</span></div>
     <div class="tagline">RSS + PDF · Local Engine + AI Panel</div>
   </div>
   <div id="key-status-badge"></div>
@@ -1121,7 +1121,7 @@
         const delBtn = document.createElement('div');
         delBtn.className = 'delete-read-btn';
         delBtn.style.cssText = 'text-align:center;margin:12px 0;padding:8px;';
-        delBtn.innerHTML = `<button class="btn-outline" style="background:#c0392b;color:#fff;border-color:#c0392b;" onclick="deleteReadFeeds(${globalIdx + 1})">🗑️ Delete Read feeds</button>`;
+        delBtn.innerHTML = `<button class="btn-outline" style="background:#c0392b;color:#fff;border-color:#c0392b;" onclick="deleteReadFeeds(this)">🗑️ Delete Read feeds</button>`;
         frag.appendChild(delBtn);
       }
     });
@@ -1150,24 +1150,32 @@
       });
     }
   }
-  function deleteReadFeeds(upTo) {
-    // Collect article IDs and their feedUrls BEFORE removing DOM nodes
+  function deleteReadFeeds(btnEl) {
+    // Collect all .feed-item nodes that appear BEFORE this delete button in the DOM
     const toDelete = {}; // feedUrl → Set of article ids
-    const items = DOM.output.querySelectorAll('.feed-item');
-    items.forEach(el => {
-      const idx = parseInt(el.dataset.globalIdx, 10);
-      if (idx < upTo) {
-        // Grab feedUrl from the headline's data attribute
+    const deletedIds = new Set();
+    const allFeedItems = Array.from(DOM.output.querySelectorAll('.feed-item'));
+    const btnRect = btnEl.closest('.delete-read-btn') || btnEl.parentElement;
+
+    // Walk all feed-items and remove those that come before the button element
+    allFeedItems.forEach(el => {
+      // compareDocumentPosition: if el comes before btnRect in DOM order
+      if (btnRect && el.compareDocumentPosition(btnRect) & Node.DOCUMENT_POSITION_FOLLOWING) {
         const headline = el.querySelector('[data-feed-url]');
         const feedUrl  = headline ? headline.getAttribute('data-feed-url') : '';
         const aid      = el.dataset.articleId || (headline ? headline.getAttribute('data-article-id') : '');
         if (feedUrl && aid) {
           if (!toDelete[feedUrl]) toDelete[feedUrl] = new Set();
           toDelete[feedUrl].add(aid);
+          deletedIds.add(aid);
         }
         el.remove();
       }
     });
+
+    // Remove the delete button row itself
+    btnRect?.remove();
+
     // Permanently remove from localStorage so they never come back
     Object.entries(toDelete).forEach(([feedUrl, ids]) => {
       let obj = lsLoad(feedUrl);
@@ -1175,13 +1183,25 @@
       obj.items = obj.items.filter(i => !ids.has(i.id));
       lsSave(feedUrl, obj.feedName, obj.items);
     });
-    // Also drop from in-memory page list
-    page.items = page.items.filter((_, i) => i >= upTo);
-    // Shift globalIdx on remaining DOM nodes so pagination stays consistent
-    DOM.output.querySelectorAll('.feed-item').forEach(el => {
-      const idx = parseInt(el.dataset.globalIdx, 10);
-      el.dataset.globalIdx = idx - upTo;
+
+    // Also purge from feedCache memory
+    Object.keys(feedCache).forEach(key => {
+      if (feedCache[key]?.items) {
+        feedCache[key].items = feedCache[key].items.filter(i => !deletedIds.has(i.id));
+      }
     });
+
+    // Drop from in-memory page list and recalculate displayed count
+    page.items = page.items.filter(i => !deletedIds.has(i.id));
+    page.displayed = DOM.output.querySelectorAll('.feed-item').length;
+
+    // Reindex globalIdx on remaining DOM nodes
+    DOM.output.querySelectorAll('.feed-item').forEach((el, i) => {
+      el.dataset.globalIdx = i;
+    });
+
+    // Update article count display
+    DOM.itemCount.textContent = `${page.items.length} articles`;
   }
 
   function startPagination(items, feedName, feedUrl) {
