@@ -956,6 +956,23 @@
       localStorage.setItem(lsKey(feedUrl), JSON.stringify({ feedName, items: trimmed, savedAt: Date.now() }));
     } catch(e) { if (e.name === 'QuotaExceededError') { try { localStorage.clear(); } catch{} } }
   }
+  /* ── Permanently deleted article IDs (survive refresh) ── */
+  const LS_DELETED_KEY = 'pulse15o_deleted_ids';
+  function deletedIdsLoad() {
+    try { return new Set(JSON.parse(localStorage.getItem(LS_DELETED_KEY) || '[]')); }
+    catch { return new Set(); }
+  }
+  function deletedIdsSave(set) {
+    try { localStorage.setItem(LS_DELETED_KEY, JSON.stringify([...set])); } catch {}
+  }
+  function deletedIdsAdd(ids) {
+    const set = deletedIdsLoad();
+    ids.forEach(id => set.add(id));
+    // Cap at 2000 to avoid unbounded growth
+    const arr = [...set];
+    deletedIdsSave(new Set(arr.slice(Math.max(0, arr.length - 2000))));
+  }
+
   function _todayStamp() {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -1150,45 +1167,39 @@
     }
   }
   function deleteReadFeeds(btnEl) {
-    // Step 1: find the wrapper div.delete-read-btn that was clicked
     const btnRow = btnEl.closest('.delete-read-btn') || btnEl.parentElement;
 
-    // Step 2: build articleId -> pageItem map for reliable feedUrl lookup
-    const idToItem = {};
-    page.items.forEach(i => { if (i.id) idToItem[i.id] = i; });
-
-    // Step 3: walk ALL .feed-item nodes in DOM order
-    //   - those BEFORE btnRow  → delete from DOM + localStorage
-    //   - those AFTER  btnRow  → keep
+    // Collect IDs and feedUrls of ALL cards visible ABOVE the button
     const deletedIds = new Set();
     const toDelete   = {}; // feedUrl -> Set<articleId>
 
-    const allCards = Array.from(DOM.output.querySelectorAll('.feed-item'));
-    for (const el of allCards) {
-      // Node.DOCUMENT_POSITION_FOLLOWING (4) is set on the result when
-      // the *argument* (btnRow) follows the *reference node* (el),
-      // meaning el comes BEFORE btnRow — so we delete it.
-      const pos = el.compareDocumentPosition(btnRow);
-      const elIsBeforeBtn = !!(pos & Node.DOCUMENT_POSITION_FOLLOWING);
-      if (!elIsBeforeBtn) continue; // el is after or IS the btn row — keep it
+    // Build id->item map from page.items for reliable _feedUrl
+    const idToItem = {};
+    page.items.forEach(i => { if (i.id) idToItem[i.id] = i; });
 
-      const aid      = el.dataset.articleId || '';
-      const pageItem = idToItem[aid];
-      const feedUrl  = (pageItem?._feedUrl) ||
-                       el.querySelector('[data-feed-url]')?.getAttribute('data-feed-url') || '';
+    Array.from(DOM.output.querySelectorAll('.feed-item')).forEach(el => {
+      // Only process cards that come BEFORE the button row in the DOM
+      const pos = btnRow ? el.compareDocumentPosition(btnRow) : 0;
+      if (!(pos & Node.DOCUMENT_POSITION_FOLLOWING)) return;
 
+      const aid     = el.dataset.articleId || '';
+      const item    = idToItem[aid];
+      const feedUrl = item?._feedUrl ||
+                      el.querySelector('[data-feed-url]')?.getAttribute('data-feed-url') || '';
       if (aid) deletedIds.add(aid);
       if (aid && feedUrl) {
         if (!toDelete[feedUrl]) toDelete[feedUrl] = new Set();
         toDelete[feedUrl].add(aid);
       }
       el.remove();
-    }
+    });
 
-    // Step 4: remove the button row itself
     btnRow?.remove();
 
-    // Step 5: persist deletions to localStorage
+    // 1. Persist deleted IDs to a dedicated LS key (works for ALL feed types)
+    if (deletedIds.size) deletedIdsAdd(deletedIds);
+
+    // 2. Also remove from per-feed LS entries where they exist
     for (const [feedUrl, ids] of Object.entries(toDelete)) {
       const obj = lsLoad(feedUrl);
       if (!obj) continue;
@@ -1196,18 +1207,15 @@
       lsSave(feedUrl, obj.feedName, obj.items);
     }
 
-    // Step 6: purge from in-memory feedCache
+    // 3. Purge from in-memory feedCache
     for (const key of Object.keys(feedCache)) {
-      if (feedCache[key]?.items) {
+      if (feedCache[key]?.items)
         feedCache[key].items = feedCache[key].items.filter(i => !deletedIds.has(i.id));
-      }
     }
 
-    // Step 7: sync page.items and displayed count
+    // 4. Sync page.items
     page.items     = page.items.filter(i => !deletedIds.has(i.id));
     page.displayed = DOM.output.querySelectorAll('.feed-item').length;
-
-    // Step 8: update article count label
     DOM.itemCount.textContent = `${page.items.length} articles`;
   }
 
@@ -1296,8 +1304,9 @@
           });
 
           feedCache[feedVal] = { timestamp: Date.now(), items: unique, feedName: label };
-          const display = unique.filter(i => !i.viewed);
-          startPagination(display.length ? display : unique, label, feedVal);
+          const _deleted = deletedIdsLoad();
+          const display = unique.filter(i => !i.viewed && !_deleted.has(i.id));
+          startPagination(display.length ? display : unique.filter(i => !_deleted.has(i.id)), label, feedVal);
         } catch(err) {
           if (reqId !== requestCounter) return;
           DOM.output.innerHTML = `<div class="system-msg error">❌ Error: ${escapeHtml(err.message)}</div>`;
@@ -1325,8 +1334,9 @@
       const mem = feedCache[feedUrl];
       if (!forceRefresh && mem && (Date.now() - mem.timestamp < CONFIG.CACHE_TTL_MS)) {
         const stored = lsLoad(feedUrl);
-        const items  = stored ? stored.items.filter(i => !i.viewed) : mem.items;
-        startPagination(items.length ? items : mem.items, feedName, feedUrl);
+        const _deleted = deletedIdsLoad();
+        const items  = stored ? stored.items.filter(i => !i.viewed && !_deleted.has(i.id)) : mem.items.filter(i => !_deleted.has(i.id));
+        startPagination(items.length ? items : mem.items.filter(i => !_deleted.has(i.id)), feedName, feedUrl);
         startCountdown();
         return;
       }
@@ -1346,8 +1356,9 @@
         if (!merged.length) merged = rawItems.map(i => ({ id: articleId(i.title), title: i.title || 'Untitled', description: processRssText(i.description, 500), link: i.link || '#', pubDate: i.pubDate || '', viewed: false }));
 
         feedCache[feedUrl] = { timestamp: Date.now(), items: merged, feedName };
-        const display = merged.filter(i => !i.viewed);
-        startPagination(display.length ? display : merged, feedName, feedUrl);
+        const _deleted = deletedIdsLoad();
+        const display = merged.filter(i => !i.viewed && !_deleted.has(i.id));
+        startPagination(display.length ? display : merged.filter(i => !_deleted.has(i.id)), feedName, feedUrl);
         startCountdown();
       } catch(err) {
         if (reqId !== requestCounter) return;
