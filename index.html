@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pulse 15O — Local Intelligence Terminal</title>
+  <title>Pulse 15P — Local Intelligence Terminal</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&family=Noto+Sans:wght@400;500&display=swap" rel="stylesheet">
 
   <style>
@@ -402,6 +402,18 @@
       #ai-fab   { bottom: 18px; right: 14px; width: 46px; height: 46px; font-size: 19px; }
     }
 
+    /* ════════════════════════════════════════
+       §12  URL-MODE INDICATOR
+    ════════════════════════════════════════ */
+    #ai-url-mode-banner {
+      display: none; background: #e8f5ef; border-bottom: 1px solid #b0d8be;
+      padding: 5px 12px; font-family: 'IBM Plex Mono', monospace;
+      font-size: 9.5px; color: #1a5c3a; font-weight: 600;
+      letter-spacing: 0.04em; flex-shrink: 0;
+    }
+    #ai-url-mode-banner.active { display: block; }
+    #ai-url-mode-banner span { opacity: 0.7; font-weight: 400; }
+
   </style>
 
   <!-- PDF.js for local PDF parsing (no AI needed) -->
@@ -562,8 +574,8 @@
   <!-- Masthead -->
   <div class="masthead">
     <div class="tagline" id="header-date">Local Intelligence Terminal</div>
-    <div class="masthead-title">Pulse<span style="font-size:11px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.55;">15O</span></div>
-    <div class="tagline">RSS + PDF · Local Engine + AI Panel</div>
+    <div class="masthead-title">Pulse<span style="font-size:11px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.55;">15P</span></div>
+    <div class="tagline">RSS + PDF · Local Engine + AI Panel · Ad-Free Reader</div>
   </div>
   <div id="key-status-badge"></div>
 
@@ -779,7 +791,7 @@
   /* ══════════════════════════════════════════════════════════════
      §4  IDB KEY STORAGE
   ══════════════════════════════════════════════════════════════ */
-  const IDB_NAME = 'pulse15d', IDB_STORE = 'kv', IDB_VER = 1;
+  const IDB_NAME = 'pulse15p', IDB_STORE = 'kv', IDB_VER = 1;
   function _idbOpen() {
     return new Promise((res, rej) => {
       const req = indexedDB.open(IDB_NAME, IDB_VER);
@@ -818,7 +830,7 @@
   ══════════════════════════════════════════════════════════════ */
   function _getRawKey(slot) { return sessionStorage.getItem(`pk${slot}`) || sessionStorage.getItem('ai_k'+slot) || ''; }
   function getGeminiKey()   { return _getRawKey(_activeKeySlot) || _getRawKey(1) || _getRawKey(2); }
-  function getGeminiModel() { return localStorage.getItem('pulse15d_model') || CONFIG.GEMINI_MODELS[0]; }
+  function getGeminiModel() { return localStorage.getItem('pulse15p_model') || CONFIG.GEMINI_MODELS[0]; }
 
   function _maskKey(k) { return k ? k.substring(0,6) + '…' + k.slice(-3) : ''; }
 
@@ -846,7 +858,7 @@
     }
     const nKeys = [k1,k2,k3].filter(Boolean).length;
     const slotLabel = `✓ ${nKeys} key${nKeys>1?'s':''} stored`;
-    const mdl = localStorage.getItem('pulse15d_ai_model') || 'gemini-3.1-flash-lite';
+    const mdl = localStorage.getItem('pulse15p_ai_model') || 'gemini-3.1-flash-lite';
     const mdlLabel = mdl.replace('gemini-3.1-flash-lite','3.1 Flash-Lite').replace('gemini-3-flash','3 Flash').replace('gemini-3.1-pro','3.1 Pro').replace('gemini-2.0-flash-lite','2.0 Flash-Lite');
     DOM.keyStatusBadge.innerHTML = `<span style="font-size:9px;font-family:'IBM Plex Mono',monospace;text-align:center;display:block;padding:2px;color:#5a554c;">AI: ${slotLabel} · ${mdlLabel} · Cascade K1→K2→K3 on quota · ⚡ panel in reader</span>`;
   }
@@ -860,7 +872,7 @@
     DOM.kmK1Input.placeholder = k1 ? `Stored (${_maskKey(k1)}) — paste to replace` : 'AIza… (paste Key 1)';
     DOM.kmK2Input.placeholder = k2 ? `Stored (${_maskKey(k2)}) — paste to replace` : 'AIza… (paste Key 2)';
     if (DOM.kmK3Input) DOM.kmK3Input.placeholder = k3 ? `Stored (${_maskKey(k3)}) — paste to replace` : 'AIza… (paste Key 3)';
-    if (DOM.kmModelSelect) DOM.kmModelSelect.value = localStorage.getItem('pulse15d_ai_model') || 'gemini-3.1-flash-lite';
+    if (DOM.kmModelSelect) DOM.kmModelSelect.value = localStorage.getItem('pulse15p_ai_model') || 'gemini-3.1-flash-lite';
     setTimeout(() => DOM.kmK1Input.focus(), 80);
   }
   function closeKeyManager() {
@@ -939,7 +951,7 @@
   function lsKey(feedUrl) {
     let h = 0;
     for (let i = 0; i < feedUrl.length; i++) h = (Math.imul(31, h) + feedUrl.charCodeAt(i)) | 0;
-    return 'pulse15d_' + Math.abs(h).toString(36);
+    return 'pulse15p_' + Math.abs(h).toString(36);
   }
   function lsLoad(feedUrl) {
     try {
@@ -957,7 +969,7 @@
     } catch(e) { if (e.name === 'QuotaExceededError') { try { localStorage.clear(); } catch{} } }
   }
   /* ── Permanently deleted article IDs (survive refresh) ── */
-  const LS_DELETED_KEY = 'pulse15o_deleted_ids';
+  const LS_DELETED_KEY = 'pulse15p_deleted_ids';
   function deletedIdsLoad() {
     try { return new Set(JSON.parse(localStorage.getItem(LS_DELETED_KEY) || '[]')); }
     catch { return new Set(); }
@@ -1025,7 +1037,7 @@
        legacy entries written before the hard-delete fix).
   ══════════════════════════════════════════════════════════════ */
   function purgeOldStories() {
-    const keysToCheck = Object.keys(localStorage).filter(k => k.startsWith('pulse15d_'));
+    const keysToCheck = Object.keys(localStorage).filter(k => k.startsWith('pulse15p_'));
     keysToCheck.forEach(lk => {
       try {
         const raw = localStorage.getItem(lk);
@@ -1432,14 +1444,31 @@
     const base   = doc.createElement('base'); base.href = baseUrl; doc.head.appendChild(base);
     [
       'script','style','nav','footer','aside','iframe','noscript','form','header','button','input','select','textarea','object','embed',
-      '.ad','.ads','.advertisement','.advert','.ad-unit','.ad-slot','.ad-container','.dfp-ad','.google-ad',
-      '[id*="google_ads"],[id*="dfp"],[class*="ad-"],[class*="-ad"],[class*="advert"],[class*="sponsor"],[class*="promo"]',
-      '.social-share','.share','.sharing','.related','.recommended','[class*="related"],[class*="recommended"]',
-      '#comments','.comments','[class*="comment"],[class*="newsletter"],[class*="subscribe"],[class*="paywall"]',
-      '.breadcrumb','.tags','.tag-list','.author-bio','[class*="author-bio"]',
+      // Ads — comprehensive
+      '.ad','.ads','.advertisement','.advert','.ad-unit','.ad-slot','.ad-container','.ad-wrapper','.ad-holder',
+      '.dfp-ad','.google-ad','.adsense','.adsbygoogle','.ad-inarticle','.ad-interstitial',
+      '[id*="google_ads"],[id*="dfp"],[id*="advert"],[id*="adsense"],[id*="ad-slot"],[id*="ad-unit"]',
+      '[class*="ad-"],[class*="-ad"],[class*="advert"],[class*="sponsor"],[class*="promo"],[class*="taboola"],[class*="outbrain"],[class*="mgid"]',
+      '[data-ad],[data-ad-slot],[data-ad-unit],[data-advertisement]',
+      'ins.adsbygoogle',
+      // Tracking & social
+      '.social-share','.share','.sharing','.social-links','.social-buttons',
+      '[class*="share-"],[class*="-share"],[class*="social-"]',
+      // Related / recommendations / newsletters
+      '.related','.recommended','.also-read','.more-stories','.trending',
+      '[class*="related"],[class*="recommended"],[class*="also-read"],[class*="more-stories"]',
+      '#comments','.comments','.comment-section',
+      '[class*="comment"],[class*="newsletter"],[class*="subscribe"],[class*="paywall"],[class*="signup"]',
+      // UI chrome
+      '.breadcrumb','.tags','.tag-list','.author-bio','[class*="author-bio"]','.byline-widget',
       '[class*="sticky"],[class*="toast"],[class*="popup"],[class*="modal"],[class*="overlay"],[class*="banner"],[class*="widget"]',
+      '[class*="notification"],[class*="cookie"],[class*="gdpr"],[class*="consent"]',
+      // Images (keep reader clean)
       'figure','picture','.article-image','[class*="hero-img"],[class*="lead-img"],[class*="featured-img"]',
-      '[class*="pull-quote"],[class*="callout"]'
+      '[class*="pull-quote"],[class*="callout"]',
+      // Indian newspaper specific
+      '[class*="prime-article"],[class*="premium-"],[class*="et-paywall"],[class*="ht-paywall"]',
+      '[id*="piano"],[class*="piano-"]'
     ].forEach(sel => { try { doc.querySelectorAll(sel).forEach(el => el.remove()); } catch{} });
     Array.from(doc.querySelectorAll('div,p,section,span,ul,ol,li,blockquote,h1,h2,h3,h4,h5,h6')).reverse()
       .forEach(el => { if (el.textContent.trim() === '' && !el.querySelector('img')) el.remove(); });
@@ -1519,14 +1548,31 @@
     // Aggressive junk removal
     [
       'script','style','nav','footer','aside','iframe','noscript','form','header','button','input','select','textarea','object','embed',
-      '.ad','.ads','.advertisement','.advert','.ad-unit','.ad-slot','.ad-container','.dfp-ad','.google-ad',
-      '[id*="google_ads"],[id*="dfp"],[class*="ad-"],[class*="-ad"],[class*="advert"],[class*="sponsor"],[class*="promo"]',
-      '.social-share','.share','.sharing','.related','.recommended','[class*="related"],[class*="recommended"]',
-      '#comments','.comments','[class*="comment"],[class*="newsletter"],[class*="subscribe"],[class*="paywall"]',
-      '.breadcrumb','.tags','.tag-list','.author-bio','[class*="author-bio"]',
+      // Ads — comprehensive
+      '.ad','.ads','.advertisement','.advert','.ad-unit','.ad-slot','.ad-container','.ad-wrapper','.ad-holder',
+      '.dfp-ad','.google-ad','.adsense','.adsbygoogle','.ad-inarticle','.ad-interstitial',
+      '[id*="google_ads"],[id*="dfp"],[id*="advert"],[id*="adsense"],[id*="ad-slot"],[id*="ad-unit"]',
+      '[class*="ad-"],[class*="-ad"],[class*="advert"],[class*="sponsor"],[class*="promo"],[class*="taboola"],[class*="outbrain"],[class*="mgid"]',
+      '[data-ad],[data-ad-slot],[data-ad-unit],[data-advertisement]',
+      'ins.adsbygoogle',
+      // Tracking & social
+      '.social-share','.share','.sharing','.social-links','.social-buttons',
+      '[class*="share-"],[class*="-share"],[class*="social-"]',
+      // Related / recommendations / newsletters
+      '.related','.recommended','.also-read','.more-stories','.trending',
+      '[class*="related"],[class*="recommended"],[class*="also-read"],[class*="more-stories"]',
+      '#comments','.comments','.comment-section',
+      '[class*="comment"],[class*="newsletter"],[class*="subscribe"],[class*="paywall"],[class*="signup"]',
+      // UI chrome
+      '.breadcrumb','.tags','.tag-list','.author-bio','[class*="author-bio"]','.byline-widget',
       '[class*="sticky"],[class*="toast"],[class*="popup"],[class*="modal"],[class*="overlay"],[class*="banner"],[class*="widget"]',
+      '[class*="notification"],[class*="cookie"],[class*="gdpr"],[class*="consent"]',
+      // Images (keep reader clean)
       'figure','picture','.article-image','[class*="hero-img"],[class*="lead-img"],[class*="featured-img"]',
-      '[class*="pull-quote"],[class*="callout"]'
+      '[class*="pull-quote"],[class*="callout"]',
+      // Indian newspaper specific
+      '[class*="prime-article"],[class*="premium-"],[class*="et-paywall"],[class*="ht-paywall"]',
+      '[id*="piano"],[class*="piano-"]'
     ].forEach(sel => { try { doc.querySelectorAll(sel).forEach(el => el.remove()); } catch{} });
 
     Array.from(doc.querySelectorAll('div,p,section,span,ul,ol,li,blockquote,h1,h2,h3,h4,h5,h6')).reverse()
@@ -1666,19 +1712,21 @@
       }
     }
 
-    // Proxy failed — show error with link to original
+    // Proxy failed — show AI-assisted mode (URL-based summary) instead of dead-end error
     setReaderProgress(100);
     setTimeout(() => setReaderProgress(0), 500);
     DOM.readerContent.innerHTML =
-      `<div class="reader-status error" style="margin-top:40px;border:1px solid var(--rule);padding:30px;border-radius:8px;">
-         <h3 style="font-family:'Playfair Display',serif;font-size:22px;margin-bottom:10px;">Article Blocked</h3>
-         <p style="color:var(--muted);line-height:1.5;font-size:14px;margin-bottom:24px;">This site blocks external readers. Open the original page instead.</p>
-         <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer"
-            style="display:inline-block;background:var(--accent);color:var(--paper);padding:11px 22px;border-radius:4px;text-decoration:none;font-family:'IBM Plex Mono',monospace;font-size:12px;text-transform:uppercase;">
-           ↗ Read on Original Site
-         </a>
+      `<div style="margin-top:36px;border:1px solid var(--rule);padding:28px 24px;border-radius:8px;text-align:center;background:var(--paper);">
+         <div style="font-size:28px;margin-bottom:10px;">⚡</div>
+         <h3 style="font-family:'Playfair Display',serif;font-size:20px;margin-bottom:10px;color:var(--ink);">AI-Assisted Mode</h3>
+         <p style="color:var(--muted);line-height:1.65;font-size:13px;margin-bottom:6px;">This site blocks external readers. The <strong>⚡ AI panel is active</strong> — tap <em>Summary</em> or <em>Key Takeaways</em> to let Gemini analyse this article via its URL.</p>
+         <p style="color:var(--meta-color);line-height:1.5;font-size:11px;margin-bottom:20px;font-family:'IBM Plex Mono',monospace;">URL-mode: Gemini reads the article on your behalf</p>
+         <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;">
+           <button onclick="AI.triggerUrlSummary()" style="background:var(--accent);color:var(--paper);padding:10px 20px;border-radius:4px;border:none;font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;cursor:pointer;font-weight:700;">⚡ AI Summary Now</button>
+           <a href="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer" style="display:inline-flex;align-items:center;background:transparent;color:var(--accent);padding:10px 20px;border-radius:4px;border:1.5px solid var(--accent);text-decoration:none;font-family:'IBM Plex Mono',monospace;font-size:11px;text-transform:uppercase;letter-spacing:0.05em;">↗ Original Site</a>
+         </div>
        </div>`;
-    AI.setContext(''); AI.show();
+    AI.setUrlContext(url); AI.show();
   }
 
   function _renderWebArticle(cleanHtml, title, feedName, pubDate, url) {
@@ -1995,9 +2043,9 @@
       if (DOM.kmK3Save) DOM.kmK3Save.addEventListener('click', () => _saveKey(3, (DOM.kmK3Input?.value||'').trim()));
       // Sync model select from localStorage
       if (DOM.kmModelSelect) {
-        DOM.kmModelSelect.value = localStorage.getItem('pulse15d_ai_model') || 'gemini-3.1-flash-lite';
+        DOM.kmModelSelect.value = localStorage.getItem('pulse15p_ai_model') || 'gemini-3.1-flash-lite';
         DOM.kmModelSelect.addEventListener('change', () => {
-          localStorage.setItem('pulse15d_ai_model', DOM.kmModelSelect.value);
+          localStorage.setItem('pulse15p_ai_model', DOM.kmModelSelect.value);
           _updateKeyStatusBadge();
         });
       }
@@ -2157,7 +2205,7 @@
       AI.wireEvents();
       DOM.refreshBtn.addEventListener('click', () => {
         Object.keys(feedCache).forEach(k => delete feedCache[k]);
-        Object.keys(localStorage).filter(k => k.startsWith('pulse15d_')).forEach(k => localStorage.removeItem(k));
+        Object.keys(localStorage).filter(k => k.startsWith('pulse15p_')).forEach(k => localStorage.removeItem(k));
         loadFeed(true);
       });
 
@@ -2231,9 +2279,10 @@
 
   const AI = (() => {
     // ── state ──
-    let _busy    = false;
-    let _history = [];   // {role,text} for display
-    let _context = '';   // article text sent to Gemini
+    let _busy       = false;
+    let _history    = [];   // {role,text} for display
+    let _context    = '';   // article text sent to Gemini
+    let _urlContext = '';   // URL for CORS-blocked articles (URL-mode)
 
     const MODEL_CASCADE = [
       'gemini-3.1-flash-lite',
@@ -2271,9 +2320,9 @@
 
     // ── model preference ──
     function _getModel() {
-      return localStorage.getItem('pulse15d_ai_model') || MODEL_CASCADE[0];
+      return localStorage.getItem('pulse15p_ai_model') || MODEL_CASCADE[0];
     }
-    function _saveModel(m) { localStorage.setItem('pulse15d_ai_model', m); }
+    function _saveModel(m) { localStorage.setItem('pulse15p_ai_model', m); }
     function _modelLabel(m) {
       return m.replace('gemini-3.1-flash-lite','3.1 Flash-Lite')
               .replace('gemini-3-flash','3 Flash')
@@ -2344,8 +2393,11 @@
         .replace(/(<\/[uo]l>)<\/p>/g,'$1');
     }
 
-    // ── build prompt with article context ──
+    // ── build prompt with article context or URL ──
     function _buildPrompt(userQ) {
+      if (_urlContext) {
+        return `You are a concise news analyst. The user cannot read this article directly due to website restrictions.\n\nARTICLE URL: ${_urlContext}\n\nPlease use your knowledge and any available information about this URL/article to answer the question below. If you cannot access the URL, provide a helpful response based on the headline/topic visible in the URL, and note you are working from the URL only.\n\nQUESTION: ${userQ}\n\nAnswer in clear, readable prose with bullet points where useful. Be concise.`;
+      }
       const ctx = _context.substring(0, 6000);
       return `You are a concise news analyst. Answer in clear, readable prose with bullet points where useful.\n\nARTICLE TEXT:\n"""\n${ctx}\n"""\n\nQUESTION: ${userQ}`;
     }
@@ -2357,7 +2409,7 @@
         _addMsg('ai', `<strong>No API key saved.</strong> Tap the &#128274; key button in the toolbar to add your free Gemini key (aistudio.google.com/apikey). Keys are stored permanently.<br><button onclick="document.getElementById('key-mgr-btn').click()">Add Key Now</button>`, 'no-key');
         return;
       }
-      if (!_context) {
+      if (!_context && !_urlContext) {
         _addMsg('ai', 'No article text available for this page. Open a readable article first.', 'error');
         return;
       }
@@ -2394,7 +2446,8 @@
     }
     function openPanel() {
       panel()?.classList.add('open');
-      if (modelLbl()) modelLbl().textContent = `Model: ${_modelLabel(_getModel())}`;
+      _updateModeIndicator();
+      if (!_urlContext && modelLbl()) modelLbl().textContent = `Model: ${_modelLabel(_getModel())}`;
     }
     function closePanel() {
       panel()?.classList.remove('open');
@@ -2403,11 +2456,58 @@
       panel()?.classList.contains('open') ? closePanel() : openPanel();
     }
 
-    // ── set context (called when reader opens) ──
+    // ── set context (called when reader opens with full article text) ──
     function setContext(text) {
       _context = text || '';
+      _urlContext = '';
       _history = [];
       if (hist()) hist().innerHTML = '';
+      _updateModeIndicator();
+    }
+
+    // ── set URL context (called when CORS blocks article fetch) ──
+    function setUrlContext(url) {
+      _urlContext = url || '';
+      _context = '';
+      _history = [];
+      if (hist()) hist().innerHTML = '';
+      _updateModeIndicator();
+    }
+
+    // ── show/hide URL mode indicator in panel header ──
+    function _updateModeIndicator() {
+      const lbl    = modelLbl();
+      const banner = document.getElementById('ai-url-mode-banner');
+      if (_urlContext) {
+        if (lbl)    { lbl.textContent = 'URL-mode active'; lbl.style.color = '#009e70'; }
+        if (banner) banner.classList.add('active');
+      } else {
+        if (lbl)    { lbl.textContent = _context ? `Model: ${_modelLabel(_getModel())}` : ''; lbl.style.color = ''; }
+        if (banner) banner.classList.remove('active');
+      }
+    }
+
+    // ── open ad-free pop-up window for CORS-blocked articles ──
+    function _openAdFreeWindow() {
+      const extLink = document.getElementById('reader-ext-link');
+      const url = _urlContext || (extLink ? extLink.href : '');
+      if (!url || url === '#' || url === window.location.href) {
+        _addMsg('ai', 'No original URL available for this article.', 'error');
+        return;
+      }
+      // Open a clean popup — user's browser ad-blocker will apply there
+      const win = window.open(url, '_blank', 'width=1000,height=820,resizable=yes,scrollbars=yes,toolbar=no,menubar=no,location=yes');
+      if (!win) {
+        _addMsg('ai', '⚠️ Pop-up blocked by browser. Please allow pop-ups for this page and try again.', 'error');
+      } else {
+        _addMsg('ai', '✅ Opened in clean browser window. Install uBlock Origin or similar for full ad-blocking.', 'ai');
+      }
+    }
+
+    // ── auto-trigger summary for URL mode (called from inline button) ──
+    function triggerUrlSummary() {
+      openPanel();
+      setTimeout(() => _send('Give me a concise summary of this article in 3-4 sentences.'), 120);
     }
 
     // ── wire events ──
@@ -2424,6 +2524,7 @@
           const p = btn.dataset.prompt;
           if (p === 'summary')   _send('Give me a concise summary of this article in 3-4 sentences.');
           if (p === 'takeaways') _send('List the 5 most important key takeaways from this article as bullet points.');
+          if (p === 'adblock')   _openAdFreeWindow();
         });
       });
 
@@ -2471,7 +2572,7 @@
       if (inp) inp.placeholder = k3 ? `Stored (…${k3.slice(-3)}) — paste to replace` : 'AIza… (paste Key 3)';
     }
 
-    return { show, hide, setContext, wireEvents: _wireEvents, loadKeys: _loadKeys, saveKey: _saveKey, getKey: _getKey, hasAnyKey: _hasAnyKey, refreshKmButtons, _callGeminiRaw: _callGemini };
+    return { show, hide, setContext, setUrlContext, triggerUrlSummary, openPanel, wireEvents: _wireEvents, loadKeys: _loadKeys, saveKey: _saveKey, getKey: _getKey, hasAnyKey: _hasAnyKey, refreshKmButtons, _callGeminiRaw: _callGemini };
   })();
 
 </script>
@@ -2487,9 +2588,11 @@
       <span class="ai-panel-model" id="ai-model-label"></span>
       <button class="ai-panel-close" id="ai-panel-close">&times;</button>
     </div>
+    <div id="ai-url-mode-banner">&#9889; URL Mode &mdash; <span>Gemini analyses article via URL (CORS-blocked site)</span></div>
     <div class="ai-quick-row">
       <button class="ai-quick-btn" data-prompt="summary">&#128203; Summary</button>
       <button class="ai-quick-btn" data-prompt="takeaways">&#128161; Key Takeaways</button>
+      <button class="ai-quick-btn" data-prompt="adblock">&#128683; Ad-Free View</button>
     </div>
     <div class="ai-chat-history" id="ai-chat-history"></div>
     <div class="ai-input-row">
