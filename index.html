@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pulse 15P — Local Intelligence Terminal</title>
+  <title>Pulse 15Q — Local Intelligence Terminal</title>
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&family=Noto+Sans:wght@400;500&display=swap" rel="stylesheet">
 
   <style>
@@ -574,7 +574,7 @@
   <!-- Masthead -->
   <div class="masthead">
     <div class="tagline" id="header-date">Local Intelligence Terminal</div>
-    <div class="masthead-title">Pulse<span style="font-size:11px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.55;">15P</span></div>
+    <div class="masthead-title">Pulse<span style="font-size:11px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.55;">15Q</span></div>
     <div class="tagline">RSS + PDF · Local Engine + AI Panel · Ad-Free Reader</div>
   </div>
   <div id="key-status-badge"></div>
@@ -2029,8 +2029,24 @@
   ══════════════════════════════════════════════════════════════ */
   window.addEventListener('load', async () => {
     try {
-      // Restore keys from IDB
-      try { await Promise.race([_restoreKeysFromIDB(), new Promise((_,r) => setTimeout(() => r(), 1000))]); } catch {}
+      // Restore keys from IDB — generous timeout for slow wake-from-sleep scenarios
+      async function _restoreWithRetry() {
+        for (let attempt = 0; attempt < 3; attempt++) {
+          try {
+            await Promise.race([
+              _restoreKeysFromIDB(),
+              new Promise((_,r) => setTimeout(() => r(new Error('timeout')), 4000))
+            ]);
+            // If at least one key came back, we're done
+            if (sessionStorage.getItem('pk1') || sessionStorage.getItem('pk2') || sessionStorage.getItem('pk3') ||
+                sessionStorage.getItem('ai_k1') || sessionStorage.getItem('ai_k2') || sessionStorage.getItem('ai_k3')) return;
+          } catch(e) {
+            if (attempt < 2) await new Promise(r => setTimeout(r, 300 * (attempt + 1)));
+          }
+        }
+      }
+      await _restoreWithRetry().catch(() => {});
+      // Also load into AI module's key namespace
       try { await AI.loadKeys(); } catch {}
 
       DOM.headerDate.textContent = new Date().toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long' });
@@ -2301,14 +2317,32 @@
 
     // ── key storage (IDB, permanent) ──
     async function _idbKey(slot, val) {
-      if (val !== undefined) return _idbSet('ai_k' + slot, val);
-      return _idbGet('ai_k' + slot);
+      if (val !== undefined) {
+        // Write to both namespaces so either restore path can find it
+        await Promise.all([
+          _idbSet('ai_k' + slot, val).catch(() => {}),
+          _idbSet('k' + slot, val).catch(() => {})
+        ]);
+        return;
+      }
+      // Read: prefer 'ai_k{slot}', fall back to short 'k{slot}'
+      const v = await _idbGet('ai_k' + slot);
+      if (v) return v;
+      return _idbGet('k' + slot);
     }
     async function _loadKeys() {
-      const [k1, k2, k3] = await Promise.all([_idbKey(1), _idbKey(2), _idbKey(3)]);
-      if (k1) sessionStorage.setItem('ai_k1', k1);
-      if (k2) sessionStorage.setItem('ai_k2', k2);
-      if (k3) sessionStorage.setItem('ai_k3', k3);
+      for (let attempt = 0; attempt < 3; attempt++) {
+        try {
+          const [k1, k2, k3] = await Promise.all([_idbKey(1), _idbKey(2), _idbKey(3)]);
+          if (k1) sessionStorage.setItem('ai_k1', k1);
+          if (k2) sessionStorage.setItem('ai_k2', k2);
+          if (k3) sessionStorage.setItem('ai_k3', k3);
+          if (k1 || k2 || k3) return; // got at least something — done
+          if (attempt < 2) await new Promise(r => setTimeout(r, 300 * (attempt + 1)));
+        } catch(e) {
+          if (attempt < 2) await new Promise(r => setTimeout(r, 300 * (attempt + 1)));
+        }
+      }
     }
     function _getKey(slot) { return sessionStorage.getItem('ai_k' + slot) || ''; }
     function _hasAnyKey()  { return !!(_getKey(1) || _getKey(2) || _getKey(3)); }
