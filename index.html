@@ -835,19 +835,36 @@
       req.onerror   = e => { db.close(); rej(e.target.error); };
     });
   }
-  async function _restoreKeysFromIDB() {
-    const [k1, k2, k3] = await Promise.all([_idbGet('k1'), _idbGet('k2'), _idbGet('k3')]);
-    if (k1) { sessionStorage.setItem('pk1', k1); sessionStorage.setItem('ai_k1', k1); }
-    if (k2) { sessionStorage.setItem('pk2', k2); sessionStorage.setItem('ai_k2', k2); }
-    if (k3) { sessionStorage.setItem('pk3', k3); sessionStorage.setItem('ai_k3', k3); }
-  }
-
   /* ══════════════════════════════════════════════════════════════
      §5  DUAL-KEY MANAGER
+     Keys are stored permanently in IndexedDB.
+     On load they are pulled into _keyCache (plain JS object).
+     _keyCache lives for the lifetime of the page — no sessionStorage
+     dependency means keys survive tab restores and PWA relaunches.
   ══════════════════════════════════════════════════════════════ */
-  function _getRawKey(slot) { return sessionStorage.getItem(`pk${slot}`) || sessionStorage.getItem('ai_k'+slot) || ''; }
+  const _keyCache = { k1: '', k2: '', k3: '' };
+
+  async function _restoreKeysFromIDB() {
+    // Load from BOTH key namespaces (pk* and ai_k*) for backwards compat
+    const [k1a, k2a, k3a, k1b, k2b, k3b] = await Promise.all([
+      _idbGet('k1'),    _idbGet('k2'),    _idbGet('k3'),
+      _idbGet('ai_k1'), _idbGet('ai_k2'), _idbGet('ai_k3')
+    ]);
+    _keyCache.k1 = k1a || k1b || '';
+    _keyCache.k2 = k2a || k2b || '';
+    _keyCache.k3 = k3a || k3b || '';
+    // Keep sessionStorage in sync for any legacy code paths
+    if (_keyCache.k1) { sessionStorage.setItem('pk1', _keyCache.k1); sessionStorage.setItem('ai_k1', _keyCache.k1); }
+    if (_keyCache.k2) { sessionStorage.setItem('pk2', _keyCache.k2); sessionStorage.setItem('ai_k2', _keyCache.k2); }
+    if (_keyCache.k3) { sessionStorage.setItem('pk3', _keyCache.k3); sessionStorage.setItem('ai_k3', _keyCache.k3); }
+  }
+
+  function _getRawKey(slot) {
+    // Primary: in-memory cache (always fresh after _restoreKeysFromIDB)
+    return _keyCache[`k${slot}`] || sessionStorage.getItem(`pk${slot}`) || sessionStorage.getItem('ai_k'+slot) || '';
+  }
   function getGeminiKey()   { return _getRawKey(_activeKeySlot) || _getRawKey(1) || _getRawKey(2); }
-  function getGeminiModel() { return localStorage.getItem('pulse17_model') || CONFIG.GEMINI_MODELS[0]; }
+  function getGeminiModel() { return localStorage.getItem('pulse17_ai_model') || CONFIG.GEMINI_MODELS[0]; }
 
   function _maskKey(k) { return k ? k.substring(0,6) + '…' + k.slice(-3) : ''; }
 
@@ -884,6 +901,10 @@
     DOM.keyManagerBox.classList.add('open');
     DOM.kmK1Input.value = ''; DOM.kmK2Input.value = '';
     if (DOM.kmK3Input) DOM.kmK3Input.value = '';
+    // Show saved-key status in placeholder so user knows key is intact
+    DOM.kmK1Input.placeholder = _keyCache.k1 ? `Saved: ${_maskKey(_keyCache.k1)} — paste new to replace` : 'Paste Gemini API key…';
+    DOM.kmK2Input.placeholder = _keyCache.k2 ? `Saved: ${_maskKey(_keyCache.k2)} — paste new to replace` : 'Paste second key (optional)…';
+    if (DOM.kmK3Input) DOM.kmK3Input.placeholder = _keyCache.k3 ? `Saved: ${_maskKey(_keyCache.k3)} — paste new to replace` : 'Paste third key (optional)…';
     _refreshKmButtons(); _updateKmStatus();
     const k1 = _getRawKey(1), k2 = _getRawKey(2), k3 = _getRawKey(3);
     DOM.kmK1Input.placeholder = k1 ? `Stored (${_maskKey(k1)}) — paste to replace` : 'AIza… (paste Key 1)';
@@ -899,11 +920,14 @@
   }
   function _saveKey(slot, val) {
     if (!val) return;
-    sessionStorage.setItem(`pk${slot}`, val);
+    // 1. Update in-memory cache immediately (survives PWA relaunch)
+    _keyCache[`k${slot}`] = val;
+    // 2. Persist to IDB under both namespaces (belt + braces)
     _idbSet(`k${slot}`, val).catch(() => {});
-    // Also store under AI module's key namespace for cross-use
-    sessionStorage.setItem('ai_k' + slot, val);
     _idbSet('ai_k' + slot, val).catch(() => {});
+    // 3. Keep sessionStorage in sync for legacy code paths
+    sessionStorage.setItem(`pk${slot}`, val);
+    sessionStorage.setItem('ai_k' + slot, val);
     _refreshKmButtons(); _updateKmStatus(); _updateKeyStatusBadge();
   }
 
@@ -2116,8 +2140,12 @@
   window.addEventListener('load', async () => {
     try {
       // Restore keys from IDB
-      try { await Promise.race([_restoreKeysFromIDB(), new Promise((_,r) => setTimeout(() => r(), 1000))]); } catch {}
+      // Load keys from IDB — no timeout race, let it complete fully
+      // This is the ONLY reliable way to get keys back after PWA relaunch
+      try { await _restoreKeysFromIDB(); } catch(e) { console.warn('[Pulse17] IDB key restore failed:', e); }
       try { await AI.loadKeys(); } catch {}
+      // Update UI now that keys are definitely loaded
+      _refreshKmButtons(); _updateKmStatus(); _updateKeyStatusBadge();
 
       DOM.headerDate.textContent = new Date().toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long' });
 
@@ -2392,16 +2420,22 @@
     }
     async function _loadKeys() {
       const [k1, k2, k3] = await Promise.all([_idbKey(1), _idbKey(2), _idbKey(3)]);
-      if (k1) sessionStorage.setItem('ai_k1', k1);
-      if (k2) sessionStorage.setItem('ai_k2', k2);
-      if (k3) sessionStorage.setItem('ai_k3', k3);
+      // Write into shared _keyCache so _getRawKey() always finds them
+      if (k1) { _keyCache.k1 = k1; sessionStorage.setItem('ai_k1', k1); }
+      if (k2) { _keyCache.k2 = k2; sessionStorage.setItem('ai_k2', k2); }
+      if (k3) { _keyCache.k3 = k3; sessionStorage.setItem('ai_k3', k3); }
     }
-    function _getKey(slot) { return sessionStorage.getItem('ai_k' + slot) || ''; }
+    function _getKey(slot) { return _keyCache['k' + slot] || sessionStorage.getItem('ai_k' + slot) || sessionStorage.getItem('pk' + slot) || ''; }
     function _hasAnyKey()  { return !!(_getKey(1) || _getKey(2) || _getKey(3)); }
     function _saveKey(slot, val) {
       if (!val) return;
+      // Update shared _keyCache immediately
+      _keyCache['k' + slot] = val;
       sessionStorage.setItem('ai_k' + slot, val);
+      sessionStorage.setItem('pk' + slot, val);
       _idbKey(slot, val).catch(() => {});
+      // Also write under pk* namespace for belt+braces
+      _idbSet('k' + slot, val).catch(() => {});
     }
 
     // ── model preference ──
