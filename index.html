@@ -591,7 +591,7 @@
   <!-- Masthead -->
   <div class="masthead">
     <div class="tagline" id="header-date">Local Intelligence Terminal</div>
-    <div class="masthead-title">Pulse<span style="font-size:11px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.55;">16</span></div>
+    <div class="masthead-title">Pulse<span style="font-size:11px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.55;">17</span></div>
     <div class="tagline">RSS + PDF · Local Engine + AI Panel · Ad-Free Reader · PWA</div>
   </div>
   <div id="key-status-badge"></div>
@@ -1153,6 +1153,48 @@
      §11  FEED RENDERING & PAGINATION
   ══════════════════════════════════════════════════════════════ */
 
+  /* ── Purge all .feed-item cards above a given DOM node ──
+     Returns { deletedIds, toDelete } so the caller can persist.     */
+  function _purgeCardsAbove(anchorEl) {
+    const deletedIds = new Set();
+    const toDelete   = {};
+    const idToItem   = {};
+    page.items.forEach(i => { if (i.id) idToItem[i.id] = i; });
+
+    Array.from(DOM.output.querySelectorAll('.feed-item')).forEach(el => {
+      const pos = anchorEl ? el.compareDocumentPosition(anchorEl) : 0;
+      if (!(pos & Node.DOCUMENT_POSITION_FOLLOWING)) return;  // not above anchor
+      const aid     = el.dataset.articleId || '';
+      const item    = idToItem[aid];
+      const feedUrl = item?._feedUrl ||
+                      el.querySelector('[data-feed-url]')?.getAttribute('data-feed-url') || '';
+      if (aid) deletedIds.add(aid);
+      if (aid && feedUrl) {
+        if (!toDelete[feedUrl]) toDelete[feedUrl] = new Set();
+        toDelete[feedUrl].add(aid);
+      }
+      el.remove();
+    });
+
+    // Persist to LS + memory
+    if (deletedIds.size) {
+      deletedIdsAdd(deletedIds);
+      for (const [feedUrl, ids] of Object.entries(toDelete)) {
+        const obj = lsLoad(feedUrl);
+        if (!obj) continue;
+        obj.items = obj.items.filter(i => !ids.has(i.id));
+        lsSave(feedUrl, obj.feedName, obj.items);
+      }
+      for (const key of Object.keys(feedCache)) {
+        if (feedCache[key]?.items)
+          feedCache[key].items = feedCache[key].items.filter(i => !deletedIds.has(i.id));
+      }
+      page.items     = page.items.filter(i => !deletedIds.has(i.id));
+      page.displayed = DOM.output.querySelectorAll('.feed-item').length;
+    }
+    return deletedIds.size;
+  }
+
   function renderNextBatch() {
     const batch = page.items.slice(page.displayed, page.displayed + CONFIG.PAGE_SIZE);
     if (!batch.length) return;
@@ -1180,91 +1222,49 @@
         (item._altSources?.length ? `<span class="alt-sources" style="font-size:9px;color:var(--meta-color);">Also in ${item._altSources.map(a => `<a href="${escapeHtml(safeUrl(a.link))}" target="_blank" style="color:var(--accent);text-decoration:underline;cursor:pointer;" title="Open in ${escapeHtml(a.feedName)}">${escapeHtml(a.feedName)}</a>`).join(', ')}</span>` : '') +
         `<button class="view-orig-btn" onclick="window.open('${escapeHtml(safeUrl(item.link))}','_blank')">↗ Original site</button></div>`;
       frag.appendChild(el);
-
     });
     page.displayed += batch.length;
 
-    // Always show a Delete button after each rendered batch
-    const delBtn = document.createElement('div');
-    delBtn.className = 'delete-read-btn';
-    delBtn.style.cssText = 'text-align:center;margin:12px 0;padding:8px;';
-    delBtn.innerHTML = `<button class="btn-outline" style="background:#c0392b;color:#fff;border-color:#c0392b;" onclick="deleteReadFeeds(this)">🗑️ Delete Read feeds</button>`;
-    frag.appendChild(delBtn);
-    if (page.displayed < page.items.length) {
+    const hasMore = page.displayed < page.items.length;
+    const actionWrap = document.createElement('div');
+    actionWrap.className = 'load-more-wrap';
+    actionWrap.id = 'load-more-wrap';
+    actionWrap.style.cssText = 'text-align:center;margin:18px 0 10px;';
+
+    if (hasMore) {
       const remaining = page.items.length - page.displayed;
-      const loadMoreWrap = document.createElement('div');
-      loadMoreWrap.id = 'load-more-wrap';
-      loadMoreWrap.style.cssText = 'text-align:center;margin:18px 0 10px;';
-      loadMoreWrap.innerHTML = `<button class="btn-outline" id="load-more-btn" style="padding:8px 22px;border-radius:20px;font-size:11px;">
-        ↓ Load more (${remaining} remaining)
-      </button>`;
-      frag.appendChild(loadMoreWrap);
+      actionWrap.innerHTML =
+        `<button class="btn-outline" id="load-more-btn"
+           style="padding:9px 26px;border-radius:20px;font-size:11px;font-weight:700;
+                  letter-spacing:0.05em;display:inline-flex;align-items:center;gap:7px;">
+           ↓ Load more <span style="opacity:0.6;font-weight:400;">(clears read · ${remaining} remaining)</span>
+         </button>`;
     } else {
-      const end = document.createElement('div'); end.className = 'load-more-indicator';
-      end.textContent = `— All ${page.items.length} articles loaded —`;
-      frag.appendChild(end);
+      actionWrap.innerHTML =
+        `<div class="load-more-indicator"
+              style="display:inline-flex;align-items:center;gap:8px;padding:7px 18px;
+                     border-radius:20px;font-size:10px;font-family:'IBM Plex Mono',monospace;
+                     background:#1a5c3a12;color:var(--accent);cursor:pointer;"
+              id="load-more-btn" title="Clear read articles">
+           ✓ All caught up &nbsp;·&nbsp; <span style="text-decoration:underline;opacity:0.7;">clear read</span>
+         </div>`;
     }
+    frag.appendChild(actionWrap);
     DOM.output.appendChild(frag);
-    // Wire Load More button
-    const loadMoreBtn = document.getElementById('load-more-btn');
-    if (loadMoreBtn) {
-      loadMoreBtn.addEventListener('click', () => {
-        document.getElementById('load-more-wrap')?.remove();
+
+    // Single event handler for both states
+    document.getElementById('load-more-btn')?.addEventListener('click', function() {
+      const wrap = document.getElementById('load-more-wrap');
+      // 1. Delete all read cards above this button
+      _purgeCardsAbove(wrap);
+      wrap?.remove();
+      // 2. If more items remain, render next batch; otherwise just update count
+      if (hasMore) {
         renderNextBatch();
-      });
-    }
-  }
-  function deleteReadFeeds(btnEl) {
-    const btnRow = btnEl.closest('.delete-read-btn') || btnEl.parentElement;
-
-    // Collect IDs and feedUrls of ALL cards visible ABOVE the button
-    const deletedIds = new Set();
-    const toDelete   = {}; // feedUrl -> Set<articleId>
-
-    // Build id->item map from page.items for reliable _feedUrl
-    const idToItem = {};
-    page.items.forEach(i => { if (i.id) idToItem[i.id] = i; });
-
-    Array.from(DOM.output.querySelectorAll('.feed-item')).forEach(el => {
-      // Only process cards that come BEFORE the button row in the DOM
-      const pos = btnRow ? el.compareDocumentPosition(btnRow) : 0;
-      if (!(pos & Node.DOCUMENT_POSITION_FOLLOWING)) return;
-
-      const aid     = el.dataset.articleId || '';
-      const item    = idToItem[aid];
-      const feedUrl = item?._feedUrl ||
-                      el.querySelector('[data-feed-url]')?.getAttribute('data-feed-url') || '';
-      if (aid) deletedIds.add(aid);
-      if (aid && feedUrl) {
-        if (!toDelete[feedUrl]) toDelete[feedUrl] = new Set();
-        toDelete[feedUrl].add(aid);
       }
-      el.remove();
+      const since = new Date(Date.now() - H24_MS).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+      DOM.itemCount.textContent = `${page.items.length} articles · last 24h (since ${since})`;
     });
-
-    btnRow?.remove();
-
-    // 1. Persist deleted IDs to a dedicated LS key (works for ALL feed types)
-    if (deletedIds.size) deletedIdsAdd(deletedIds);
-
-    // 2. Also remove from per-feed LS entries where they exist
-    for (const [feedUrl, ids] of Object.entries(toDelete)) {
-      const obj = lsLoad(feedUrl);
-      if (!obj) continue;
-      obj.items = obj.items.filter(i => !ids.has(i.id));
-      lsSave(feedUrl, obj.feedName, obj.items);
-    }
-
-    // 3. Purge from in-memory feedCache
-    for (const key of Object.keys(feedCache)) {
-      if (feedCache[key]?.items)
-        feedCache[key].items = feedCache[key].items.filter(i => !deletedIds.has(i.id));
-    }
-
-    // 4. Sync page.items
-    page.items     = page.items.filter(i => !deletedIds.has(i.id));
-    page.displayed = DOM.output.querySelectorAll('.feed-item').length;
-    DOM.itemCount.textContent = `${page.items.length} articles`;
   }
 
   function startPagination(items, feedName, feedUrl) {
