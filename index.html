@@ -3,7 +3,24 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pulse 15Q — Local Intelligence Terminal</title>
+  <title>Pulse 16 — Local Intelligence Terminal</title>
+
+  <!-- ══ PWA: Web App Manifest (inline) ══ -->
+  <link rel="manifest" href="#" id="pwa-manifest-link">
+
+  <!-- ══ PWA: Theme & display ══ -->
+  <meta name="theme-color" content="#1a5c3a">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <meta name="apple-mobile-web-app-title" content="Pulse 16">
+  <meta name="application-name" content="Pulse 16">
+  <meta name="description" content="Local Intelligence Terminal — RSS + PDF · AI Panel · Ad-Free Reader">
+
+  <!-- ══ PWA: Icons (inline SVG as data-URI) ══ -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20viewBox=%270%200%20192%20192%27%3E%3Crect%20width=%27192%27%20height=%27192%27%20rx=%2728%27%20fill=%27%231a5c3a%27/%3E%3Crect%20x=%2718%27%20y=%2732%27%20width=%2774%27%20height=%27128%27%20rx=%275%27%20fill=%27%23f5f0e8%27/%3E%3Crect%20x=%27100%27%20y=%2738%27%20width=%2766%27%20height=%27122%27%20rx=%274%27%20fill=%27%23e4eaf2%27/%3E%3Cline%20x1=%2794%27%20y1=%2728%27%20x2=%2792%27%20y2=%27164%27%20stroke=%27%231a5c3a%27%20stroke-width=%275%27%20stroke-linecap=%27round%27/%3E%3Crect%20x=%2722%27%20y=%2738%27%20width=%2766%27%20height=%2722%27%20rx=%273%27%20fill=%27%231a5c3a%27/%3E%3Cline%20x1=%2722%27%20y1=%2772%27%20x2=%2784%27%20y2=%2772%27%20stroke=%27%231a5c3a%27%20stroke-width=%275%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%2722%27%20y1=%2784%27%20x2=%2774%27%20y2=%2784%27%20stroke=%27%231a5c3a%27%20stroke-width=%274%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%2722%27%20y1=%27100%27%20x2=%2748%27%20y2=%27100%27%20stroke=%27%23c8c0b0%27%20stroke-width=%273%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%2722%27%20y1=%27111%27%20x2=%2748%27%20y2=%27111%27%20stroke=%27%23c8c0b0%27%20stroke-width=%273%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%2722%27%20y1=%27122%27%20x2=%2748%27%20y2=%27122%27%20stroke=%27%23c8c0b0%27%20stroke-width=%273%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%2758%27%20y1=%27100%27%20x2=%2784%27%20y2=%27100%27%20stroke=%27%23c8c0b0%27%20stroke-width=%273%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%2758%27%20y1=%27111%27%20x2=%2784%27%20y2=%27111%27%20stroke=%27%23c8c0b0%27%20stroke-width=%273%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%2758%27%20y1=%27122%27%20x2=%2784%27%20y2=%27122%27%20stroke=%27%23c8c0b0%27%20stroke-width=%273%27%20stroke-linecap=%27round%27/%3E%3Crect%20x=%2722%27%20y=%27134%27%20width=%2762%27%20height=%2720%27%20rx=%273%27%20fill=%27%23dde5ee%27/%3E%3Cline%20x1=%27106%27%20y1=%2752%27%20x2=%27160%27%20y2=%2752%27%20stroke=%27%231a5c3a%27%20stroke-width=%274%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%27106%27%20y1=%2763%27%20x2=%27150%27%20y2=%2763%27%20stroke=%27%231a5c3a%27%20stroke-width=%273%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%27106%27%20y1=%2780%27%20x2=%27160%27%20y2=%2780%27%20stroke=%27%23c8c0b0%27%20stroke-width=%273%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%27106%27%20y1=%2791%27%20x2=%27160%27%20y2=%2791%27%20stroke=%27%23c8c0b0%27%20stroke-width=%273%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%27106%27%20y1=%27102%27%20x2=%27155%27%20y2=%27102%27%20stroke=%27%23c8c0b0%27%20stroke-width=%273%27%20stroke-linecap=%27round%27/%3E%3Crect%20x=%27106%27%20y=%27116%27%20width=%2754%27%20height=%2736%27%20rx=%273%27%20fill=%27%23dde5ee%27/%3E%3C/svg%3E">
+  <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20viewBox=%270%200%20192%20192%27%3E%3Crect%20width=%27192%27%20height=%27192%27%20rx=%2728%27%20fill=%27%231a5c3a%27/%3E%3Crect%20x=%2718%27%20y=%2732%27%20width=%2774%27%20height=%27128%27%20rx=%275%27%20fill=%27%23f5f0e8%27/%3E%3Crect%20x=%27100%27%20y=%2738%27%20width=%2766%27%20height=%27122%27%20rx=%274%27%20fill=%27%23e4eaf2%27/%3E%3Cline%20x1=%2794%27%20y1=%2728%27%20x2=%2792%27%20y2=%27164%27%20stroke=%27%231a5c3a%27%20stroke-width=%275%27%20stroke-linecap=%27round%27/%3E%3Crect%20x=%2722%27%20y=%2738%27%20width=%2766%27%20height=%2722%27%20rx=%273%27%20fill=%27%231a5c3a%27/%3E%3Cline%20x1=%2722%27%20y1=%2772%27%20x2=%2784%27%20y2=%2772%27%20stroke=%27%231a5c3a%27%20stroke-width=%275%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%2722%27%20y1=%2784%27%20x2=%2774%27%20y2=%2784%27%20stroke=%27%231a5c3a%27%20stroke-width=%274%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%2722%27%20y1=%27100%27%20x2=%2748%27%20y2=%27100%27%20stroke=%27%23c8c0b0%27%20stroke-width=%273%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%2722%27%20y1=%27111%27%20x2=%2748%27%20y2=%27111%27%20stroke=%27%23c8c0b0%27%20stroke-width=%273%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%2722%27%20y1=%27122%27%20x2=%2748%27%20y2=%27122%27%20stroke=%27%23c8c0b0%27%20stroke-width=%273%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%2758%27%20y1=%27100%27%20x2=%2784%27%20y2=%27100%27%20stroke=%27%23c8c0b0%27%20stroke-width=%273%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%2758%27%20y1=%27111%27%20x2=%2784%27%20y2=%27111%27%20stroke=%27%23c8c0b0%27%20stroke-width=%273%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%2758%27%20y1=%27122%27%20x2=%2784%27%20y2=%27122%27%20stroke=%27%23c8c0b0%27%20stroke-width=%273%27%20stroke-linecap=%27round%27/%3E%3Crect%20x=%2722%27%20y=%27134%27%20width=%2762%27%20height=%2720%27%20rx=%273%27%20fill=%27%23dde5ee%27/%3E%3Cline%20x1=%27106%27%20y1=%2752%27%20x2=%27160%27%20y2=%2752%27%20stroke=%27%231a5c3a%27%20stroke-width=%274%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%27106%27%20y1=%2763%27%20x2=%27150%27%20y2=%2763%27%20stroke=%27%231a5c3a%27%20stroke-width=%273%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%27106%27%20y1=%2780%27%20x2=%27160%27%20y2=%2780%27%20stroke=%27%23c8c0b0%27%20stroke-width=%273%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%27106%27%20y1=%2791%27%20x2=%27160%27%20y2=%2791%27%20stroke=%27%23c8c0b0%27%20stroke-width=%273%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%27106%27%20y1=%27102%27%20x2=%27155%27%20y2=%27102%27%20stroke=%27%23c8c0b0%27%20stroke-width=%273%27%20stroke-linecap=%27round%27/%3E%3Crect%20x=%27106%27%20y=%27116%27%20width=%2754%27%20height=%2736%27%20rx=%273%27%20fill=%27%23dde5ee%27/%3E%3C/svg%3E">
+
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;1,400&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@300;400;500&family=Noto+Sans:wght@400;500&display=swap" rel="stylesheet">
 
   <style>
@@ -574,8 +591,8 @@
   <!-- Masthead -->
   <div class="masthead">
     <div class="tagline" id="header-date">Local Intelligence Terminal</div>
-    <div class="masthead-title">Pulse<span style="font-size:11px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.55;">15Q</span></div>
-    <div class="tagline">RSS + PDF · Local Engine + AI Panel · Ad-Free Reader</div>
+    <div class="masthead-title">Pulse<span style="font-size:11px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.55;">16</span></div>
+    <div class="tagline">RSS + PDF · Local Engine + AI Panel · Ad-Free Reader · PWA</div>
   </div>
   <div id="key-status-badge"></div>
 
@@ -791,7 +808,7 @@
   /* ══════════════════════════════════════════════════════════════
      §4  IDB KEY STORAGE
   ══════════════════════════════════════════════════════════════ */
-  const IDB_NAME = 'pulse15p', IDB_STORE = 'kv', IDB_VER = 1;
+  const IDB_NAME = 'pulse16', IDB_STORE = 'kv', IDB_VER = 1;
   function _idbOpen() {
     return new Promise((res, rej) => {
       const req = indexedDB.open(IDB_NAME, IDB_VER);
@@ -830,7 +847,7 @@
   ══════════════════════════════════════════════════════════════ */
   function _getRawKey(slot) { return sessionStorage.getItem(`pk${slot}`) || sessionStorage.getItem('ai_k'+slot) || ''; }
   function getGeminiKey()   { return _getRawKey(_activeKeySlot) || _getRawKey(1) || _getRawKey(2); }
-  function getGeminiModel() { return localStorage.getItem('pulse15p_model') || CONFIG.GEMINI_MODELS[0]; }
+  function getGeminiModel() { return localStorage.getItem('pulse16_model') || CONFIG.GEMINI_MODELS[0]; }
 
   function _maskKey(k) { return k ? k.substring(0,6) + '…' + k.slice(-3) : ''; }
 
@@ -858,7 +875,7 @@
     }
     const nKeys = [k1,k2,k3].filter(Boolean).length;
     const slotLabel = `✓ ${nKeys} key${nKeys>1?'s':''} stored`;
-    const mdl = localStorage.getItem('pulse15p_ai_model') || 'gemini-3.1-flash-lite';
+    const mdl = localStorage.getItem('pulse16_ai_model') || 'gemini-3.1-flash-lite';
     const mdlLabel = mdl.replace('gemini-3.1-flash-lite','3.1 Flash-Lite').replace('gemini-3-flash','3 Flash').replace('gemini-3.1-pro','3.1 Pro').replace('gemini-2.0-flash-lite','2.0 Flash-Lite');
     DOM.keyStatusBadge.innerHTML = `<span style="font-size:9px;font-family:'IBM Plex Mono',monospace;text-align:center;display:block;padding:2px;color:#5a554c;">AI: ${slotLabel} · ${mdlLabel} · Cascade K1→K2→K3 on quota · ⚡ panel in reader</span>`;
   }
@@ -872,7 +889,7 @@
     DOM.kmK1Input.placeholder = k1 ? `Stored (${_maskKey(k1)}) — paste to replace` : 'AIza… (paste Key 1)';
     DOM.kmK2Input.placeholder = k2 ? `Stored (${_maskKey(k2)}) — paste to replace` : 'AIza… (paste Key 2)';
     if (DOM.kmK3Input) DOM.kmK3Input.placeholder = k3 ? `Stored (${_maskKey(k3)}) — paste to replace` : 'AIza… (paste Key 3)';
-    if (DOM.kmModelSelect) DOM.kmModelSelect.value = localStorage.getItem('pulse15p_ai_model') || 'gemini-3.1-flash-lite';
+    if (DOM.kmModelSelect) DOM.kmModelSelect.value = localStorage.getItem('pulse16_ai_model') || 'gemini-3.1-flash-lite';
     setTimeout(() => DOM.kmK1Input.focus(), 80);
   }
   function closeKeyManager() {
@@ -951,7 +968,7 @@
   function lsKey(feedUrl) {
     let h = 0;
     for (let i = 0; i < feedUrl.length; i++) h = (Math.imul(31, h) + feedUrl.charCodeAt(i)) | 0;
-    return 'pulse15p_' + Math.abs(h).toString(36);
+    return 'pulse16_' + Math.abs(h).toString(36);
   }
   function lsLoad(feedUrl) {
     try {
@@ -969,7 +986,7 @@
     } catch(e) { if (e.name === 'QuotaExceededError') { try { localStorage.clear(); } catch{} } }
   }
   /* ── Permanently deleted article IDs (survive refresh) ── */
-  const LS_DELETED_KEY = 'pulse15p_deleted_ids';
+  const LS_DELETED_KEY = 'pulse16_deleted_ids';
   function deletedIdsLoad() {
     try { return new Set(JSON.parse(localStorage.getItem(LS_DELETED_KEY) || '[]')); }
     catch { return new Set(); }
@@ -1037,7 +1054,7 @@
        legacy entries written before the hard-delete fix).
   ══════════════════════════════════════════════════════════════ */
   function purgeOldStories() {
-    const keysToCheck = Object.keys(localStorage).filter(k => k.startsWith('pulse15p_'));
+    const keysToCheck = Object.keys(localStorage).filter(k => k.startsWith('pulse16_'));
     keysToCheck.forEach(lk => {
       try {
         const raw = localStorage.getItem(lk);
@@ -2029,24 +2046,8 @@
   ══════════════════════════════════════════════════════════════ */
   window.addEventListener('load', async () => {
     try {
-      // Restore keys from IDB — generous timeout for slow wake-from-sleep scenarios
-      async function _restoreWithRetry() {
-        for (let attempt = 0; attempt < 3; attempt++) {
-          try {
-            await Promise.race([
-              _restoreKeysFromIDB(),
-              new Promise((_,r) => setTimeout(() => r(new Error('timeout')), 4000))
-            ]);
-            // If at least one key came back, we're done
-            if (sessionStorage.getItem('pk1') || sessionStorage.getItem('pk2') || sessionStorage.getItem('pk3') ||
-                sessionStorage.getItem('ai_k1') || sessionStorage.getItem('ai_k2') || sessionStorage.getItem('ai_k3')) return;
-          } catch(e) {
-            if (attempt < 2) await new Promise(r => setTimeout(r, 300 * (attempt + 1)));
-          }
-        }
-      }
-      await _restoreWithRetry().catch(() => {});
-      // Also load into AI module's key namespace
+      // Restore keys from IDB
+      try { await Promise.race([_restoreKeysFromIDB(), new Promise((_,r) => setTimeout(() => r(), 1000))]); } catch {}
       try { await AI.loadKeys(); } catch {}
 
       DOM.headerDate.textContent = new Date().toLocaleDateString('en-IN', { weekday:'long', day:'numeric', month:'long' });
@@ -2059,9 +2060,9 @@
       if (DOM.kmK3Save) DOM.kmK3Save.addEventListener('click', () => _saveKey(3, (DOM.kmK3Input?.value||'').trim()));
       // Sync model select from localStorage
       if (DOM.kmModelSelect) {
-        DOM.kmModelSelect.value = localStorage.getItem('pulse15p_ai_model') || 'gemini-3.1-flash-lite';
+        DOM.kmModelSelect.value = localStorage.getItem('pulse16_ai_model') || 'gemini-3.1-flash-lite';
         DOM.kmModelSelect.addEventListener('change', () => {
-          localStorage.setItem('pulse15p_ai_model', DOM.kmModelSelect.value);
+          localStorage.setItem('pulse16_ai_model', DOM.kmModelSelect.value);
           _updateKeyStatusBadge();
         });
       }
@@ -2221,7 +2222,7 @@
       AI.wireEvents();
       DOM.refreshBtn.addEventListener('click', () => {
         Object.keys(feedCache).forEach(k => delete feedCache[k]);
-        Object.keys(localStorage).filter(k => k.startsWith('pulse15p_')).forEach(k => localStorage.removeItem(k));
+        Object.keys(localStorage).filter(k => k.startsWith('pulse16_')).forEach(k => localStorage.removeItem(k));
         loadFeed(true);
       });
 
@@ -2317,32 +2318,14 @@
 
     // ── key storage (IDB, permanent) ──
     async function _idbKey(slot, val) {
-      if (val !== undefined) {
-        // Write to both namespaces so either restore path can find it
-        await Promise.all([
-          _idbSet('ai_k' + slot, val).catch(() => {}),
-          _idbSet('k' + slot, val).catch(() => {})
-        ]);
-        return;
-      }
-      // Read: prefer 'ai_k{slot}', fall back to short 'k{slot}'
-      const v = await _idbGet('ai_k' + slot);
-      if (v) return v;
-      return _idbGet('k' + slot);
+      if (val !== undefined) return _idbSet('ai_k' + slot, val);
+      return _idbGet('ai_k' + slot);
     }
     async function _loadKeys() {
-      for (let attempt = 0; attempt < 3; attempt++) {
-        try {
-          const [k1, k2, k3] = await Promise.all([_idbKey(1), _idbKey(2), _idbKey(3)]);
-          if (k1) sessionStorage.setItem('ai_k1', k1);
-          if (k2) sessionStorage.setItem('ai_k2', k2);
-          if (k3) sessionStorage.setItem('ai_k3', k3);
-          if (k1 || k2 || k3) return; // got at least something — done
-          if (attempt < 2) await new Promise(r => setTimeout(r, 300 * (attempt + 1)));
-        } catch(e) {
-          if (attempt < 2) await new Promise(r => setTimeout(r, 300 * (attempt + 1)));
-        }
-      }
+      const [k1, k2, k3] = await Promise.all([_idbKey(1), _idbKey(2), _idbKey(3)]);
+      if (k1) sessionStorage.setItem('ai_k1', k1);
+      if (k2) sessionStorage.setItem('ai_k2', k2);
+      if (k3) sessionStorage.setItem('ai_k3', k3);
     }
     function _getKey(slot) { return sessionStorage.getItem('ai_k' + slot) || ''; }
     function _hasAnyKey()  { return !!(_getKey(1) || _getKey(2) || _getKey(3)); }
@@ -2354,9 +2337,9 @@
 
     // ── model preference ──
     function _getModel() {
-      return localStorage.getItem('pulse15p_ai_model') || MODEL_CASCADE[0];
+      return localStorage.getItem('pulse16_ai_model') || MODEL_CASCADE[0];
     }
-    function _saveModel(m) { localStorage.setItem('pulse15p_ai_model', m); }
+    function _saveModel(m) { localStorage.setItem('pulse16_ai_model', m); }
     function _modelLabel(m) {
       return m.replace('gemini-3.1-flash-lite','3.1 Flash-Lite')
               .replace('gemini-3-flash','3 Flash')
@@ -2634,6 +2617,171 @@
       <button id="ai-send-btn">Send</button>
     </div>
   </div>
+
+
+<!-- ══ PWA: Service Worker source (read by PWA init script below) ══ -->
+<script id="sw-src" type="text/plain">
+const CACHE = 'pulse-16-v1';
+const OFFLINE_URL = './';
+
+self.addEventListener('install', e => {
+  self.skipWaiting();
+  e.waitUntil(
+    caches.open(CACHE).then(c => c.addAll([OFFLINE_URL]).catch(() => {}))
+  );
+});
+
+self.addEventListener('activate', e => {
+  e.waitUntil(
+    caches.keys().then(keys =>
+      Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))
+    ).then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener('fetch', e => {
+  const url = e.request.url;
+  if (e.request.method !== 'GET' || url.startsWith('chrome-extension') || url.startsWith('data:')) return;
+
+  const isExternal = url.includes('allorigins') || url.includes('generativelanguage.googleapis.com')
+                  || url.includes('cdnjs') || url.includes('fonts.googleapis') || url.includes('fonts.gstatic');
+  if (isExternal) {
+    e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+    return;
+  }
+
+  e.respondWith(
+    caches.match(e.request).then(cached => {
+      if (cached) return cached;
+      return fetch(e.request).then(resp => {
+        if (resp && resp.status === 200 && resp.type !== 'opaque') {
+          caches.open(CACHE).then(c => c.put(e.request, resp.clone()));
+        }
+        return resp;
+      }).catch(() => caches.match(OFFLINE_URL));
+    })
+  );
+});
+</script>
+
+<!-- ══════════════════════════════════════════════════
+     PWA: Inline Manifest + Service Worker (Brave-ready)
+     Pulse 16 — single-file PWA, no external manifest.json needed
+══════════════════════════════════════════════════ -->
+<script>
+(function () {
+  /* ── 1. Inline Web App Manifest (data: URI trick for single-file PWA) ── */
+  const manifest = {
+    name: "Pulse 16 — Local Intelligence Terminal",
+    short_name: "Pulse 16",
+    description: "RSS + PDF · Local Engine + Gemini AI Panel · Ad-Free Reader",
+    start_url: "./",
+    display: "standalone",
+    orientation: "portrait-primary",
+    background_color: "#f5f0e8",
+    theme_color: "#1a5c3a",
+    categories: ["news", "productivity"],
+    icons: [
+      {
+        src: "data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20viewBox=%270%200%20192%20192%27%3E%3Crect%20width=%27192%27%20height=%27192%27%20rx=%2728%27%20fill=%27%231a5c3a%27/%3E%3Crect%20x=%2718%27%20y=%2732%27%20width=%2774%27%20height=%27128%27%20rx=%275%27%20fill=%27%23f5f0e8%27/%3E%3Crect%20x=%27100%27%20y=%2738%27%20width=%2766%27%20height=%27122%27%20rx=%274%27%20fill=%27%23e4eaf2%27/%3E%3Cline%20x1=%2794%27%20y1=%2728%27%20x2=%2792%27%20y2=%27164%27%20stroke=%27%231a5c3a%27%20stroke-width=%275%27%20stroke-linecap=%27round%27/%3E%3Crect%20x=%2722%27%20y=%2738%27%20width=%2766%27%20height=%2722%27%20rx=%273%27%20fill=%27%231a5c3a%27/%3E%3Cline%20x1=%2722%27%20y1=%2772%27%20x2=%2784%27%20y2=%2772%27%20stroke=%27%231a5c3a%27%20stroke-width=%275%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%2722%27%20y1=%2784%27%20x2=%2774%27%20y2=%2784%27%20stroke=%27%231a5c3a%27%20stroke-width=%274%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%2722%27%20y1=%27100%27%20x2=%2748%27%20y2=%27100%27%20stroke=%27%23c8c0b0%27%20stroke-width=%273%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%2722%27%20y1=%27111%27%20x2=%2748%27%20y2=%27111%27%20stroke=%27%23c8c0b0%27%20stroke-width=%273%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%2722%27%20y1=%27122%27%20x2=%2748%27%20y2=%27122%27%20stroke=%27%23c8c0b0%27%20stroke-width=%273%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%2758%27%20y1=%27100%27%20x2=%2784%27%20y2=%27100%27%20stroke=%27%23c8c0b0%27%20stroke-width=%273%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%2758%27%20y1=%27111%27%20x2=%2784%27%20y2=%27111%27%20stroke=%27%23c8c0b0%27%20stroke-width=%273%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%2758%27%20y1=%27122%27%20x2=%2784%27%20y2=%27122%27%20stroke=%27%23c8c0b0%27%20stroke-width=%273%27%20stroke-linecap=%27round%27/%3E%3Crect%20x=%2722%27%20y=%27134%27%20width=%2762%27%20height=%2720%27%20rx=%273%27%20fill=%27%23dde5ee%27/%3E%3Cline%20x1=%27106%27%20y1=%2752%27%20x2=%27160%27%20y2=%2752%27%20stroke=%27%231a5c3a%27%20stroke-width=%274%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%27106%27%20y1=%2763%27%20x2=%27150%27%20y2=%2763%27%20stroke=%27%231a5c3a%27%20stroke-width=%273%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%27106%27%20y1=%2780%27%20x2=%27160%27%20y2=%2780%27%20stroke=%27%23c8c0b0%27%20stroke-width=%273%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%27106%27%20y1=%2791%27%20x2=%27160%27%20y2=%2791%27%20stroke=%27%23c8c0b0%27%20stroke-width=%273%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%27106%27%20y1=%27102%27%20x2=%27155%27%20y2=%27102%27%20stroke=%27%23c8c0b0%27%20stroke-width=%273%27%20stroke-linecap=%27round%27/%3E%3Crect%20x=%27106%27%20y=%27116%27%20width=%2754%27%20height=%2736%27%20rx=%273%27%20fill=%27%23dde5ee%27/%3E%3C/svg%3E",
+        sizes: "192x192",
+        type: "image/svg+xml",
+        purpose: "any maskable"
+      },
+      {
+        src: "data:image/svg+xml,%3Csvg%20xmlns=%27http://www.w3.org/2000/svg%27%20viewBox=%270%200%20512%20512%27%3E%3Crect%20width=%27512%27%20height=%27512%27%20rx=%2772%27%20fill=%27%231a5c3a%27/%3E%3Crect%20x=%2748%27%20y=%2786%27%20width=%27196%27%20height=%27340%27%20rx=%2712%27%20fill=%27%23f5f0e8%27/%3E%3Crect%20x=%27266%27%20y=%27100%27%20width=%27176%27%20height=%27326%27%20rx=%2710%27%20fill=%27%23e4eaf2%27/%3E%3Cline%20x1=%27250%27%20y1=%2774%27%20x2=%27246%27%20y2=%27438%27%20stroke=%27%231a5c3a%27%20stroke-width=%2714%27%20stroke-linecap=%27round%27/%3E%3Crect%20x=%2758%27%20y=%27100%27%20width=%27176%27%20height=%2758%27%20rx=%278%27%20fill=%27%231a5c3a%27/%3E%3Cline%20x1=%2758%27%20y1=%27192%27%20x2=%27224%27%20y2=%27192%27%20stroke=%27%231a5c3a%27%20stroke-width=%2714%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%2758%27%20y1=%27224%27%20x2=%27196%27%20y2=%27224%27%20stroke=%27%231a5c3a%27%20stroke-width=%2711%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%2758%27%20y1=%27268%27%20x2=%27126%27%20y2=%27268%27%20stroke=%27%23c8c0b0%27%20stroke-width=%278%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%2758%27%20y1=%27294%27%20x2=%27126%27%20y2=%27294%27%20stroke=%27%23c8c0b0%27%20stroke-width=%278%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%2758%27%20y1=%27320%27%20x2=%27126%27%20y2=%27320%27%20stroke=%27%23c8c0b0%27%20stroke-width=%278%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%27154%27%20y1=%27268%27%20x2=%27224%27%20y2=%27268%27%20stroke=%27%23c8c0b0%27%20stroke-width=%278%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%27154%27%20y1=%27294%27%20x2=%27224%27%20y2=%27294%27%20stroke=%27%23c8c0b0%27%20stroke-width=%278%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%27154%27%20y1=%27320%27%20x2=%27224%27%20y2=%27320%27%20stroke=%27%23c8c0b0%27%20stroke-width=%278%27%20stroke-linecap=%27round%27/%3E%3Crect%20x=%2758%27%20y=%27356%27%20width=%27166%27%20height=%2754%27%20rx=%278%27%20fill=%27%23dde5ee%27/%3E%3Cline%20x1=%27282%27%20y1=%27140%27%20x2=%27426%27%20y2=%27140%27%20stroke=%27%231a5c3a%27%20stroke-width=%2711%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%27282%27%20y1=%27168%27%20x2=%27400%27%20y2=%27168%27%20stroke=%27%231a5c3a%27%20stroke-width=%279%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%27282%27%20y1=%27214%27%20x2=%27426%27%20y2=%27214%27%20stroke=%27%23c8c0b0%27%20stroke-width=%278%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%27282%27%20y1=%27240%27%20x2=%27426%27%20y2=%27240%27%20stroke=%27%23c8c0b0%27%20stroke-width=%278%27%20stroke-linecap=%27round%27/%3E%3Cline%20x1=%27282%27%20y1=%27266%27%20x2=%27410%27%20y2=%27266%27%20stroke=%27%23c8c0b0%27%20stroke-width=%278%27%20stroke-linecap=%27round%27/%3E%3Crect%20x=%27282%27%20y=%27308%27%20width=%27144%27%20height=%2796%27%20rx=%278%27%20fill=%27%23dde5ee%27/%3E%3C/svg%3E",
+        sizes: "512x512",
+        type: "image/svg+xml",
+        purpose: "any maskable"
+      }
+    ]
+  };
+
+  /* Inject manifest as blob URL (works in Brave / Chrome-family) */
+  try {
+    const blob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.getElementById('pwa-manifest-link');
+    if (link) link.href = blobUrl;
+  } catch (e) {
+    console.warn('[Pulse16 PWA] Manifest blob injection failed:', e);
+  }
+
+  /* ── 2. Service Worker — inline via Blob URL ── */
+  /* ── Service Worker via same-page dual-mode script ──────────────────────
+     Brave/Chrome block blob: URL SW registration.
+     Fix: SW code is embedded in this page inside a <script id="sw-src">
+     tag. We read that script's text, Base64-encode it, and register it
+     as a  data:application/javascript;base64,...  URI — the only
+     protocol Chromium-family browsers allow for single-file PWAs served
+     from http/https. On file:// it silently skips (SW needs a server).
+  ──────────────────────────────────────────────────────────────────────── */
+  if ('serviceWorker' in navigator) {
+    try {
+      const swText = document.getElementById('sw-src').textContent;
+      const b64    = btoa(unescape(encodeURIComponent(swText)));
+      const swUrl  = 'data:application/javascript;base64,' + b64;
+      navigator.serviceWorker.register(swUrl, { scope: './' })
+        .then(reg => console.log('[Pulse16 PWA] SW registered ✓', reg.scope))
+        .catch(err => console.info('[Pulse16 PWA] SW skipped (needs http/https):', err.message));
+    } catch (e) {
+      console.info('[Pulse16 PWA] SW not available:', e.message);
+    }
+  }
+
+  /* ── 3. PWA Install prompt (Brave shows native prompt) ── */
+  let _deferredPrompt = null;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    _deferredPrompt = e;
+    /* Show a subtle install nudge in the masthead area */
+    _showInstallBadge();
+  });
+
+  window.addEventListener('appinstalled', () => {
+    _deferredPrompt = null;
+    const badge = document.getElementById('pwa-install-badge');
+    if (badge) badge.remove();
+    console.log('[Pulse16 PWA] App installed ✓');
+  });
+
+  function _showInstallBadge() {
+    if (document.getElementById('pwa-install-badge')) return;
+    const badge = document.createElement('div');
+    badge.id = 'pwa-install-badge';
+    badge.innerHTML = `
+      <style>
+        #pwa-install-badge {
+          position: fixed; bottom: 90px; left: 16px; z-index: 1300;
+          background: #1a5c3a; color: #f5f0e8;
+          font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700;
+          text-transform: uppercase; letter-spacing: 0.08em;
+          padding: 8px 14px; border-radius: 20px;
+          box-shadow: 0 4px 16px rgba(0,0,0,0.28);
+          display: flex; align-items: center; gap: 8px;
+          cursor: pointer; transition: background 0.2s;
+          animation: pwaSlideIn 0.4s cubic-bezier(.4,0,.2,1);
+        }
+        #pwa-install-badge:hover { background: #13472c; }
+        @keyframes pwaSlideIn { from { opacity:0; transform:translateY(20px); } to { opacity:1; transform:translateY(0); } }
+        #pwa-install-badge .pwa-x { opacity:0.6; font-size:13px; margin-left:4px; }
+        #pwa-install-badge .pwa-x:hover { opacity:1; }
+      </style>
+      <span>⬇ Install Pulse 16</span>
+      <span class="pwa-x" id="pwa-dismiss-x">✕</span>
+    `;
+    badge.addEventListener('click', e => {
+      if (e.target.id === 'pwa-dismiss-x') { badge.remove(); return; }
+      if (_deferredPrompt) {
+        _deferredPrompt.prompt();
+        _deferredPrompt.userChoice.then(() => { _deferredPrompt = null; badge.remove(); });
+      }
+    });
+    document.body.appendChild(badge);
+  }
+
+})();
+</script>
 
 </body>
 </html>
