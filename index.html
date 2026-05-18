@@ -665,7 +665,7 @@
     READER_FONT_MIN:    13,
     READER_FONT_MAX:    24,
     READER_FONT_DEF:    17,
-    PAGE_SIZE:          10,
+    PAGE_SIZE:          25,
     MAX_LS_PER_FEED:    100,
     DEDUP_THRESHOLD:    0.60,
     GEMINI_MODELS:      ['gemini-3.1-flash-lite', 'gemini-3-flash', 'gemini-3.1-pro', 'gemini-2.0-flash-lite'],
@@ -1007,15 +1007,18 @@
     return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
   }
   function lsMarkViewed(feedUrl, aid) {
-    // HARD DELETE: permanently remove the article from localStorage right now.
-    // "Delete means delete" — it must not come back on restart.
-    let obj = lsLoad(feedUrl);
-    if (!obj) return; // nothing stored yet for this feed — nothing to remove
-    const before = obj.items.length;
-    obj.items = obj.items.filter(i => i.id !== aid);
-    if (obj.items.length !== before) {
-      lsSave(feedUrl, obj.feedName, obj.items);
+    // 1. Hard-delete from per-feed LS entry
+    if (feedUrl && feedUrl !== 'uploaded-pdf') {
+      const obj = lsLoad(feedUrl);
+      if (obj) {
+        const before = obj.items.length;
+        obj.items = obj.items.filter(i => i.id !== aid);
+        if (obj.items.length !== before) lsSave(feedUrl, obj.feedName, obj.items);
+      }
     }
+    // 2. Add to global deleted-IDs so fresh RSS re-fetches NEVER surface it again
+    //    This is the key fix — section feeds bypass per-feed LS so only this blocks them
+    if (aid) deletedIdsAdd(new Set([aid]));
   }
   function articleId(title) {
     return title ? title.trim().toLowerCase().replace(/[^a-z0-9]+/g,'-').substring(0,60) : '';
@@ -1065,7 +1068,7 @@
         if (!obj || !Array.isArray(obj.items)) return;
         const before = obj.items.length;
         obj.items = obj.items.filter(item => {
-          // 1. Remove if older than 4 days
+          // 1. Remove if older than 24 hours
           if (item.pubDate) {
             const age = Date.now() - new Date(item.pubDate).getTime();
             if (!isNaN(age) && age >= CONFIG.STORY_MAX_AGE_MS) return false;
@@ -1383,20 +1386,20 @@
           const unique24 = filter24h(unique);
           const label = sectionLabel.replace(/^[📰📊💼💻📝📈🏙️⏱️]\s*/,'');
 
-          // ── Mark viewed status from each source's LS store ──
-          unique.forEach(item => {
+          if (!unique24.length) { setFeedStatus('🕐 No articles in the last 24 hours from this section.'); setRefreshing(false); return; }
+          // Apply deletedIds + viewed filter in one pass on the final 24h-filtered list
+          const _deleted = deletedIdsLoad();
+          unique24.forEach(item => {
+            if (_deleted.has(item.id)) { item._blocked = true; return; }
             if (!item._feedUrl) return;
             const stored = lsLoad(item._feedUrl);
             if (!stored) return;
             const match = stored.items.find(s => s.id === item.id);
-            if (match && match.viewed) item.viewed = true;
+            if (match && match.viewed) item._blocked = true;
           });
-
-          if (!unique24.length) { setFeedStatus('🕐 No articles in the last 24 hours from this section.'); setRefreshing(false); return; }
-          feedCache[feedVal] = { timestamp: Date.now(), items: unique24, feedName: label };
-          const _deleted = deletedIdsLoad();
-          const display = unique24.filter(i => !i.viewed && !_deleted.has(i.id));
-          startPagination(display.length ? display : unique24.filter(i => !_deleted.has(i.id)), label, feedVal);
+          const unique24clean = unique24.filter(i => !i._blocked);
+          feedCache[feedVal] = { timestamp: Date.now(), items: unique24clean, feedName: label };
+          startPagination(unique24clean, label, feedVal);
         } catch(err) {
           if (reqId !== requestCounter) return;
           DOM.output.innerHTML = `<div class="system-msg error">❌ Error: ${escapeHtml(err.message)}</div>`;
