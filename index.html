@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pulse 16 — Local Intelligence Terminal</title>
+  <title>Pulse 17 — Local Intelligence Terminal</title>
 
   <!-- ══ PWA: Web App Manifest (inline) ══ -->
   <link rel="manifest" href="#" id="pwa-manifest-link">
@@ -13,8 +13,8 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Pulse 16">
-  <meta name="application-name" content="Pulse 16">
+  <meta name="apple-mobile-web-app-title" content="Pulse 17">
+  <meta name="application-name" content="Pulse 17">
   <meta name="description" content="Local Intelligence Terminal — RSS + PDF · AI Panel · Ad-Free Reader">
 
   <!-- ══ PWA: Icons (inline SVG as data-URI) ══ -->
@@ -669,7 +669,7 @@
     MAX_LS_PER_FEED:    100,
     DEDUP_THRESHOLD:    0.60,
     GEMINI_MODELS:      ['gemini-3.1-flash-lite', 'gemini-3-flash', 'gemini-3.1-pro', 'gemini-2.0-flash-lite'],
-    STORY_MAX_AGE_MS:   4 * 24 * 60 * 60 * 1000   // 4 days — older stories purged on load
+    STORY_MAX_AGE_MS:   24 * 60 * 60 * 1000        // 24 hours — strict rolling window
   });
 
   /* ══════════════════════════════════════════════════════════════
@@ -808,7 +808,7 @@
   /* ══════════════════════════════════════════════════════════════
      §4  IDB KEY STORAGE
   ══════════════════════════════════════════════════════════════ */
-  const IDB_NAME = 'pulse16', IDB_STORE = 'kv', IDB_VER = 1;
+  const IDB_NAME = 'pulse17', IDB_STORE = 'kv', IDB_VER = 1;
   function _idbOpen() {
     return new Promise((res, rej) => {
       const req = indexedDB.open(IDB_NAME, IDB_VER);
@@ -847,7 +847,7 @@
   ══════════════════════════════════════════════════════════════ */
   function _getRawKey(slot) { return sessionStorage.getItem(`pk${slot}`) || sessionStorage.getItem('ai_k'+slot) || ''; }
   function getGeminiKey()   { return _getRawKey(_activeKeySlot) || _getRawKey(1) || _getRawKey(2); }
-  function getGeminiModel() { return localStorage.getItem('pulse16_model') || CONFIG.GEMINI_MODELS[0]; }
+  function getGeminiModel() { return localStorage.getItem('pulse17_model') || CONFIG.GEMINI_MODELS[0]; }
 
   function _maskKey(k) { return k ? k.substring(0,6) + '…' + k.slice(-3) : ''; }
 
@@ -875,7 +875,7 @@
     }
     const nKeys = [k1,k2,k3].filter(Boolean).length;
     const slotLabel = `✓ ${nKeys} key${nKeys>1?'s':''} stored`;
-    const mdl = localStorage.getItem('pulse16_ai_model') || 'gemini-3.1-flash-lite';
+    const mdl = localStorage.getItem('pulse17_ai_model') || 'gemini-3.1-flash-lite';
     const mdlLabel = mdl.replace('gemini-3.1-flash-lite','3.1 Flash-Lite').replace('gemini-3-flash','3 Flash').replace('gemini-3.1-pro','3.1 Pro').replace('gemini-2.0-flash-lite','2.0 Flash-Lite');
     DOM.keyStatusBadge.innerHTML = `<span style="font-size:9px;font-family:'IBM Plex Mono',monospace;text-align:center;display:block;padding:2px;color:#5a554c;">AI: ${slotLabel} · ${mdlLabel} · Cascade K1→K2→K3 on quota · ⚡ panel in reader</span>`;
   }
@@ -889,7 +889,7 @@
     DOM.kmK1Input.placeholder = k1 ? `Stored (${_maskKey(k1)}) — paste to replace` : 'AIza… (paste Key 1)';
     DOM.kmK2Input.placeholder = k2 ? `Stored (${_maskKey(k2)}) — paste to replace` : 'AIza… (paste Key 2)';
     if (DOM.kmK3Input) DOM.kmK3Input.placeholder = k3 ? `Stored (${_maskKey(k3)}) — paste to replace` : 'AIza… (paste Key 3)';
-    if (DOM.kmModelSelect) DOM.kmModelSelect.value = localStorage.getItem('pulse16_ai_model') || 'gemini-3.1-flash-lite';
+    if (DOM.kmModelSelect) DOM.kmModelSelect.value = localStorage.getItem('pulse17_ai_model') || 'gemini-3.1-flash-lite';
     setTimeout(() => DOM.kmK1Input.focus(), 80);
   }
   function closeKeyManager() {
@@ -968,7 +968,7 @@
   function lsKey(feedUrl) {
     let h = 0;
     for (let i = 0; i < feedUrl.length; i++) h = (Math.imul(31, h) + feedUrl.charCodeAt(i)) | 0;
-    return 'pulse16_' + Math.abs(h).toString(36);
+    return 'pulse17_' + Math.abs(h).toString(36);
   }
   function lsLoad(feedUrl) {
     try {
@@ -986,7 +986,7 @@
     } catch(e) { if (e.name === 'QuotaExceededError') { try { localStorage.clear(); } catch{} } }
   }
   /* ── Permanently deleted article IDs (survive refresh) ── */
-  const LS_DELETED_KEY = 'pulse16_deleted_ids';
+  const LS_DELETED_KEY = 'pulse17_deleted_ids';
   function deletedIdsLoad() {
     try { return new Set(JSON.parse(localStorage.getItem(LS_DELETED_KEY) || '[]')); }
     catch { return new Set(); }
@@ -1028,10 +1028,12 @@
     return shared / Math.max(wa.size, wb.size, 1);
   }
   function mergeIntoStore(feedUrl, feedName, freshItems) {
+    // Only accept items published within the last 24 hours
+    const fresh24 = filter24h(freshItems);
     const stored = lsLoad(feedUrl);
     const existing = stored ? stored.items : [];
     const result = [...existing];
-    freshItems.forEach(item => {
+    fresh24.forEach(item => {
       const id    = articleId(item.title);
       const isDup = result.some(e => e.id === id || similarity(e.title || '', item.title || '') >= CONFIG.DEDUP_THRESHOLD);
       if (!isDup) {
@@ -1054,7 +1056,7 @@
        legacy entries written before the hard-delete fix).
   ══════════════════════════════════════════════════════════════ */
   function purgeOldStories() {
-    const keysToCheck = Object.keys(localStorage).filter(k => k.startsWith('pulse16_'));
+    const keysToCheck = Object.keys(localStorage).filter(k => k.startsWith('pulse17_'));
     keysToCheck.forEach(lk => {
       try {
         const raw = localStorage.getItem(lk);
@@ -1078,6 +1080,23 @@
       } catch { /* corrupt entry — leave alone */ }
     });
   }
+  /* ══════════════════════════════════════════════════════════════
+     §9c  24-HOUR ROLLING WINDOW FILTER
+     Applied to every item before display AND before LS storage.
+     An item with no parseable pubDate is treated as "now" so it
+     passes through rather than being silently dropped.
+  ══════════════════════════════════════════════════════════════ */
+  const H24_MS = 24 * 60 * 60 * 1000;
+  function isWithin24h(pubDateStr) {
+    if (!pubDateStr) return true;           // no date → keep (unknown age)
+    const t = new Date(pubDateStr).getTime();
+    if (isNaN(t))    return true;           // unparseable → keep
+    return (Date.now() - t) <= H24_MS;
+  }
+  function filter24h(items) {
+    return items.filter(i => isWithin24h(i.pubDate));
+  }
+
   function xhrFetch(url, timeoutMs) {
     return new Promise((res, rej) => {
       const x = new XMLHttpRequest();
@@ -1253,7 +1272,8 @@
     page.displayed = 0;
     DOM.output.innerHTML = '';
     renderNextBatch();
-    DOM.itemCount.textContent = `${items.length} articles`;
+    const since = new Date(Date.now() - H24_MS).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+    DOM.itemCount.textContent = `${items.length} articles · last 24h (since ${since})`;
   }
   function setFeedStatus(msg) { DOM.output.innerHTML = `<div class="system-msg">${msg}</div>`; }
   function setRefreshing(on) { DOM.refreshBtn.disabled = on; DOM.refreshBtn.classList.toggle('spinning', on); }
@@ -1307,6 +1327,7 @@
           }
           if (reqId !== requestCounter) return;
           if (!allItems.length) { setFeedStatus('📭 No articles found across any source.'); return; }
+          // Note: filter24h is applied after dedup — zero results post-filter handled by startPagination
           // Deduplicate by title similarity — keep alt sources
           const unique = [];
           allItems.forEach(item => {
@@ -1321,6 +1342,8 @@
             }
           });
           unique.sort((a, b) => new Date(b.pubDate) - new Date(a.pubDate));
+          // 24-hour rolling window — discard anything older than 24h
+          const unique24 = filter24h(unique);
           const label = sectionLabel.replace(/^[📰📊💼💻📝📈🏙️⏱️]\s*/,'');
 
           // ── Mark viewed status from each source's LS store ──
@@ -1332,10 +1355,11 @@
             if (match && match.viewed) item.viewed = true;
           });
 
-          feedCache[feedVal] = { timestamp: Date.now(), items: unique, feedName: label };
+          if (!unique24.length) { setFeedStatus('🕐 No articles in the last 24 hours from this section.'); setRefreshing(false); return; }
+          feedCache[feedVal] = { timestamp: Date.now(), items: unique24, feedName: label };
           const _deleted = deletedIdsLoad();
-          const display = unique.filter(i => !i.viewed && !_deleted.has(i.id));
-          startPagination(display.length ? display : unique.filter(i => !_deleted.has(i.id)), label, feedVal);
+          const display = unique24.filter(i => !i.viewed && !_deleted.has(i.id));
+          startPagination(display.length ? display : unique24.filter(i => !_deleted.has(i.id)), label, feedVal);
         } catch(err) {
           if (reqId !== requestCounter) return;
           DOM.output.innerHTML = `<div class="system-msg error">❌ Error: ${escapeHtml(err.message)}</div>`;
@@ -1364,8 +1388,11 @@
       if (!forceRefresh && mem && (Date.now() - mem.timestamp < CONFIG.CACHE_TTL_MS)) {
         const stored = lsLoad(feedUrl);
         const _deleted = deletedIdsLoad();
-        const items  = stored ? stored.items.filter(i => !i.viewed && !_deleted.has(i.id)) : mem.items.filter(i => !_deleted.has(i.id));
-        startPagination(items.length ? items : mem.items.filter(i => !_deleted.has(i.id)), feedName, feedUrl);
+        const base   = stored ? stored.items : mem.items;
+        const items  = filter24h(base).filter(i => !i.viewed && !_deleted.has(i.id));
+        const fallbk = filter24h(base).filter(i => !_deleted.has(i.id));
+        if (!fallbk.length) { setFeedStatus('🕐 No articles in the last 24 hours from this feed.'); startCountdown(); return; }
+        startPagination(items.length ? items : fallbk, feedName, feedUrl);
         startCountdown();
         return;
       }
@@ -1384,10 +1411,12 @@
         try { merged = mergeIntoStore(feedUrl, feedName, rawItems); } catch { merged = rawItems; }
         if (!merged.length) merged = rawItems.map(i => ({ id: articleId(i.title), title: i.title || 'Untitled', description: processRssText(i.description, 500), link: i.link || '#', pubDate: i.pubDate || '', viewed: false }));
 
-        feedCache[feedUrl] = { timestamp: Date.now(), items: merged, feedName };
+        const merged24 = filter24h(merged);
+        if (!merged24.length) { setFeedStatus('🕐 No articles in the last 24 hours from this feed.'); setRefreshing(false); return; }
+        feedCache[feedUrl] = { timestamp: Date.now(), items: merged24, feedName };
         const _deleted = deletedIdsLoad();
-        const display = merged.filter(i => !i.viewed && !_deleted.has(i.id));
-        startPagination(display.length ? display : merged.filter(i => !_deleted.has(i.id)), feedName, feedUrl);
+        const display = merged24.filter(i => !i.viewed && !_deleted.has(i.id));
+        startPagination(display.length ? display : merged24.filter(i => !_deleted.has(i.id)), feedName, feedUrl);
         startCountdown();
       } catch(err) {
         if (reqId !== requestCounter) return;
@@ -2060,9 +2089,9 @@
       if (DOM.kmK3Save) DOM.kmK3Save.addEventListener('click', () => _saveKey(3, (DOM.kmK3Input?.value||'').trim()));
       // Sync model select from localStorage
       if (DOM.kmModelSelect) {
-        DOM.kmModelSelect.value = localStorage.getItem('pulse16_ai_model') || 'gemini-3.1-flash-lite';
+        DOM.kmModelSelect.value = localStorage.getItem('pulse17_ai_model') || 'gemini-3.1-flash-lite';
         DOM.kmModelSelect.addEventListener('change', () => {
-          localStorage.setItem('pulse16_ai_model', DOM.kmModelSelect.value);
+          localStorage.setItem('pulse17_ai_model', DOM.kmModelSelect.value);
           _updateKeyStatusBadge();
         });
       }
@@ -2222,7 +2251,7 @@
       AI.wireEvents();
       DOM.refreshBtn.addEventListener('click', () => {
         Object.keys(feedCache).forEach(k => delete feedCache[k]);
-        Object.keys(localStorage).filter(k => k.startsWith('pulse16_')).forEach(k => localStorage.removeItem(k));
+        Object.keys(localStorage).filter(k => k.startsWith('pulse17_')).forEach(k => localStorage.removeItem(k));
         loadFeed(true);
       });
 
@@ -2337,9 +2366,9 @@
 
     // ── model preference ──
     function _getModel() {
-      return localStorage.getItem('pulse16_ai_model') || MODEL_CASCADE[0];
+      return localStorage.getItem('pulse17_ai_model') || MODEL_CASCADE[0];
     }
-    function _saveModel(m) { localStorage.setItem('pulse16_ai_model', m); }
+    function _saveModel(m) { localStorage.setItem('pulse17_ai_model', m); }
     function _modelLabel(m) {
       return m.replace('gemini-3.1-flash-lite','3.1 Flash-Lite')
               .replace('gemini-3-flash','3 Flash')
@@ -2621,7 +2650,7 @@
 
 <!-- ══ PWA: Service Worker source (read by PWA init script below) ══ -->
 <script id="sw-src" type="text/plain">
-const CACHE = 'pulse-16-v1';
+const CACHE = 'pulse-17-v1';
 const OFFLINE_URL = './';
 
 self.addEventListener('install', e => {
@@ -2666,14 +2695,14 @@ self.addEventListener('fetch', e => {
 
 <!-- ══════════════════════════════════════════════════
      PWA: Inline Manifest + Service Worker (Brave-ready)
-     Pulse 16 — single-file PWA, no external manifest.json needed
+     Pulse 17 — single-file PWA, no external manifest.json needed
 ══════════════════════════════════════════════════ -->
 <script>
 (function () {
   /* ── 1. Inline Web App Manifest (data: URI trick for single-file PWA) ── */
   const manifest = {
-    name: "Pulse 16 — Local Intelligence Terminal",
-    short_name: "Pulse 16",
+    name: "Pulse 17 — Local Intelligence Terminal",
+    short_name: "Pulse 17",
     description: "RSS + PDF · Local Engine + Gemini AI Panel · Ad-Free Reader",
     start_url: "./",
     display: "standalone",
@@ -2704,7 +2733,7 @@ self.addEventListener('fetch', e => {
     const link = document.getElementById('pwa-manifest-link');
     if (link) link.href = blobUrl;
   } catch (e) {
-    console.warn('[Pulse16 PWA] Manifest blob injection failed:', e);
+    console.warn('[Pulse17 PWA] Manifest blob injection failed:', e);
   }
 
   /* ── 2. Service Worker — inline via Blob URL ── */
@@ -2722,10 +2751,10 @@ self.addEventListener('fetch', e => {
       const b64    = btoa(unescape(encodeURIComponent(swText)));
       const swUrl  = 'data:application/javascript;base64,' + b64;
       navigator.serviceWorker.register(swUrl, { scope: './' })
-        .then(reg => console.log('[Pulse16 PWA] SW registered ✓', reg.scope))
-        .catch(err => console.info('[Pulse16 PWA] SW skipped (needs http/https):', err.message));
+        .then(reg => console.log('[Pulse17 PWA] SW registered ✓', reg.scope))
+        .catch(err => console.info('[Pulse17 PWA] SW skipped (needs http/https):', err.message));
     } catch (e) {
-      console.info('[Pulse16 PWA] SW not available:', e.message);
+      console.info('[Pulse17 PWA] SW not available:', e.message);
     }
   }
 
@@ -2742,7 +2771,7 @@ self.addEventListener('fetch', e => {
     _deferredPrompt = null;
     const badge = document.getElementById('pwa-install-badge');
     if (badge) badge.remove();
-    console.log('[Pulse16 PWA] App installed ✓');
+    console.log('[Pulse17 PWA] App installed ✓');
   });
 
   function _showInstallBadge() {
@@ -2767,7 +2796,7 @@ self.addEventListener('fetch', e => {
         #pwa-install-badge .pwa-x { opacity:0.6; font-size:13px; margin-left:4px; }
         #pwa-install-badge .pwa-x:hover { opacity:1; }
       </style>
-      <span>⬇ Install Pulse 16</span>
+      <span>⬇ Install Pulse 17</span>
       <span class="pwa-x" id="pwa-dismiss-x">✕</span>
     `;
     badge.addEventListener('click', e => {
