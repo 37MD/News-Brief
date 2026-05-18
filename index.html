@@ -1267,9 +1267,6 @@
     document.getElementById('load-more-btn')?.addEventListener('click', function() {
       const wrap = document.getElementById('load-more-wrap');
 
-      // Record the scroll position so we can keep the viewport stable
-      const wrapTop = wrap ? wrap.getBoundingClientRect().top + window.scrollY : 0;
-
       // 1. Purge read cards above this button
       _purgeCardsAbove(wrap);
 
@@ -1292,8 +1289,14 @@
       // 4. Remove sentinel (it served its purpose)
       sentinel.remove();
 
-      // 5. Scroll to where the button was so the first new card is visible
-      window.scrollTo({ top: wrapTop - 60, behavior: 'smooth' });
+      // 5. After purge the old cards are gone — first new card is now at the top.
+      //    Use rAF so layout has settled before measuring.
+      requestAnimationFrame(() => {
+        const firstNew = DOM.output.querySelector('.feed-item');
+        const target   = firstNew || DOM.output;
+        const y = target.getBoundingClientRect().top + window.scrollY - 8;
+        window.scrollTo({ top: y, behavior: 'smooth' });
+      });
 
       // 6. Update count
       const since = new Date(Date.now() - H24_MS).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
