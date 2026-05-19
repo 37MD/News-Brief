@@ -807,14 +807,23 @@
 
   /* ══════════════════════════════════════════════════════════════
      §4  IDB KEY STORAGE
+     Single cached connection — avoids racing parallel opens
+     which can cause IDB failures on Brave PWA cold start.
   ══════════════════════════════════════════════════════════════ */
   const IDB_NAME = 'pulse17', IDB_STORE = 'kv', IDB_VER = 1;
+  let _idbConn = null;          // cached connection
   function _idbOpen() {
+    if (_idbConn) return Promise.resolve(_idbConn);
     return new Promise((res, rej) => {
       const req = indexedDB.open(IDB_NAME, IDB_VER);
-      req.onupgradeneeded = e => e.target.result.createObjectStore(IDB_STORE);
-      req.onsuccess = e => res(e.target.result);
+      req.onupgradeneeded = e => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(IDB_STORE))
+          db.createObjectStore(IDB_STORE);
+      };
+      req.onsuccess = e => { _idbConn = e.target.result; res(_idbConn); };
       req.onerror   = e => rej(e.target.error);
+      req.onblocked = () => rej(new Error('IDB blocked'));
     });
   }
   async function _idbSet(key, val) {
@@ -822,8 +831,8 @@
     return new Promise((res, rej) => {
       const tx = db.transaction(IDB_STORE, 'readwrite');
       tx.objectStore(IDB_STORE).put(val, key);
-      tx.oncomplete = () => { db.close(); res(); };
-      tx.onerror    = e => { db.close(); rej(e.target.error); };
+      tx.oncomplete = () => res();
+      tx.onerror    = e => rej(e.target.error);
     });
   }
   async function _idbGet(key) {
@@ -831,9 +840,42 @@
     return new Promise((res, rej) => {
       const tx  = db.transaction(IDB_STORE, 'readonly');
       const req = tx.objectStore(IDB_STORE).get(key);
-      req.onsuccess = () => { db.close(); res(req.result); };
-      req.onerror   = e => { db.close(); rej(e.target.error); };
+      req.onsuccess = () => res(req.result || null);
+      req.onerror   = e => rej(e.target.error);
     });
+  }
+
+  /* One-time migration: pull keys saved in pulse16 IDB into pulse17 IDB */
+  async function _migrateFromPulse16() {
+    const DONE_FLAG = 'pulse17_migrated_from_16';
+    if (localStorage.getItem(DONE_FLAG)) return;
+    try {
+      const oldDb = await new Promise((res, rej) => {
+        const r = indexedDB.open('pulse16', 1);
+        r.onsuccess = e => res(e.target.result);
+        r.onerror   = () => res(null);   // pulse16 may not exist — that's fine
+        r.onupgradeneeded = () => res(null); // brand new DB means nothing to migrate
+      });
+      if (!oldDb) { localStorage.setItem(DONE_FLAG, '1'); return; }
+      const slots = ['k1','k2','k3','ai_k1','ai_k2','ai_k3'];
+      const vals  = await Promise.all(slots.map(k => new Promise(res => {
+        try {
+          const tx  = oldDb.transaction('kv', 'readonly');
+          const req = tx.objectStore('kv').get(k);
+          req.onsuccess = () => res(req.result || null);
+          req.onerror   = () => res(null);
+        } catch { res(null); }
+      })));
+      oldDb.close();
+      // Write any found keys into pulse17 IDB
+      for (let i = 0; i < slots.length; i++) {
+        if (vals[i]) await _idbSet(slots[i], vals[i]);
+      }
+      if (vals.some(Boolean)) console.log('[Pulse17] ✓ Migrated API keys from pulse16 IDB');
+    } catch(e) {
+      console.warn('[Pulse17] pulse16 migration skipped:', e.message);
+    }
+    localStorage.setItem(DONE_FLAG, '1');
   }
   /* ══════════════════════════════════════════════════════════════
      §5  DUAL-KEY MANAGER
@@ -2142,6 +2184,9 @@
       // Restore keys from IDB
       // Load keys from IDB — no timeout race, let it complete fully
       // This is the ONLY reliable way to get keys back after PWA relaunch
+      // Step 1: migrate keys from pulse16 IDB (one-time, no-op after first run)
+      try { await _migrateFromPulse16(); } catch(e) { console.warn('[Pulse17] Migration error:', e); }
+      // Step 2: restore keys into _keyCache
       try { await _restoreKeysFromIDB(); } catch(e) { console.warn('[Pulse17] IDB key restore failed:', e); }
       try { await AI.loadKeys(); } catch {}
       // Update UI now that keys are definitely loaded
