@@ -583,8 +583,12 @@
         <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash-Lite — fallback</option>
       </select>
       <div id="km-status" class="km-status"></div>
-      <div class="km-footer">Keys saved in IndexedDB — never asked again · <span>aistudio.google.com/apikey</span></div>
-      <div class="km-bottom"><button id="km-close-btn" class="km-close">✕ Close</button></div>
+      <div class="km-footer">Keys saved in localStorage — never asked again · <span>aistudio.google.com/apikey</span></div>
+      <div class="km-bottom" style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button id="km-scan-btn" class="km-save" style="background:#2c6e8a;border-color:#2c6e8a;flex:1;font-size:9px;">🔍 Scan Storage</button>
+        <button id="km-close-btn" class="km-close">✕ Close</button>
+      </div>
+      <div id="km-scan-result" style="display:none;margin-top:6px;padding:6px;background:#0a0a0a;border:1px solid #2c6e8a;border-radius:4px;font-family:'IBM Plex Mono',monospace;font-size:8px;color:#7ec8e3;max-height:120px;overflow-y:auto;white-space:pre-wrap;word-break:break-all;"></div>
     </div>
   </div>
 
@@ -845,37 +849,95 @@
     });
   }
 
-  /* One-time migration: pull keys saved in pulse16 IDB into pulse17 IDB */
+  /* ══════════════════════════════════════════════════════════════
+     FULL KEY RESCUE — scans every possible location keys may have
+     been saved across all previous Pulse versions, writes found
+     keys directly into localStorage (the only reliable store).
+     Runs on EVERY startup until a key is confirmed in localStorage.
+  ══════════════════════════════════════════════════════════════ */
   async function _migrateFromPulse16() {
-    const DONE_FLAG = 'pulse17_migrated_from_16';
-    if (localStorage.getItem(DONE_FLAG)) return;
-    try {
-      const oldDb = await new Promise((res, rej) => {
-        const r = indexedDB.open('pulse16', 1);
-        r.onsuccess = e => res(e.target.result);
-        r.onerror   = () => res(null);   // pulse16 may not exist — that's fine
-        r.onupgradeneeded = () => res(null); // brand new DB means nothing to migrate
-      });
-      if (!oldDb) { localStorage.setItem(DONE_FLAG, '1'); return; }
-      const slots = ['k1','k2','k3','ai_k1','ai_k2','ai_k3'];
-      const vals  = await Promise.all(slots.map(k => new Promise(res => {
-        try {
-          const tx  = oldDb.transaction('kv', 'readonly');
-          const req = tx.objectStore('kv').get(k);
-          req.onsuccess = () => res(req.result || null);
-          req.onerror   = () => res(null);
-        } catch { res(null); }
-      })));
-      oldDb.close();
-      // Write any found keys into pulse17 IDB
-      for (let i = 0; i < slots.length; i++) {
-        if (vals[i]) await _idbSet(slots[i], vals[i]);
+
+    // If we already have keys in the new localStorage slots — nothing to do
+    const alreadyHaveKey = localStorage.getItem('pulse17_key_1') ||
+                           localStorage.getItem('pulse17_key_2') ||
+                           localStorage.getItem('pulse17_key_3');
+    if (alreadyHaveKey) return;
+
+    let found = null;
+
+    // ── PASS 1: Old localStorage key names from previous versions ──
+    const oldLsNames = [
+      'pk1','pk2','pk3',
+      'ai_k1','ai_k2','ai_k3',
+      'pulse16_key_1','pulse16_key_2','pulse16_key_3',
+      'pulse15_key_1','pulse15_key_2','pulse15_key_3',
+      'gemini_key','geminiKey','apiKey','api_key','gemini_api_key'
+    ];
+    for (const name of oldLsNames) {
+      const v = localStorage.getItem(name);
+      if (v && v.length > 10) {
+        // Looks like a real API key — save to slot 1
+        if (!found) found = v;
+        console.log('[Pulse17 migrate] Found key in localStorage:', name);
       }
-      if (vals.some(Boolean)) console.log('[Pulse17] ✓ Migrated API keys from pulse16 IDB');
-    } catch(e) {
-      console.warn('[Pulse17] pulse16 migration skipped:', e.message);
     }
-    localStorage.setItem(DONE_FLAG, '1');
+    if (found) {
+      localStorage.setItem('pulse17_key_1', found);
+      console.log('[Pulse17 migrate] ✓ Key rescued from old localStorage → pulse17_key_1');
+      return;
+    }
+
+    // ── PASS 2: sessionStorage same names ──
+    for (const name of oldLsNames) {
+      const v = sessionStorage.getItem(name);
+      if (v && v.length > 10) {
+        found = v;
+        console.log('[Pulse17 migrate] Found key in sessionStorage:', name);
+        break;
+      }
+    }
+    if (found) {
+      localStorage.setItem('pulse17_key_1', found);
+      console.log('[Pulse17 migrate] ✓ Key rescued from sessionStorage → pulse17_key_1');
+      return;
+    }
+
+    // ── PASS 3: IDB — try pulse17, pulse16, pulse15 databases ──
+    for (const dbName of ['pulse17','pulse16','pulse15']) {
+      if (found) break;
+      try {
+        const db = await new Promise(res => {
+          const r = indexedDB.open(dbName, 1);
+          r.onsuccess      = e => res(e.target.result);
+          r.onerror        = ()  => res(null);
+          r.onupgradeneeded = () => res(null); // new db = nothing to rescue
+        });
+        if (!db) continue;
+        for (const slot of ['k1','k2','k3','ai_k1','ai_k2','ai_k3']) {
+          if (found) break;
+          const v = await new Promise(res => {
+            try {
+              const tx  = db.transaction('kv','readonly');
+              const req = tx.objectStore('kv').get(slot);
+              req.onsuccess = () => res(req.result || null);
+              req.onerror   = () => res(null);
+            } catch { res(null); }
+          });
+          if (v && v.length > 10) {
+            found = v;
+            console.log('[Pulse17 migrate] Found key in IDB', dbName, slot);
+          }
+        }
+        db.close();
+      } catch(e) { /* IDB blocked or absent */ }
+    }
+
+    if (found) {
+      localStorage.setItem('pulse17_key_1', found);
+      console.log('[Pulse17 migrate] ✓ Key rescued from IDB → pulse17_key_1');
+    } else {
+      console.log('[Pulse17 migrate] No existing keys found in any storage location');
+    }
   }
   /* ══════════════════════════════════════════════════════════════
      §5  DUAL-KEY MANAGER
@@ -887,23 +949,30 @@
   const _keyCache = { k1: '', k2: '', k3: '' };
 
   async function _restoreKeysFromIDB() {
-    // Load from BOTH key namespaces (pk* and ai_k*) for backwards compat
-    const [k1a, k2a, k3a, k1b, k2b, k3b] = await Promise.all([
-      _idbGet('k1'),    _idbGet('k2'),    _idbGet('k3'),
-      _idbGet('ai_k1'), _idbGet('ai_k2'), _idbGet('ai_k3')
-    ]);
-    _keyCache.k1 = k1a || k1b || '';
-    _keyCache.k2 = k2a || k2b || '';
-    _keyCache.k3 = k3a || k3b || '';
-    // Keep sessionStorage in sync for any legacy code paths
-    if (_keyCache.k1) { sessionStorage.setItem('pk1', _keyCache.k1); sessionStorage.setItem('ai_k1', _keyCache.k1); }
-    if (_keyCache.k2) { sessionStorage.setItem('pk2', _keyCache.k2); sessionStorage.setItem('ai_k2', _keyCache.k2); }
-    if (_keyCache.k3) { sessionStorage.setItem('pk3', _keyCache.k3); sessionStorage.setItem('ai_k3', _keyCache.k3); }
+    for (const slot of [1, 2, 3]) {
+      // localStorage is primary — read it first (sync, instant)
+      const lsVal = localStorage.getItem(`pulse17_key_${slot}`);
+      if (lsVal) { _keyCache[`k${slot}`] = lsVal; continue; }
+      // IDB fallback — covers keys saved before this fix
+      try {
+        const idbVal = await _idbGet(`k${slot}`) || await _idbGet(`ai_k${slot}`);
+        if (idbVal) {
+          _keyCache[`k${slot}`] = idbVal;
+          // Promote to localStorage so future loads are instant
+          localStorage.setItem(`pulse17_key_${slot}`, idbVal);
+        }
+      } catch(e) { /* IDB unavailable — ignore */ }
+    }
   }
 
   function _getRawKey(slot) {
-    // Primary: in-memory cache (always fresh after _restoreKeysFromIDB)
-    return _keyCache[`k${slot}`] || sessionStorage.getItem(`pk${slot}`) || sessionStorage.getItem('ai_k'+slot) || '';
+    // 1. localStorage — always available, survives every relaunch
+    const lsVal = localStorage.getItem(`pulse17_key_${slot}`);
+    if (lsVal) { _keyCache[`k${slot}`] = lsVal; return lsVal; }
+    // 2. In-memory cache
+    if (_keyCache[`k${slot}`]) return _keyCache[`k${slot}`];
+    // 3. sessionStorage — legacy fallback
+    return sessionStorage.getItem(`pk${slot}`) || sessionStorage.getItem('ai_k'+slot) || '';
   }
   function getGeminiKey()   { return _getRawKey(_activeKeySlot) || _getRawKey(1) || _getRawKey(2); }
   function getGeminiModel() { return localStorage.getItem('pulse17_ai_model') || CONFIG.GEMINI_MODELS[0]; }
@@ -962,12 +1031,14 @@
   }
   function _saveKey(slot, val) {
     if (!val) return;
-    // 1. Update in-memory cache immediately (survives PWA relaunch)
+    // 1. In-memory cache — immediate
     _keyCache[`k${slot}`] = val;
-    // 2. Persist to IDB under both namespaces (belt + braces)
+    // 2. localStorage — PRIMARY persistent store (synchronous, never fails in Brave PWA)
+    localStorage.setItem(`pulse17_key_${slot}`, val);
+    // 3. IDB — secondary backup (async, best-effort)
     _idbSet(`k${slot}`, val).catch(() => {});
     _idbSet('ai_k' + slot, val).catch(() => {});
-    // 3. Keep sessionStorage in sync for legacy code paths
+    // 4. sessionStorage — legacy compat
     sessionStorage.setItem(`pk${slot}`, val);
     sessionStorage.setItem('ai_k' + slot, val);
     _refreshKmButtons(); _updateKmStatus(); _updateKeyStatusBadge();
@@ -2197,6 +2268,43 @@
       // Key manager
       DOM.keyMgrBtn.addEventListener('click', e => { e.stopPropagation(); DOM.keyManagerBox.classList.contains('open') ? closeKeyManager() : openKeyManager(); });
       DOM.kmCloseBtn.addEventListener('click', closeKeyManager);
+
+      // ── 🔍 Scan Storage — dumps ALL keys so we can find where API key is stored ──
+      document.getElementById('km-scan-btn')?.addEventListener('click', () => {
+        const out   = document.getElementById('km-scan-result');
+        const lines = [];
+
+        lines.push('═══ localStorage (' + localStorage.length + ' keys) ═══');
+        const lsKeys = Object.keys(localStorage).sort();
+        if (!lsKeys.length) { lines.push('  (empty)'); }
+        lsKeys.forEach(k => {
+          const v = localStorage.getItem(k);
+          const display = (v && v.length > 20) ? v.substring(0,12) + '…' + v.slice(-4) : v;
+          lines.push('  ' + k + ' = ' + display);
+        });
+
+        lines.push('');
+        lines.push('═══ sessionStorage (' + sessionStorage.length + ' keys) ═══');
+        const ssKeys = Object.keys(sessionStorage).sort();
+        if (!ssKeys.length) { lines.push('  (empty)'); }
+        ssKeys.forEach(k => {
+          const v = sessionStorage.getItem(k);
+          const display = (v && v.length > 20) ? v.substring(0,12) + '…' + v.slice(-4) : v;
+          lines.push('  ' + k + ' = ' + display);
+        });
+
+        lines.push('');
+        lines.push('═══ _keyCache ═══');
+        lines.push('  k1 = ' + (_keyCache.k1 ? _maskKey(_keyCache.k1) : '(empty)'));
+        lines.push('  k2 = ' + (_keyCache.k2 ? _maskKey(_keyCache.k2) : '(empty)'));
+        lines.push('  k3 = ' + (_keyCache.k3 ? _maskKey(_keyCache.k3) : '(empty)'));
+
+        out.textContent = lines.join('\n');
+        out.style.display = 'block';
+
+        // Also print to console for easy copy
+        console.log('[Pulse17 Storage Dump]\n' + lines.join('\n'));
+      });
       DOM.kmK1Save.addEventListener('click', () => _saveKey(1, (DOM.kmK1Input.value||'').trim()));
       DOM.kmK2Save.addEventListener('click', () => _saveKey(2, (DOM.kmK2Input.value||'').trim()));
       if (DOM.kmK3Save) DOM.kmK3Save.addEventListener('click', () => _saveKey(3, (DOM.kmK3Input?.value||'').trim()));
@@ -2464,23 +2572,23 @@
       return _idbGet('ai_k' + slot);
     }
     async function _loadKeys() {
-      const [k1, k2, k3] = await Promise.all([_idbKey(1), _idbKey(2), _idbKey(3)]);
-      // Write into shared _keyCache so _getRawKey() always finds them
-      if (k1) { _keyCache.k1 = k1; sessionStorage.setItem('ai_k1', k1); }
-      if (k2) { _keyCache.k2 = k2; sessionStorage.setItem('ai_k2', k2); }
-      if (k3) { _keyCache.k3 = k3; sessionStorage.setItem('ai_k3', k3); }
+      // localStorage is primary — _restoreKeysFromIDB already handles this
+      // Just ensure _keyCache is in sync
+      for (const slot of [1,2,3]) {
+        const v = localStorage.getItem('pulse17_key_' + slot);
+        if (v) _keyCache['k' + slot] = v;
+      }
     }
-    function _getKey(slot) { return _keyCache['k' + slot] || sessionStorage.getItem('ai_k' + slot) || sessionStorage.getItem('pk' + slot) || ''; }
+    function _getKey(slot) {
+      return localStorage.getItem('pulse17_key_' + slot) || _keyCache['k' + slot] || sessionStorage.getItem('ai_k' + slot) || '';
+    }
     function _hasAnyKey()  { return !!(_getKey(1) || _getKey(2) || _getKey(3)); }
     function _saveKey(slot, val) {
       if (!val) return;
-      // Update shared _keyCache immediately
       _keyCache['k' + slot] = val;
+      localStorage.setItem('pulse17_key_' + slot, val);   // PRIMARY
       sessionStorage.setItem('ai_k' + slot, val);
-      sessionStorage.setItem('pk' + slot, val);
       _idbKey(slot, val).catch(() => {});
-      // Also write under pk* namespace for belt+braces
-      _idbSet('k' + slot, val).catch(() => {});
     }
 
     // ── model preference ──
