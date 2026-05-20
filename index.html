@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pulse 17 — Local Intelligence Terminal</title>
+  <title>Pulse 18 — Local Intelligence Terminal</title>
 
   <!-- ══ PWA: Web App Manifest (inline) ══ -->
   <link rel="manifest" href="#" id="pwa-manifest-link">
@@ -13,8 +13,8 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Pulse 17">
-  <meta name="application-name" content="Pulse 17">
+  <meta name="apple-mobile-web-app-title" content="Pulse 18">
+  <meta name="application-name" content="Pulse 18">
   <meta name="description" content="Local Intelligence Terminal — RSS + PDF · AI Panel · Ad-Free Reader">
 
   <!-- ══ PWA: Icons (inline SVG as data-URI) ══ -->
@@ -494,7 +494,7 @@
           <option value="https://www.livemint.com/rss/technology"> Live Mint</option>
           <option value="https://www.hindustantimes.com/feeds/rss/technology/rssfeed.xml"> Hindustan Times</option>
         </optgroup>
-        <optgroup label="══ Editorial ══">
+        <optgroup label="══ Editorial / Opinion ══">
           <option value="section-editorial">📝 All Editorial</option>
           <option value="https://www.thehindu.com/opinion/feeder/default.rss"> The Hindu</option>
           <option value="https://www.thehindubusinessline.com/opinion/feeder/default.rss"> Hindu Business Line</option>
@@ -502,6 +502,15 @@
           <option value="https://economictimes.indiatimes.com/opinion/opinionshome/rssfeeds/897228639.cms"> Economic Times</option>
           <option value="https://www.livemint.com/rss/opinion"> Live Mint</option>
           <option value="https://www.hindustantimes.com/feeds/rss/editorials/rssfeed.xml"> Hindustan Times</option>
+                  <option value="https://www.business-standard.com/rss/opinion-and-editorial.rss"> Business Standard</option>
+          <option value="https://www.financialexpress.com/opinion/feed/"> Financial Express</option>
+          <option value="https://www.thestatesman.com/opinion/feed"> The Statesman</option>
+          <option value="https://www.dailypioneer.com/feeds/opinion.xml"> The Pioneer</option>
+          <option value="https://www.arabnews.com/opinion/rss.xml"> Arab News</option>
+          <option value="https://rss.nytimes.com/services/xml/rss/nyt/Opinion.xml"> NY Times Opinion</option>
+          <option value="https://feeds.a.dj.com/rss/RSSOpinion.xml"> WSJ Opinion</option>
+          <option value="https://www.ft.com/opinion?format=rss"> FT Opinion</option>
+          <option value="https://feeds.feedburner.com/chicagotribune/news/opinion"> Chicago Tribune Opinion</option>
         </optgroup>
         <optgroup label="══ Markets ══">
           <option value="section-markets">📈 All Markets</option>
@@ -577,10 +586,10 @@
       </div>
       <div class="km-label" style="margin-top:6px;">Model (cascade order)</div>
       <select id="km-model-select" class="km-input" style="width:100%;margin-bottom:8px;height:30px;">
-        <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash-Lite — default/fastest</option>
+        <option value="gemini-3.1-flash-lite">Gemini 3.1 Flash-Lite — fastest</option>
         <option value="gemini-3-flash">Gemini 3 Flash</option>
+        <option value="gemini-3.5-flash">Gemini 3.5 Flash</option>
         <option value="gemini-3.1-pro">Gemini 3.1 Pro — most capable</option>
-        <option value="gemini-2.0-flash-lite">Gemini 2.0 Flash-Lite — fallback</option>
       </select>
       <div id="km-status" class="km-status"></div>
       <div class="km-footer">Keys saved in localStorage — never asked again · <span>aistudio.google.com/apikey</span></div>
@@ -595,8 +604,8 @@
   <!-- Masthead -->
   <div class="masthead">
     <div class="tagline" id="header-date">Local Intelligence Terminal</div>
-    <div class="masthead-title">Pulse<span style="font-size:11px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.55;">17</span></div>
-    <div class="tagline">RSS + PDF · Local Engine + AI Panel · Ad-Free Reader · PWA</div>
+    <div class="masthead-title">Pulse<span style="font-size:11px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.55;">18</span></div>
+    <div class="tagline">RSS + PDF · Editorial Feeds · AI Panel · Ad-Free Reader · PWA</div>
   </div>
   <div id="key-status-badge"></div>
 
@@ -672,7 +681,7 @@
     PAGE_SIZE:          25,
     MAX_LS_PER_FEED:    100,
     DEDUP_THRESHOLD:    0.60,
-    GEMINI_MODELS:      ['gemini-3.1-flash-lite', 'gemini-3-flash', 'gemini-3.1-pro', 'gemini-2.0-flash-lite'],
+    GEMINI_MODELS:      ['gemini-3.1-flash-lite', 'gemini-3-flash', 'gemini-3.5-flash', 'gemini-3.1-pro'],
     STORY_MAX_AGE_MS:   24 * 60 * 60 * 1000        // 24 hours — strict rolling window
   });
 
@@ -723,12 +732,23 @@
       { url: 'https://www.hindustantimes.com/feeds/rss/technology/rssfeed.xml', label: 'Hindustan Times' }
     ],
     'section-editorial': [
+      // Indian newspapers
       { url: 'https://www.thehindu.com/opinion/feeder/default.rss', label: 'The Hindu' },
       { url: 'https://www.thehindubusinessline.com/opinion/feeder/default.rss', label: 'Hindu Business Line' },
       { url: 'https://indianexpress.com/section/opinion/editorials/feed/', label: 'Indian Express' },
       { url: 'https://economictimes.indiatimes.com/opinion/opinionshome/rssfeeds/897228639.cms', label: 'Economic Times' },
       { url: 'https://www.livemint.com/rss/opinion', label: 'Live Mint' },
-      { url: 'https://www.hindustantimes.com/feeds/rss/editorials/rssfeed.xml', label: 'Hindustan Times' }
+      { url: 'https://www.hindustantimes.com/feeds/rss/editorials/rssfeed.xml', label: 'Hindustan Times' },
+      { url: 'https://www.business-standard.com/rss/opinion-and-editorial.rss', label: 'Business Standard' },
+      { url: 'https://www.financialexpress.com/opinion/feed/', label: 'Financial Express' },
+      { url: 'https://www.thestatesman.com/opinion/feed', label: 'The Statesman' },
+      { url: 'https://www.dailypioneer.com/feeds/opinion.xml', label: 'The Pioneer' },
+      // International newspapers
+      { url: 'https://www.arabnews.com/opinion/rss.xml', label: 'Arab News' },
+      { url: 'https://rss.nytimes.com/services/xml/rss/nyt/Opinion.xml', label: 'NY Times Opinion' },
+      { url: 'https://feeds.a.dj.com/rss/RSSOpinion.xml', label: 'WSJ Opinion' },
+      { url: 'https://www.ft.com/opinion?format=rss', label: 'FT Opinion' },
+      { url: 'https://feeds.feedburner.com/chicagotribune/news/opinion', label: 'Chicago Tribune Opinion' }
     ],
     'section-markets': [
       { url: 'https://www.thehindubusinessline.com/markets/feeder/default.rss', label: 'Hindu Business Line' },
@@ -814,7 +834,7 @@
      Single cached connection — avoids racing parallel opens
      which can cause IDB failures on Brave PWA cold start.
   ══════════════════════════════════════════════════════════════ */
-  const IDB_NAME = 'pulse17', IDB_STORE = 'kv', IDB_VER = 1;
+  const IDB_NAME = 'pulse18', IDB_STORE = 'kv', IDB_VER = 1;
   let _idbConn = null;          // cached connection
   function _idbOpen() {
     if (_idbConn) return Promise.resolve(_idbConn);
@@ -858,9 +878,9 @@
   async function _migrateFromPulse16() {
 
     // If we already have keys in the new localStorage slots — nothing to do
-    const alreadyHaveKey = localStorage.getItem('pulse17_key_1') ||
-                           localStorage.getItem('pulse17_key_2') ||
-                           localStorage.getItem('pulse17_key_3');
+    const alreadyHaveKey = localStorage.getItem('pulse18_key_1') ||
+                           localStorage.getItem('pulse18_key_2') ||
+                           localStorage.getItem('pulse18_key_3');
     if (alreadyHaveKey) return;
 
     let found = null;
@@ -878,12 +898,12 @@
       if (v && v.length > 10) {
         // Looks like a real API key — save to slot 1
         if (!found) found = v;
-        console.log('[Pulse17 migrate] Found key in localStorage:', name);
+        console.log('[Pulse18 migrate] Found key in localStorage:', name);
       }
     }
     if (found) {
-      localStorage.setItem('pulse17_key_1', found);
-      console.log('[Pulse17 migrate] ✓ Key rescued from old localStorage → pulse17_key_1');
+      localStorage.setItem('pulse18_key_1', found);
+      console.log('[Pulse18 migrate] ✓ Key rescued from old localStorage → pulse18_key_1');
       return;
     }
 
@@ -892,18 +912,18 @@
       const v = sessionStorage.getItem(name);
       if (v && v.length > 10) {
         found = v;
-        console.log('[Pulse17 migrate] Found key in sessionStorage:', name);
+        console.log('[Pulse18 migrate] Found key in sessionStorage:', name);
         break;
       }
     }
     if (found) {
-      localStorage.setItem('pulse17_key_1', found);
-      console.log('[Pulse17 migrate] ✓ Key rescued from sessionStorage → pulse17_key_1');
+      localStorage.setItem('pulse18_key_1', found);
+      console.log('[Pulse18 migrate] ✓ Key rescued from sessionStorage → pulse18_key_1');
       return;
     }
 
     // ── PASS 3: IDB — try pulse17, pulse16, pulse15 databases ──
-    for (const dbName of ['pulse17','pulse16','pulse15']) {
+    for (const dbName of ['pulse18','pulse16','pulse15']) {
       if (found) break;
       try {
         const db = await new Promise(res => {
@@ -925,7 +945,7 @@
           });
           if (v && v.length > 10) {
             found = v;
-            console.log('[Pulse17 migrate] Found key in IDB', dbName, slot);
+            console.log('[Pulse18 migrate] Found key in IDB', dbName, slot);
           }
         }
         db.close();
@@ -933,10 +953,10 @@
     }
 
     if (found) {
-      localStorage.setItem('pulse17_key_1', found);
-      console.log('[Pulse17 migrate] ✓ Key rescued from IDB → pulse17_key_1');
+      localStorage.setItem('pulse18_key_1', found);
+      console.log('[Pulse18 migrate] ✓ Key rescued from IDB → pulse18_key_1');
     } else {
-      console.log('[Pulse17 migrate] No existing keys found in any storage location');
+      console.log('[Pulse18 migrate] No existing keys found in any storage location');
     }
   }
   /* ══════════════════════════════════════════════════════════════
@@ -951,7 +971,7 @@
   async function _restoreKeysFromIDB() {
     for (const slot of [1, 2, 3]) {
       // localStorage is primary — read it first (sync, instant)
-      const lsVal = localStorage.getItem(`pulse17_key_${slot}`);
+      const lsVal = localStorage.getItem(`pulse18_key_${slot}`);
       if (lsVal) { _keyCache[`k${slot}`] = lsVal; continue; }
       // IDB fallback — covers keys saved before this fix
       try {
@@ -959,7 +979,7 @@
         if (idbVal) {
           _keyCache[`k${slot}`] = idbVal;
           // Promote to localStorage so future loads are instant
-          localStorage.setItem(`pulse17_key_${slot}`, idbVal);
+          localStorage.setItem(`pulse18_key_${slot}`, idbVal);
         }
       } catch(e) { /* IDB unavailable — ignore */ }
     }
@@ -967,7 +987,7 @@
 
   function _getRawKey(slot) {
     // 1. localStorage — always available, survives every relaunch
-    const lsVal = localStorage.getItem(`pulse17_key_${slot}`);
+    const lsVal = localStorage.getItem(`pulse18_key_${slot}`);
     if (lsVal) { _keyCache[`k${slot}`] = lsVal; return lsVal; }
     // 2. In-memory cache
     if (_keyCache[`k${slot}`]) return _keyCache[`k${slot}`];
@@ -975,7 +995,7 @@
     return sessionStorage.getItem(`pk${slot}`) || sessionStorage.getItem('ai_k'+slot) || '';
   }
   function getGeminiKey()   { return _getRawKey(_activeKeySlot) || _getRawKey(1) || _getRawKey(2); }
-  function getGeminiModel() { return localStorage.getItem('pulse17_ai_model') || CONFIG.GEMINI_MODELS[0]; }
+  function getGeminiModel() { return localStorage.getItem('pulse18_ai_model') || CONFIG.GEMINI_MODELS[0]; }
 
   function _maskKey(k) { return k ? k.substring(0,6) + '…' + k.slice(-3) : ''; }
 
@@ -1003,8 +1023,8 @@
     }
     const nKeys = [k1,k2,k3].filter(Boolean).length;
     const slotLabel = `✓ ${nKeys} key${nKeys>1?'s':''} stored`;
-    const mdl = localStorage.getItem('pulse17_ai_model') || 'gemini-3.1-flash-lite';
-    const mdlLabel = mdl.replace('gemini-3.1-flash-lite','3.1 Flash-Lite').replace('gemini-3-flash','3 Flash').replace('gemini-3.1-pro','3.1 Pro').replace('gemini-2.0-flash-lite','2.0 Flash-Lite');
+    const mdl = localStorage.getItem('pulse18_ai_model') || 'gemini-3.1-flash-lite';
+    const mdlLabel = mdl.replace('gemini-3.1-flash-lite','3.1 Flash-Lite').replace('gemini-3-flash','3 Flash').replace('gemini-3.5-flash','3.5 Flash').replace('gemini-3.1-pro','3.1 Pro');
     DOM.keyStatusBadge.innerHTML = `<span style="font-size:9px;font-family:'IBM Plex Mono',monospace;text-align:center;display:block;padding:2px;color:#5a554c;">AI: ${slotLabel} · ${mdlLabel} · Cascade K1→K2→K3 on quota · ⚡ panel in reader</span>`;
   }
 
@@ -1021,7 +1041,7 @@
     DOM.kmK1Input.placeholder = k1 ? `Stored (${_maskKey(k1)}) — paste to replace` : 'AIza… (paste Key 1)';
     DOM.kmK2Input.placeholder = k2 ? `Stored (${_maskKey(k2)}) — paste to replace` : 'AIza… (paste Key 2)';
     if (DOM.kmK3Input) DOM.kmK3Input.placeholder = k3 ? `Stored (${_maskKey(k3)}) — paste to replace` : 'AIza… (paste Key 3)';
-    if (DOM.kmModelSelect) DOM.kmModelSelect.value = localStorage.getItem('pulse17_ai_model') || 'gemini-3.1-flash-lite';
+    if (DOM.kmModelSelect) DOM.kmModelSelect.value = localStorage.getItem('pulse18_ai_model') || 'gemini-3.1-flash-lite';
     setTimeout(() => DOM.kmK1Input.focus(), 80);
   }
   function closeKeyManager() {
@@ -1034,7 +1054,7 @@
     // 1. In-memory cache — immediate
     _keyCache[`k${slot}`] = val;
     // 2. localStorage — PRIMARY persistent store (synchronous, never fails in Brave PWA)
-    localStorage.setItem(`pulse17_key_${slot}`, val);
+    localStorage.setItem(`pulse18_key_${slot}`, val);
     // 3. IDB — secondary backup (async, best-effort)
     _idbSet(`k${slot}`, val).catch(() => {});
     _idbSet('ai_k' + slot, val).catch(() => {});
@@ -1105,7 +1125,7 @@
   function lsKey(feedUrl) {
     let h = 0;
     for (let i = 0; i < feedUrl.length; i++) h = (Math.imul(31, h) + feedUrl.charCodeAt(i)) | 0;
-    return 'pulse17_' + Math.abs(h).toString(36);
+    return 'pulse18_' + Math.abs(h).toString(36);
   }
   function lsLoad(feedUrl) {
     try {
@@ -1123,7 +1143,7 @@
     } catch(e) { if (e.name === 'QuotaExceededError') { try { localStorage.clear(); } catch{} } }
   }
   /* ── Permanently deleted article IDs (survive refresh) ── */
-  const LS_DELETED_KEY = 'pulse17_deleted_ids';
+  const LS_DELETED_KEY = 'pulse18_deleted_ids';
   function deletedIdsLoad() {
     try { return new Set(JSON.parse(localStorage.getItem(LS_DELETED_KEY) || '[]')); }
     catch { return new Set(); }
@@ -1167,6 +1187,53 @@
     wa.forEach(w => { if (wb.has(w)) shared++; });
     return shared / Math.max(wa.size, wb.size, 1);
   }
+  /* ── Per-feed "last seen" timestamp ─────────────────────────────
+     Saved as pulse18_ts_<hash> → ISO string of the most recent
+     pubDate successfully loaded from that feed.
+     On next fetch, any item with pubDate ≤ lastSeen is skipped,
+     so only genuinely new articles surface after a refresh.
+  ──────────────────────────────────────────────────────────────── */
+  function tsKey(feedUrl) { return 'pulse18_ts_' + lsKey(feedUrl).replace('pulse18_',''); }
+
+  function lastSeenGet(feedUrl) {
+    try { const v = localStorage.getItem(tsKey(feedUrl)); return v ? new Date(v).getTime() : 0; }
+    catch { return 0; }
+  }
+  function lastSeenSet(feedUrl, isoStr) {
+    try { if (isoStr) localStorage.setItem(tsKey(feedUrl), isoStr); } catch {}
+  }
+  function lastSeenClear(feedUrl) {
+    try { localStorage.removeItem(tsKey(feedUrl)); } catch {}
+  }
+
+  /* Filter items to only those NEWER than lastSeen for this feed.
+     If forceRefresh is true (manual refresh button) we skip the
+     filter so the user can see full 24h window again.           */
+  function filterNewOnly(feedUrl, items, forceRefresh) {
+    if (forceRefresh) return items;
+    const cutoff = lastSeenGet(feedUrl);
+    if (!cutoff) return items;                 // first ever load — show all
+    return items.filter(i => {
+      if (!i.pubDate) return false;            // no date → already shown once
+      const t = new Date(i.pubDate).getTime();
+      return !isNaN(t) && t > cutoff;
+    });
+  }
+
+  /* After a successful fetch, persist the newest pubDate */
+  function lastSeenUpdate(feedUrl, items) {
+    if (!items.length) return;
+    // Find latest pubDate in this batch
+    let newest = 0;
+    let newestStr = '';
+    items.forEach(i => {
+      if (!i.pubDate) return;
+      const t = new Date(i.pubDate).getTime();
+      if (!isNaN(t) && t > newest) { newest = t; newestStr = i.pubDate; }
+    });
+    if (newest > lastSeenGet(feedUrl)) lastSeenSet(feedUrl, newestStr);
+  }
+
   function mergeIntoStore(feedUrl, feedName, freshItems) {
     // Only accept items published within the last 24 hours
     const fresh24 = filter24h(freshItems);
@@ -1196,7 +1263,7 @@
        legacy entries written before the hard-delete fix).
   ══════════════════════════════════════════════════════════════ */
   function purgeOldStories() {
-    const keysToCheck = Object.keys(localStorage).filter(k => k.startsWith('pulse17_'));
+    const keysToCheck = Object.keys(localStorage).filter(k => k.startsWith('pulse18_'));
     keysToCheck.forEach(lk => {
       try {
         const raw = localStorage.getItem(lk);
@@ -1450,7 +1517,7 @@
     DOM.output.innerHTML = '';
     renderNextBatch();
     const since = new Date(Date.now() - H24_MS).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-    DOM.itemCount.textContent = `${items.length} articles · last 24h (since ${since})`;
+    DOM.itemCount.textContent = `${items.length} new articles · since ${since}`;
   }
   function setFeedStatus(msg) { DOM.output.innerHTML = `<div class="system-msg">${msg}</div>`; }
   function setRefreshing(on) { DOM.refreshBtn.disabled = on; DOM.refreshBtn.classList.toggle('spinning', on); }
@@ -1505,6 +1572,8 @@
           if (reqId !== requestCounter) return;
           if (!allItems.length) { setFeedStatus('📭 No articles found across any source.'); return; }
           // Note: filter24h is applied after dedup — zero results post-filter handled by startPagination
+          // Collect all feed URLs for lastSeen tracking
+          const allFeedUrls = [...new Set(allItems.map(i => i._feedUrl).filter(Boolean))];
           // Deduplicate by title similarity — keep alt sources
           const unique = [];
           allItems.forEach(item => {
@@ -1524,9 +1593,13 @@
           const label = sectionLabel.replace(/^[📰📊💼💻📝📈🏙️⏱️]\s*/,'');
 
           if (!unique24.length) { setFeedStatus('🕐 No articles in the last 24 hours from this section.'); setRefreshing(false); return; }
+          // Update last-seen per source feed; then filter section to new-only
+          allFeedUrls.forEach(fu => lastSeenUpdate(fu, unique24.filter(i => i._feedUrl === fu)));
+          const sectionNewOnly = filterNewOnly(feedVal, unique24, forceRefresh);
+          const unique24final  = sectionNewOnly.length ? sectionNewOnly : unique24;
           // Apply deletedIds + viewed filter in one pass on the final 24h-filtered list
           const _deleted = deletedIdsLoad();
-          unique24.forEach(item => {
+          unique24final.forEach(item => {
             if (_deleted.has(item.id)) { item._blocked = true; return; }
             if (!item._feedUrl) return;
             const stored = lsLoad(item._feedUrl);
@@ -1534,7 +1607,7 @@
             const match = stored.items.find(s => s.id === item.id);
             if (match && match.viewed) item._blocked = true;
           });
-          const unique24clean = unique24.filter(i => !i._blocked);
+          const unique24clean = unique24final.filter(i => !i._blocked);
           feedCache[feedVal] = { timestamp: Date.now(), items: unique24clean, feedName: label };
           startPagination(unique24clean, label, feedVal);
         } catch(err) {
@@ -1590,10 +1663,15 @@
 
         const merged24 = filter24h(merged);
         if (!merged24.length) { setFeedStatus('🕐 No articles in the last 24 hours from this feed.'); setRefreshing(false); return; }
-        feedCache[feedUrl] = { timestamp: Date.now(), items: merged24, feedName };
+        // Update last-seen timestamp with all fetched items before filtering
+        lastSeenUpdate(feedUrl, merged24);
+        // Show only items newer than last seen (unless forced refresh)
+        const newOnly = filterNewOnly(feedUrl, merged24, forceRefresh);
+        const toShow  = newOnly.length ? newOnly : merged24;  // fallback: show all if nothing new
+        feedCache[feedUrl] = { timestamp: Date.now(), items: toShow, feedName };
         const _deleted = deletedIdsLoad();
-        const display = merged24.filter(i => !i.viewed && !_deleted.has(i.id));
-        startPagination(display.length ? display : merged24.filter(i => !_deleted.has(i.id)), feedName, feedUrl);
+        const display = toShow.filter(i => !i.viewed && !_deleted.has(i.id));
+        startPagination(display.length ? display : toShow.filter(i => !_deleted.has(i.id)), feedName, feedUrl);
         startCountdown();
       } catch(err) {
         if (reqId !== requestCounter) return;
@@ -2256,9 +2334,9 @@
       // Load keys from IDB — no timeout race, let it complete fully
       // This is the ONLY reliable way to get keys back after PWA relaunch
       // Step 1: migrate keys from pulse16 IDB (one-time, no-op after first run)
-      try { await _migrateFromPulse16(); } catch(e) { console.warn('[Pulse17] Migration error:', e); }
+      try { await _migrateFromPulse16(); } catch(e) { console.warn('[Pulse18] Migration error:', e); }
       // Step 2: restore keys into _keyCache
-      try { await _restoreKeysFromIDB(); } catch(e) { console.warn('[Pulse17] IDB key restore failed:', e); }
+      try { await _restoreKeysFromIDB(); } catch(e) { console.warn('[Pulse18] IDB key restore failed:', e); }
       try { await AI.loadKeys(); } catch {}
       // Update UI now that keys are definitely loaded
       _refreshKmButtons(); _updateKmStatus(); _updateKeyStatusBadge();
@@ -2303,16 +2381,16 @@
         out.style.display = 'block';
 
         // Also print to console for easy copy
-        console.log('[Pulse17 Storage Dump]\n' + lines.join('\n'));
+        console.log('[Pulse18 Storage Dump]\n' + lines.join('\n'));
       });
       DOM.kmK1Save.addEventListener('click', () => _saveKey(1, (DOM.kmK1Input.value||'').trim()));
       DOM.kmK2Save.addEventListener('click', () => _saveKey(2, (DOM.kmK2Input.value||'').trim()));
       if (DOM.kmK3Save) DOM.kmK3Save.addEventListener('click', () => _saveKey(3, (DOM.kmK3Input?.value||'').trim()));
       // Sync model select from localStorage
       if (DOM.kmModelSelect) {
-        DOM.kmModelSelect.value = localStorage.getItem('pulse17_ai_model') || 'gemini-3.1-flash-lite';
+        DOM.kmModelSelect.value = localStorage.getItem('pulse18_ai_model') || 'gemini-3.1-flash-lite';
         DOM.kmModelSelect.addEventListener('change', () => {
-          localStorage.setItem('pulse17_ai_model', DOM.kmModelSelect.value);
+          localStorage.setItem('pulse18_ai_model', DOM.kmModelSelect.value);
           _updateKeyStatusBadge();
         });
       }
@@ -2472,7 +2550,7 @@
       AI.wireEvents();
       DOM.refreshBtn.addEventListener('click', () => {
         Object.keys(feedCache).forEach(k => delete feedCache[k]);
-        Object.keys(localStorage).filter(k => k.startsWith('pulse17_')).forEach(k => localStorage.removeItem(k));
+        Object.keys(localStorage).filter(k => k.startsWith('pulse18_')).forEach(k => localStorage.removeItem(k));
         loadFeed(true);
       });
 
@@ -2541,7 +2619,7 @@
      AI PANEL — floating thunder button
      Works on any open reader page (PDF or web article)
      Keys stored permanently in IDB, cascade K1->K2->K3
-     Models: 2.5-flash (default) -> 2.0-flash -> 2.0-flash-lite -> 2.5-pro
+     Models: 2.5-flash (default) -> 2.0-flash -> 3.1-flash-lite -> 2.5-pro
   ══════════════════════════════════════════════════ */
 
   const AI = (() => {
@@ -2554,8 +2632,8 @@
     const MODEL_CASCADE = [
       'gemini-3.1-flash-lite',
       'gemini-3-flash',
-      'gemini-3.1-pro',
-      'gemini-2.0-flash-lite'
+      'gemini-3.5-flash',
+      'gemini-3.1-pro'
     ];
 
     // ── DOM shortcuts ──
@@ -2575,32 +2653,32 @@
       // localStorage is primary — _restoreKeysFromIDB already handles this
       // Just ensure _keyCache is in sync
       for (const slot of [1,2,3]) {
-        const v = localStorage.getItem('pulse17_key_' + slot);
+        const v = localStorage.getItem('pulse18_key_' + slot);
         if (v) _keyCache['k' + slot] = v;
       }
     }
     function _getKey(slot) {
-      return localStorage.getItem('pulse17_key_' + slot) || _keyCache['k' + slot] || sessionStorage.getItem('ai_k' + slot) || '';
+      return localStorage.getItem('pulse18_key_' + slot) || _keyCache['k' + slot] || sessionStorage.getItem('ai_k' + slot) || '';
     }
     function _hasAnyKey()  { return !!(_getKey(1) || _getKey(2) || _getKey(3)); }
     function _saveKey(slot, val) {
       if (!val) return;
       _keyCache['k' + slot] = val;
-      localStorage.setItem('pulse17_key_' + slot, val);   // PRIMARY
+      localStorage.setItem('pulse18_key_' + slot, val);   // PRIMARY
       sessionStorage.setItem('ai_k' + slot, val);
       _idbKey(slot, val).catch(() => {});
     }
 
     // ── model preference ──
     function _getModel() {
-      return localStorage.getItem('pulse17_ai_model') || MODEL_CASCADE[0];
+      return localStorage.getItem('pulse18_ai_model') || MODEL_CASCADE[0];
     }
-    function _saveModel(m) { localStorage.setItem('pulse17_ai_model', m); }
+    function _saveModel(m) { localStorage.setItem('pulse18_ai_model', m); }
     function _modelLabel(m) {
       return m.replace('gemini-3.1-flash-lite','3.1 Flash-Lite')
               .replace('gemini-3-flash','3 Flash')
               .replace('gemini-3.1-pro','3.1 Pro')
-              .replace('gemini-2.0-flash-lite','2.0 Flash-Lite');
+              .replace('gemini-3.1-flash-lite','2.0 Flash-Lite');
     }
 
     // ── call Gemini with full cascade ──
@@ -2877,7 +2955,7 @@
 
 <!-- ══ PWA: Service Worker source (read by PWA init script below) ══ -->
 <script id="sw-src" type="text/plain">
-const CACHE = 'pulse-17-v1';
+const CACHE = 'pulse-18-v1';
 const OFFLINE_URL = './';
 
 self.addEventListener('install', e => {
@@ -2922,14 +3000,14 @@ self.addEventListener('fetch', e => {
 
 <!-- ══════════════════════════════════════════════════
      PWA: Inline Manifest + Service Worker (Brave-ready)
-     Pulse 17 — single-file PWA, no external manifest.json needed
+     Pulse 18 — single-file PWA, no external manifest.json needed
 ══════════════════════════════════════════════════ -->
 <script>
 (function () {
   /* ── 1. Inline Web App Manifest (data: URI trick for single-file PWA) ── */
   const manifest = {
-    name: "Pulse 17 — Local Intelligence Terminal",
-    short_name: "Pulse 17",
+    name: "Pulse 18 — Local Intelligence Terminal",
+    short_name: "Pulse 18",
     description: "RSS + PDF · Local Engine + Gemini AI Panel · Ad-Free Reader",
     start_url: "./",
     display: "standalone",
@@ -2960,7 +3038,7 @@ self.addEventListener('fetch', e => {
     const link = document.getElementById('pwa-manifest-link');
     if (link) link.href = blobUrl;
   } catch (e) {
-    console.warn('[Pulse17 PWA] Manifest blob injection failed:', e);
+    console.warn('[Pulse18 PWA] Manifest blob injection failed:', e);
   }
 
   /* ── 2. Service Worker — inline via Blob URL ── */
@@ -2978,10 +3056,10 @@ self.addEventListener('fetch', e => {
       const b64    = btoa(unescape(encodeURIComponent(swText)));
       const swUrl  = 'data:application/javascript;base64,' + b64;
       navigator.serviceWorker.register(swUrl, { scope: './' })
-        .then(reg => console.log('[Pulse17 PWA] SW registered ✓', reg.scope))
-        .catch(err => console.info('[Pulse17 PWA] SW skipped (needs http/https):', err.message));
+        .then(reg => console.log('[Pulse18 PWA] SW registered ✓', reg.scope))
+        .catch(err => console.info('[Pulse18 PWA] SW skipped (needs http/https):', err.message));
     } catch (e) {
-      console.info('[Pulse17 PWA] SW not available:', e.message);
+      console.info('[Pulse18 PWA] SW not available:', e.message);
     }
   }
 
@@ -2998,7 +3076,7 @@ self.addEventListener('fetch', e => {
     _deferredPrompt = null;
     const badge = document.getElementById('pwa-install-badge');
     if (badge) badge.remove();
-    console.log('[Pulse17 PWA] App installed ✓');
+    console.log('[Pulse18 PWA] App installed ✓');
   });
 
   function _showInstallBadge() {
@@ -3023,7 +3101,7 @@ self.addEventListener('fetch', e => {
         #pwa-install-badge .pwa-x { opacity:0.6; font-size:13px; margin-left:4px; }
         #pwa-install-badge .pwa-x:hover { opacity:1; }
       </style>
-      <span>⬇ Install Pulse 17</span>
+      <span>⬇ Install Pulse 18</span>
       <span class="pwa-x" id="pwa-dismiss-x">✕</span>
     `;
     badge.addEventListener('click', e => {
