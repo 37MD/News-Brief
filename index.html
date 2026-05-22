@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pulse 18 — Local Intelligence Terminal</title>
+  <title>Pulse 18A — Local Intelligence Terminal</title>
 
   <!-- ══ PWA: Web App Manifest (inline) ══ -->
   <link rel="manifest" href="#" id="pwa-manifest-link">
@@ -13,8 +13,8 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Pulse 18">
-  <meta name="application-name" content="Pulse 18">
+  <meta name="apple-mobile-web-app-title" content="Pulse 18A">
+  <meta name="application-name" content="Pulse 18A">
   <meta name="description" content="Local Intelligence Terminal — RSS + PDF · AI Panel · Ad-Free Reader">
 
   <!-- ══ PWA: Icons (inline SVG as data-URI) ══ -->
@@ -35,7 +35,7 @@
       --muted:          #5a554c;
       --meta-color:     #8c867a;
       --error:          #c0392b;
-      --reader-font-sz: 17px;
+      --reader-font-sz: 25px;
     }
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     body { background: var(--paper); color: var(--ink); font-family: 'IBM Plex Sans', 'Noto Sans', sans-serif; min-height: 100vh; line-height: 1.6; }
@@ -207,7 +207,7 @@
     @keyframes fadeIn { from { opacity:0; transform:translateY(5px); } to { opacity:1; transform:translateY(0); } }
     .headline { font-family: 'Playfair Display', serif; font-size: 20px; color: var(--ink); text-decoration: none; font-weight: 700; display: block; line-height: 1.3; margin-bottom: 8px; word-break: break-word; cursor: pointer; }
     .headline:hover { color: var(--accent); text-decoration: underline; }
-    .description { font-size: 14px; color: var(--muted); margin-bottom: 10px; line-height: 1.6; }
+    .description { font-size: 21px; color: var(--muted); margin-bottom: 10px; line-height: 1.6; }
     .meta { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--meta-color); text-transform: uppercase; letter-spacing: 0.05em; display: flex; justify-content: space-between; align-items: center; }
     .view-orig-btn { font-family: 'IBM Plex Mono', monospace; font-size: 9px; color: var(--muted); text-decoration: underline; cursor: pointer; background: none; border: none; padding: 0; letter-spacing: 0.03em; }
     .view-orig-btn:hover { color: var(--accent); }
@@ -604,7 +604,7 @@
   <!-- Masthead -->
   <div class="masthead">
     <div class="tagline" id="header-date">Local Intelligence Terminal</div>
-    <div class="masthead-title">Pulse<span style="font-size:11px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.55;">18</span></div>
+    <div class="masthead-title">Pulse<span style="font-size:11px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.55;">18A</span></div>
     <div class="tagline">RSS + PDF · Editorial Feeds · AI Panel · Ad-Free Reader · PWA</div>
   </div>
   <div id="key-status-badge"></div>
@@ -3000,14 +3000,14 @@ self.addEventListener('fetch', e => {
 
 <!-- ══════════════════════════════════════════════════
      PWA: Inline Manifest + Service Worker (Brave-ready)
-     Pulse 18 — single-file PWA, no external manifest.json needed
+     Pulse 18A — single-file PWA, no external manifest.json needed
 ══════════════════════════════════════════════════ -->
 <script>
 (function () {
   /* ── 1. Inline Web App Manifest (data: URI trick for single-file PWA) ── */
   const manifest = {
-    name: "Pulse 18 — Local Intelligence Terminal",
-    short_name: "Pulse 18",
+    name: "Pulse 18A — Local Intelligence Terminal",
+    short_name: "Pulse 18A",
     description: "RSS + PDF · Local Engine + Gemini AI Panel · Ad-Free Reader",
     start_url: "./",
     display: "standalone",
@@ -3101,7 +3101,7 @@ self.addEventListener('fetch', e => {
         #pwa-install-badge .pwa-x { opacity:0.6; font-size:13px; margin-left:4px; }
         #pwa-install-badge .pwa-x:hover { opacity:1; }
       </style>
-      <span>⬇ Install Pulse 18</span>
+      <span>⬇ Install Pulse 18A</span>
       <span class="pwa-x" id="pwa-dismiss-x">✕</span>
     `;
     badge.addEventListener('click', e => {
