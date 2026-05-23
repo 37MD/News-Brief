@@ -1496,12 +1496,11 @@
       // 4. Remove sentinel (it served its purpose)
       sentinel.remove();
 
-      // 5. After purge the old cards are gone — first new card is now at the top.
-      //    Use rAF so layout has settled before measuring.
+      // 5. Scroll to just below the "keys stored" badge so new batch starts at top of viewport.
       requestAnimationFrame(() => {
-        const firstNew = DOM.output.querySelector('.feed-item');
-        const target   = firstNew || DOM.output;
-        const y = target.getBoundingClientRect().top + window.scrollY - 8;
+        const badge  = document.getElementById('key-status-badge');
+        const anchor = badge || document.querySelector('.feed-status-bar') || DOM.output;
+        const y = anchor.getBoundingClientRect().bottom + window.scrollY + 4;
         window.scrollTo({ top: y, behavior: 'smooth' });
       });
 
