@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pulse 18A — Local Intelligence Terminal</title>
+  <title>Pulse 18A — Local Pulse</title>
 
   <!-- ══ PWA: Web App Manifest (inline) ══ -->
   <link rel="manifest" href="#" id="pwa-manifest-link">
@@ -605,7 +605,7 @@
   <div class="masthead">
     <div class="tagline" id="header-date">Local Intelligence Terminal</div>
     <div class="masthead-title">Pulse<span style="font-size:11px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.55;">18A</span></div>
-    <div class="tagline">RSS + PDF · Editorial Feeds · AI Panel · Ad-Free Reader · PWA</div>
+    <div class="tagline">RSS + PDF · AI Panel · Ad-Free Reader</div>
   </div>
   <div id="key-status-badge"></div>
 
@@ -1025,7 +1025,7 @@
     const slotLabel = `✓ ${nKeys} key${nKeys>1?'s':''} stored`;
     const mdl = localStorage.getItem('pulse18_ai_model') || 'gemini-3.1-flash-lite';
     const mdlLabel = mdl.replace('gemini-3.1-flash-lite','3.1 Flash-Lite').replace('gemini-3-flash','3 Flash').replace('gemini-3.5-flash','3.5 Flash').replace('gemini-3.1-pro','3.1 Pro');
-    DOM.keyStatusBadge.innerHTML = `<span style="font-size:9px;font-family:'IBM Plex Mono',monospace;text-align:center;display:block;padding:2px;color:#5a554c;">AI: ${slotLabel} · ${mdlLabel} · Cascade K1→K2→K3 on quota · ⚡ panel in reader</span>`;
+    DOM.keyStatusBadge.innerHTML = `<span style="font-size:9px;font-family:'IBM Plex Mono',monospace;text-align:center;display:block;padding:2px;color:#5a554c;">AI: ${slotLabel} · ${mdlLabel} · Cascade K1→K2→K3 on quota</span>`;
   }
 
   function openKeyManager() {
@@ -1510,13 +1510,15 @@
     });
   }
 
-  function startPagination(items, feedName, feedUrl) {
+  function startPagination(items, feedName, feedUrl, sourceCount) {
     page.items     = items.map(i => ({ ...i, _feedName: i._feedName || feedName, _feedUrl: i._feedUrl || feedUrl }));
     page.displayed = 0;
     DOM.output.innerHTML = '';
     renderNextBatch();
     const since = new Date(Date.now() - H24_MS).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
-    DOM.itemCount.textContent = `${items.length} new articles · since ${since}`;
+    DOM.itemCount.textContent = sourceCount
+      ? `${feedName} · ${items.length} new · ${sourceCount} sources · since ${since}`
+      : `${items.length} new articles · since ${since}`;
   }
   function setFeedStatus(msg) { DOM.output.innerHTML = `<div class="system-msg">${msg}</div>`; }
   function setRefreshing(on) { DOM.refreshBtn.disabled = on; DOM.refreshBtn.classList.toggle('spinning', on); }
@@ -1608,13 +1610,12 @@
           });
           const unique24clean = unique24final.filter(i => !i._blocked);
           feedCache[feedVal] = { timestamp: Date.now(), items: unique24clean, feedName: label };
-          startPagination(unique24clean, label, feedVal);
+          startPagination(unique24clean, label, feedVal, feeds.length);
         } catch(err) {
           if (reqId !== requestCounter) return;
           DOM.output.innerHTML = `<div class="system-msg error">❌ Error: ${escapeHtml(err.message)}</div>`;
         } finally {
           if (reqId === requestCounter) setRefreshing(false);
-          DOM.nextRefresh.textContent = 'Aggregated — no auto-refresh';
         }
         return;
       }
