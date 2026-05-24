@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pulse 18A — Local Pulse</title>
+  <title>Pulse 18B — Local Pulse</title>
 
   <!-- ══ PWA: Web App Manifest (inline) ══ -->
   <link rel="manifest" href="#" id="pwa-manifest-link">
@@ -13,8 +13,8 @@
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <meta name="apple-mobile-web-app-title" content="Pulse 18A">
-  <meta name="application-name" content="Pulse 18A">
+  <meta name="apple-mobile-web-app-title" content="Pulse 18B">
+  <meta name="application-name" content="Pulse 18B">
   <meta name="description" content="Local Intelligence Terminal — RSS + PDF · AI Panel · Ad-Free Reader">
 
   <!-- ══ PWA: Icons (inline SVG as data-URI) ══ -->
@@ -604,7 +604,7 @@
   <!-- Masthead -->
   <div class="masthead">
     <div class="tagline" id="header-date">Local Intelligence Terminal</div>
-    <div class="masthead-title">Pulse<span style="font-size:11px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.55;">18A</span></div>
+    <div class="masthead-title">Pulse<span style="font-size:11px;font-weight:400;font-family:'IBM Plex Mono',monospace;letter-spacing:0.1em;vertical-align:super;margin-left:4px;opacity:0.55;">18B</span></div>
     <div class="tagline">RSS + PDF · AI Panel · Ad-Free Reader</div>
   </div>
   <div id="key-status-badge"></div>
@@ -3000,14 +3000,14 @@ self.addEventListener('fetch', e => {
 
 <!-- ══════════════════════════════════════════════════
      PWA: Inline Manifest + Service Worker (Brave-ready)
-     Pulse 18A — single-file PWA, no external manifest.json needed
+     Pulse 18B — single-file PWA, no external manifest.json needed
 ══════════════════════════════════════════════════ -->
 <script>
 (function () {
   /* ── 1. Inline Web App Manifest (data: URI trick for single-file PWA) ── */
   const manifest = {
-    name: "Pulse 18A — Local Intelligence Terminal",
-    short_name: "Pulse 18A",
+    name: "Pulse 18B — Local Intelligence Terminal",
+    short_name: "Pulse 18B",
     description: "RSS + PDF · Local Engine + Gemini AI Panel · Ad-Free Reader",
     start_url: "./",
     display: "standalone",
@@ -3101,7 +3101,7 @@ self.addEventListener('fetch', e => {
         #pwa-install-badge .pwa-x { opacity:0.6; font-size:13px; margin-left:4px; }
         #pwa-install-badge .pwa-x:hover { opacity:1; }
       </style>
-      <span>⬇ Install Pulse 18A</span>
+      <span>⬇ Install Pulse 18B</span>
       <span class="pwa-x" id="pwa-dismiss-x">✕</span>
     `;
     badge.addEventListener('click', e => {
